@@ -38,8 +38,10 @@ if(edit_filter.isEmpty()) {
       (CART.AGENCY like \"%%%s%%\")||(CART.ALBUM like \"%%%s%%\")||\
       (CART.LABEL like \"%%%s%%\")||(CART.NUMBER like \"%%%s%%\")||\
       (CART.PUBLISHER like \"%%%s%%\")||(CART.COMPOSER like \"%%%s%%\")||\
-      (CART.USER_DEFINED like \"%%%s%%\"))",
+      (CART.USER_DEFINED like \"%%%s%%\")||\
+      (CART.SCHED_CODES like \"%%%s%%\"))",
   			   (const char *)search_string.utf8(),
+			   (const char *)search_string.utf8(),
 			   (const char *)search_string.utf8(),
 			   (const char *)search_string.utf8(),
 			   (const char *)search_string.utf8(),
@@ -82,8 +84,9 @@ else {
       (CART.AGENCY like \"%%%s%%\")||(CART.ALBUM like \"%%%s%%\")||\
       (CART.LABEL like \"%%%s%%\")||(CART.NUMBER like \"%%%s%%\")||\
       (CART.PUBLISHER like \"%%%s%%\")||(CART.COMPOSER like \"%%%s%%\")||\
-      (CART.USER_DEFINED like \"%%%s%%\"))",
+      (CART.USER_DEFINED like \"%%%s%%\")||(CART.SCHED_CODES like \"%%%s%%\"))",
   			   (const char *)search_string.utf8(),
+			   (const char *)search_string.utf8(),
 			   (const char *)search_string.utf8(),
 			   (const char *)search_string.utf8(),
 			   (const char *)search_string.utf8(),

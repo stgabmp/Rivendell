@@ -72,6 +72,10 @@ class RDEventLine
   void setHaveCode(QString str);
   unsigned titleSep() const;
   void setTitleSep(unsigned titlesep);
+  int duckVolume() const;
+  void setDuckVolume(int vol);
+  QString transGroup() const;
+  void setTransGroup(QString group);
   RDLogEvent *preimportCarts();
   RDLogEvent *postimportCarts();
   QTime startTime() const;
@@ -82,7 +86,7 @@ class RDEventLine
   bool load();
   bool save();
   bool generateLog(QString logname,const QString &svcname,
-		   QString *errors, unsigned artistsep,QString clockname);
+		   QString *errors, unsigned artistsep,QString clockname,int *real_length);
   bool linkLog(RDLogEvent *e,int next_id,const QString &svcname,
 	       RDLogLine *link_logline,const QString &track_str,
 	       const QString &label_cart,const QString &track_cart,
@@ -90,6 +94,10 @@ class RDEventLine
   
  private:
   int GetLength(unsigned cartnum,int def_length=0);
+  int GetSegueLength(unsigned cartnum,int def_length=0);
+  int GetSegueDuration(unsigned cartnum);
+  int GetSegueEndPoint(unsigned cartnum);
+  int GetTalkLength(unsigned cartnum);
   QString event_name;
   QString event_properties;
   int event_preposition;
@@ -113,6 +121,8 @@ class RDEventLine
   QString event_sched_group;
   QString event_have_code;
   unsigned event_title_sep;
+  int event_duck_up;
+  QString event_trans_group;
 };
 
 #endif 

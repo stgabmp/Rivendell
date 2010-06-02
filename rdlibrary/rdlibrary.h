@@ -45,6 +45,7 @@
 #include <rdlibrary_conf.h>
 #include <rdlistviewitem.h>
 #include <rdconfig.h>
+#include <rdsimpleplayer.h>
 
 #include <disk_gauge.h>
 #include <cart_tip.h>
@@ -136,6 +137,8 @@ class MainWidget : public QWidget
   QPixmap *lib_rivendell_map;
   RDStation::FilterMode lib_filter_mode;
   QProgressDialog *lib_progress_dialog;
+  QLabel *lib_selected_label;
+  RDSimplePlayer *lib_player;
 };
 
 

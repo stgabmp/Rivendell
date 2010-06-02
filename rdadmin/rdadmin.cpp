@@ -153,6 +153,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 	     admin_config->stationName(),true)) {
     exit(1);
   }
+  
   new RDDbHeartbeat(admin_config->mysqlHeartbeatInterval());
 
   //
@@ -561,6 +562,18 @@ int gui_main(int argc,char *argv[])
 int cmdline_main(int argc,char *argv[])
 {
   QApplication a(argc,argv,false);
+  bool update_db=false;
+  QString username=QString::QString("");
+  
+  for(int i=0;i<argc;i++) {
+    if(!strcmp(argv[i],"--update-db")) {
+      update_db=true;
+      if(argc>i+1) { 
+        username=(QString)argv[i+1];
+	i++;
+      }
+    }
+  }
   
   //
   // Load Configs
@@ -573,7 +586,7 @@ int cmdline_main(int argc,char *argv[])
   //
   if(!OpenDb(admin_config->mysqlDbname(),admin_config->mysqlUsername(),
 	     admin_config->mysqlPassword(),admin_config->mysqlHostname(),
-	     admin_config->stationName(),false)) {
+	     admin_config->stationName(),false,username)) {
     return 1;
   }
 
@@ -588,6 +601,9 @@ int main(int argc,char *argv[])
 
   for(int i=0;i<argc;i++) {
     if(!strcmp(argv[i],"--check-db")) {
+      found_check_db=true;
+    }
+    if(!strcmp(argv[i],"--update-db")) {
       found_check_db=true;
     }
   }

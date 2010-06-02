@@ -96,6 +96,19 @@ QString RDCreateClockTableSql(QString name)
 }
 
 
+QString RDCreateRulesTableSql(QString name)
+{
+  return QString().sprintf("create table if not exists `%s_RULES` (\
+      CODE varchar(10) not null primary key,\
+      MAX_ROW int unsigned,\
+      MIN_WAIT int unsigned,\
+      NOT_AFTER varchar(10),\
+      OR_AFTER varchar(10),\
+      OR_AFTER_II varchar(10))",(const char *)
+                                RDEscapeStringSQLColumn(name.replace(" ","_"))); 
+}
+
+
 QString RDCreateReconciliationTableSql(QString name)
 {
   QString sql=QString().sprintf("create table `%s_SRT` (\

@@ -75,6 +75,10 @@ class RDEvent
   void setHaveCode(QString str);
   unsigned titleSep();
   void setTitleSep(unsigned titlesep);
+  int duckVolume();
+  void setDuckVolume(int vol);
+  QString transGroup();
+  void setTransGroup(QString group);
 
   
  private:

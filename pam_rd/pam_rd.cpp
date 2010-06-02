@@ -65,8 +65,6 @@
 // The pam module name, this should be unique amongst pam modules.
 #define MODULE_NAME SYSLOG_IDENT
 
-
-
 /* 
  * utility functions and related definitions 
  */
@@ -164,7 +162,7 @@ int ask_passwd(pam_handle_t *pamh, int pwtype)
     int i = 0;
     int retval;
 
-    msg[i].msg = "Password: ";
+    msg[i].msg = "Rivendell Password: ";
     msg[i].msg_style = PAM_PROMPT_ECHO_OFF;
     mesg[i] = &msg[i];
 
@@ -231,7 +229,7 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t *pamh,
     }
     if (ctrl & PAM_RD_DEBUG) syslog(LOG_DEBUG, "got user:%s", username);
 
-    if (ctrl & ~PAM_RD_IGNORE_PASS) {
+    if ( !(ctrl & PAM_RD_IGNORE_PASS) ) {
         /* get password */
         if ((ctrl & PAM_RD_TRY_FIRST_PASS) || (ctrl & PAM_RD_USE_FIRST_PASS)) {
             retval = pam_get_item(pamh, PAM_AUTHTOK, (const void **) &password);
@@ -243,6 +241,7 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t *pamh,
             retval = ask_passwd(pamh, PAM_AUTHTOK);
         }
         retval = pam_get_item(pamh, PAM_AUTHTOK, (const void **)&password);
+
 
         if (password == NULL) {
             syslog(LOG_ERR, "Could not retrieve user's password");

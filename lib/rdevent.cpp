@@ -398,6 +398,30 @@ unsigned RDEvent::titleSep()
   return GetIntValue("TITLE_SEP");
 }
 
+int RDEvent::duckVolume()
+{
+  return GetIntValue("DUCK_UP");
+}
+
+
+void RDEvent::setDuckVolume(int vol)
+{
+  SetRow("DUCK_UP",vol);
+}
+
+
+QString RDEvent::transGroup()
+{
+  bool ok;
+  return GetStringValue("TRANS_GROUP",&ok);
+}
+
+
+void RDEvent::setTransGroup(QString group)
+{
+  SetRow("TRANS_GROUP",group,true);
+}
+
 
 void RDEvent::setTitleSep(unsigned titlesep)
 {

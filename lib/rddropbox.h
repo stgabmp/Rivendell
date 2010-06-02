@@ -41,6 +41,10 @@ class RDDropbox
   void setNormalizationLevel(int lvl) const;
   int autotrimLevel() const;
   void setAutotrimLevel(int lvl) const;
+  int segueLevel() const;
+  void setSegueLevel(int lvl) const;
+  int segueLength() const;
+  void setSegueLength(int len) const;
   bool singleCart() const;
   void setSingleCart(bool state) const;
   unsigned toCart() const;

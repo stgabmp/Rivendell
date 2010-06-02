@@ -21,67 +21,45 @@
 //
 
 #include <schedcartlist.h>
+#include <cstdlib>
 
 
-SchedCartList::SchedCartList(int listsize)
+SchedCartList::SchedCartList()
 {
-	cartnum=new unsigned[listsize];
-	cartlen=new int[listsize];
-	stackid=new int[listsize];
-	artist=new QString[listsize];
-	sched_codes=new QString[listsize];
 	itemcounter=0;
 }
 
 SchedCartList::~SchedCartList()
 {
-	delete []cartnum;
-	delete []cartlen;
-	delete []stackid;
-	delete []artist;
-	delete []sched_codes;
 }
 
 void SchedCartList::insertItem(unsigned cartnumber,int cartlength,int stack_id,QString stack_artist,QString stack_schedcodes)
 {
-	cartnum[itemcounter]=cartnumber;
-	cartlen[itemcounter]=cartlength;
-	stackid[itemcounter]=stack_id;
-	artist[itemcounter]=stack_artist.lower().replace(" ","");
-        sched_codes[itemcounter]=stack_schedcodes;	
+	cartnum.push_back(cartnumber);
+	cartlen.push_back(cartlength);
+	stackid.push_back(stack_id);
+	artist.push_back(stack_artist.lower().replace(" ",""));
+        sched_codes.push_back(stack_schedcodes);
+	valid.push_back(true);	
 	itemcounter++;
 }
 
 
 void SchedCartList::removeItem(int itemnumber)
 {
-	for(int i=itemnumber;i<(itemcounter-1);i++)
-	{
-		cartnum[i]=cartnum[i+1];
-		cartlen[i]=cartlen[i+1];
-		stackid[i]=stackid[i+1];
-		artist[i]=artist[i+1];
-		sched_codes[i]=sched_codes[i+1];
-	}
+   if(valid[itemnumber]) {
+	valid[itemnumber]=false;		
 	itemcounter--;
+    }
 }
 
 bool SchedCartList::removeIfCode(int itemnumber,QString test_code)
 {
-    QString test = test_code;
-    test+="          ";
-    test=test.left(11);
+    QString test = test_code.leftJustify(11,' ',TRUE);
 
-    if (sched_codes[itemnumber].find(test)!=-1)
+    if (sched_codes[itemnumber].find(test)!=-1 && valid[itemnumber])
       {
-	for(int i=itemnumber;i<(itemcounter-1);i++)
-	{
-		cartnum[i]=cartnum[i+1];
-		cartlen[i]=cartlen[i+1];
-		stackid[i]=stackid[i+1];
-		artist[i]=artist[i+1];
-		sched_codes[i]=sched_codes[i+1];
-	}
+	valid[itemnumber]=false;		
 	itemcounter--;
         return true;
       }
@@ -90,9 +68,7 @@ bool SchedCartList::removeIfCode(int itemnumber,QString test_code)
 
 bool SchedCartList::itemHasCode(int itemnumber,QString test_code)
 {
-    QString test=test_code;
-    test+="          ";
-    test=test.left(11);
+    QString test=test_code.leftJustify(11,' ',TRUE);
 
     if (sched_codes[itemnumber].find(test)!=-1)
       return true;
@@ -103,21 +79,13 @@ bool SchedCartList::itemHasCode(int itemnumber,QString test_code)
 
 void SchedCartList::save(void)
 {
-	savecartnum=new unsigned[itemcounter];
-	savecartlen=new int[itemcounter];
-	savestackid=new int[itemcounter];
-	saveartist=new QString[itemcounter];
-	save_sched_codes=new QString[itemcounter];
-
 	saveitemcounter=itemcounter;	
-	for(int i=0;i<saveitemcounter;i++)
-	{
-		savecartnum[i]=cartnum[i];
-		savecartlen[i]=cartlen[i];
-		savestackid[i]=stackid[i];
-		saveartist[i]=artist[i];
-		save_sched_codes[i]=sched_codes[i];
-	}
+	savecartnum=cartnum;
+	savecartlen=cartlen;
+	savestackid=stackid;
+	saveartist=artist;
+	save_sched_codes=sched_codes;
+	save_valid=valid;
 }
 
 
@@ -125,21 +93,14 @@ void SchedCartList::restore(void)
 {
 	if(itemcounter==0)
 	{
-		for(int i=0;i<saveitemcounter;i++)
-		{
-			cartnum[i]=savecartnum[i];
-			cartlen[i]=savecartlen[i];
-			stackid[i]=savestackid[i];
-			artist[i]=saveartist[i];
-			sched_codes[i]=save_sched_codes[i];
-		}
+		cartnum=savecartnum;
+		cartlen=savecartlen;
+		stackid=savestackid;
+		artist=saveartist;
+		sched_codes=save_sched_codes;
 		itemcounter=saveitemcounter;	
+		valid=save_valid;
 	}
-	delete []savecartnum;
-	delete []savecartlen;
-	delete []savestackid;
-	delete []saveartist;
-	delete []save_sched_codes;
 }
 
 
@@ -174,6 +135,29 @@ int SchedCartList::getNumberOfItems(void)
 {
 	return itemcounter;
 }
+
+ 
+int SchedCartList::getTotalNumberOfItems(void)
+{
+	return cartnum.size();
+}
  
 
-
+int SchedCartList::getRandom(void)
+{
+	if(itemcounter<1) {
+	  return 0;
+	}
+        if(cartnum.size()==1) {
+          return 0;
+        }
+        unsigned pos=rand()%(cartnum.size()-1);
+	while(valid[pos]==false) {
+	  pos++;
+	  if(pos>=cartnum.size()) {
+	    pos=0;
+	  }
+	}
+	return pos;	
+}
+ 

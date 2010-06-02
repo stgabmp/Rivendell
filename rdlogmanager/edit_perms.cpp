@@ -108,7 +108,7 @@ EditPerms::EditPerms(QString object_name,ObjectType type,
 	break;
   }
   // FIXME: should this be filtered based on the user if usersec is enabled?
-  sql=QString().sprintf("select SERVICE_NAME from %s_PERMS \
+  sql=QString().sprintf("select SERVICE_NAME from `%s_PERMS` \
                          where %s_NAME=\"%s\"",
 			(const char *)object_type,
 			(const char *)object_type,

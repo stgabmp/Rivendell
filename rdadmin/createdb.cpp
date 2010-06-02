@@ -1087,6 +1087,8 @@ bool CreateDb(QString name,QString pwd)
       COLOR char(7),\
       SCHED_GROUP VARCHAR(10),\
       TITLE_SEP INT(10) UNSIGNED,\
+      TRANS_GROUP VARCHAR(10),\
+      DUCK_UP int default 0,\
       HAVE_CODE VARCHAR(10),\
       HOR_SEP INT(10) UNSIGNED,\
       HOR_DIST INT(10) UNSIGNED,\
@@ -1319,6 +1321,8 @@ bool CreateDb(QString name,QString pwd)
         PATH char(255),\
         NORMALIZATION_LEVEL int default 1,\
         AUTOTRIM_LEVEL int default 1,\
+        SEGUE_LENGTH int default 0,\
+        SEGUE_LEVEL int default 0,\
         SINGLE_CART enum('N','Y') default 'N',\
         TO_CART int unsigned default 0,\
         USE_CARTCHUNK_ID enum('N','Y') default 'N',\
@@ -5134,7 +5138,7 @@ bool UpdateDb(int ver)
     q=new QSqlQuery(sql);
     while(q->next()) {
       QString svc=q->value(0).toString();
-      sql=QString().sprintf("drop table %s_STACK",(const char *)svc.replace(" ","_"));
+      sql=QString().sprintf("drop table `%s_STACK`",(const char *)svc.replace(" ","_"));
       printf("%s\n",(const char*)sql);
       q1=new QSqlQuery(sql);
       delete q1;
@@ -6228,7 +6232,7 @@ bool UpdateDb(int ver)
     delete q;
   }
 
-  if(ver<181) {
+  if(ver<182) {
     sql=QString().sprintf("select NUMBER from CART where TYPE=%u",
 			  RDCart::Audio);
     q=new QSqlQuery(sql);
@@ -6351,8 +6355,37 @@ bool UpdateDb(int ver)
       ConvertTimeField(tablename+"_CLK","START_TIME");
     }
     delete q;
-  }
 
+  }
+  if(ver<181) {
+    q=new QSqlQuery("alter table EVENTS add column DUCK_UP int default 0 after TITLE_SEP");
+    delete q;
+    q=new QSqlQuery("alter table EVENTS add column TRANS_GROUP VARCHAR(10) after TITLE_SEP");
+    delete q;
+    q=new QSqlQuery("alter table DROPBOXES add column SEGUE_LEVEL int default 0 after AUTOTRIM_LEVEL");
+    delete q;
+    q=new QSqlQuery("alter table DROPBOXES add column SEGUE_LENGTH int default 0 after AUTOTRIM_LEVEL");
+    delete q;
+    sql="select NAME from LOGS;";
+    q=new QSqlQuery(sql);
+    while(q->next()) {
+      tablename=q->value(0).toString();
+      tablename.replace(" ","_");
+      sql="drop table "+tablename+"_STACK";
+      q1=new QSqlQuery(sql);
+      delete q1;
+    }
+    delete q;
+    sql="select NAME from SERVICES;";
+    q=new QSqlQuery(sql);
+    while(q->next()) {
+      tablename=q->value(0).toString();
+      sql=RDCreateStackTableSql(tablename);
+      q1=new QSqlQuery(sql);
+      delete q1;
+    }
+    delete q;
+  }
 
   // **** End of version updates ****
   

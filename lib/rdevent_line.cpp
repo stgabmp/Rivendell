@@ -262,6 +262,29 @@ void RDEventLine::setTitleSep(unsigned titlesep)
 }
 
 
+int RDEventLine::duckVolume() const
+{
+  return event_duck_up;
+}
+
+
+void RDEventLine::setDuckVolume(int vol)
+{
+  event_duck_up=vol;
+}
+
+
+QString RDEventLine::transGroup() const
+{
+  return event_trans_group;
+}
+
+
+void RDEventLine::setTransGroup(QString group)
+{
+  event_trans_group=group;
+}
+
 
 RDLogEvent *RDEventLine::preimportCarts()
 {
@@ -323,6 +346,8 @@ void RDEventLine::clear()
    event_sched_group="";
    event_have_code="";
    event_title_sep=100;
+   event_duck_up=0;
+   event_trans_group="";
    event_nested_event="";
 }
 
@@ -333,7 +358,8 @@ bool RDEventLine::load()
                                  GRACE_TIME,POST_POINT,USE_AUTOFILL,\
                                  USE_TIMESCALE,IMPORT_SOURCE,START_SLOP,\
                                  END_SLOP,FIRST_TRANS_TYPE,DEFAULT_TRANS_TYPE,\
-                                 COLOR,AUTOFILL_SLOP,NESTED_EVENT,SCHED_GROUP,TITLE_SEP,HAVE_CODE \
+                                 COLOR,AUTOFILL_SLOP,NESTED_EVENT,SCHED_GROUP,TITLE_SEP,HAVE_CODE, \
+                                 DUCK_UP,TRANS_GROUP \
                                  from EVENTS where NAME=\"%s\"",
 				(const char *)event_name);
   RDSqlQuery *q=new RDSqlQuery(sql);
@@ -366,6 +392,8 @@ bool RDEventLine::load()
   event_sched_group=q->value(15).toString();
   event_title_sep=q->value(16).toUInt();
   event_have_code=q->value(17).toString();
+  event_duck_up=q->value(18).toInt();
+  event_trans_group=q->value(19).toString();
   
   delete q;
   event_preimport_log->load();
@@ -388,7 +416,8 @@ bool RDEventLine::save()
                            END_SLOP=%d,FIRST_TRANS_TYPE=%d,\
                            DEFAULT_TRANS_TYPE=%d,COLOR=\"%s\"\
                            AUTOFILL_SLOP=%d,NESTED_EVENT=\"%s\",\
-                           SCHED_GROUP=\"%s\",TITLE_SEP=%d,HAVE_CODE=\"%s\" \
+                           SCHED_GROUP=\"%s\",TITLE_SEP=%d,HAVE_CODE=\"%s\",\
+                           DUCK_UP=%d,TRANS_GROUP=\"%s\" \
                            where NAME=\"%s\"",
 			  (const char *)RDEscapeString(event_properties),
 			  event_preposition,event_time_type,
@@ -405,6 +434,8 @@ bool RDEventLine::save()
 			  (const char *)RDEscapeString(event_sched_group),
 			  event_title_sep,
 			  (const char*)event_have_code,
+			  event_duck_up,
+			  (const char *)RDEscapeString(event_trans_group),
 			  (const char *)RDEscapeString(event_name));
   }
   else {
@@ -447,7 +478,7 @@ bool RDEventLine::save()
 
 bool RDEventLine::generateLog(QString logname,const QString &svcname,
 			      QString *errors, unsigned artistsep,
-			      QString clockname)
+			      QString clockname,int *real_length)
 {
   QString sql;
   RDSqlQuery *q;
@@ -466,6 +497,8 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
   bool post_point=event_post_point;
   int grace_time=event_grace_time;
   int link_id=0;
+
+  *real_length=0;
 
   //
   // Get Current Count and Link ID
@@ -595,13 +628,22 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
     int stackid;
     int counter;   		
     RDLogLine::Source source=RDLogLine::Music;
+    trans_type=event_default_transtype;
     
     QString svcname_rp = svcname;
     svcname_rp.replace(" ","_");
     
     time.addMSecs(postimport_length);
     
-    sql=QString().sprintf("select NUMBER,ARTIST,SCHED_CODES from CART where GROUP_NAME='%s'",(const char *)SchedGroup()); 
+    if(event_have_code.isEmpty()) {
+      sql=QString().sprintf("select NUMBER,ARTIST,SCHED_CODES from CART where GROUP_NAME='%s'",
+ 	    (const char *)SchedGroup()); 
+    }
+    else {
+      sql=QString().sprintf("select NUMBER,ARTIST,SCHED_CODES from CART where GROUP_NAME='%s'\
+            and SCHED_CODES like \"%%%s%%\"",
+ 	    (const char *)SchedGroup(),(const char *)event_have_code.leftJustify(11,' ')); 
+    }
     
     q=new RDSqlQuery(sql);
     if(q->size()>0)
@@ -617,7 +659,7 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
       
       int querysize=(int)q->size();
       SchedCartList *schedCL;
-      schedCL=new SchedCartList(querysize);
+      schedCL=new SchedCartList();
       
       for(counter=0;counter<querysize;counter++)
       {
@@ -626,7 +668,8 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
       }
       delete q;
       
-      sql=QString().sprintf("SELECT SCHED_STACK_ID from %s_STACK order by SCHED_STACK_ID",(const char*)svcname_rp);
+      sql=QString().sprintf("SELECT SCHED_STACK_ID from `%s_STACK` order by SCHED_STACK_ID",
+       	  (const char*)svcname_rp);
       q=new RDSqlQuery(sql);
       if (q->last())
       { 
@@ -643,68 +686,54 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
       // Add deconflicting rules here		  
       // Title separation 
       schedCL->save();		  
-      sql=QString().sprintf("select CART from %s_STACK \
+      sql=QString().sprintf("select CART from `%s_STACK` \
 			  where SCHED_STACK_ID >= %d",(const char*)svcname_rp,(stackid-titlesep));
       q=new RDSqlQuery(sql);
-      
       while (q->next())	
       {
-	for(counter=0;counter<schedCL->getNumberOfItems();counter++)
+	for(counter=0;counter<schedCL->getTotalNumberOfItems();counter++)
 	{ 
 	  if(q->value(0).toUInt()==schedCL->getItemCartnumber(counter))
 	  {
 	    schedCL->removeItem(counter);
-	    counter--;
 	  }
 	}
       }          
       delete q;
-      if(schedCL->getNumberOfItems()==0)
-	*errors+=QString().sprintf("%s Rule broken: Title Separation\n",(const char *)time.toString("hh:mm:ss"));
+      if(schedCL->getNumberOfItems()==0) {
+        *errors+=QString().sprintf("%s Rule broken: Title Separation\n",
+           (const char *)time.toString("hh:mm:ss"));
+      }
       schedCL->restore();
       
       // Artist separation
       schedCL->save();		  
-      sql=QString().sprintf("select ARTIST from %s_STACK \
+      sql=QString().sprintf("select ARTIST from `%s_STACK` \
 			  where SCHED_STACK_ID >= %d",(const char*)svcname_rp,(stackid-artistsep));
       q=new RDSqlQuery(sql);
       
       while (q->next())	
       {
-	for(counter=0;counter<schedCL->getNumberOfItems();counter++)
+	for(counter=0;counter<schedCL->getTotalNumberOfItems();counter++)
 	{ 
 	  if(q->value(0).toString()==schedCL->getItemArtist(counter))
 	  {
 	    schedCL->removeItem(counter);
-	    counter--;
 	  }
 	}
       }          
       
       delete q;
-      if(schedCL->getNumberOfItems()==0)
-	*errors+=QString().sprintf("%s Rule broken: Artist Separation\n",(const char *)time.toString("hh:mm:ss"));
+      if(schedCL->getNumberOfItems()==0) {
+        *errors+=QString().sprintf("%s Rule broken: Artist Separation\n",
+                  (const char *)time.toString("hh:mm:ss"));
+      }
       schedCL->restore();
       
-      // Must have scheduler code
-      if(event_have_code!="")
-      {
-	schedCL->save();		  
-	for(counter=0;counter<schedCL->getNumberOfItems();counter++)
-	{ 
-	  if(!schedCL->itemHasCode(counter,event_have_code))
-	  {
-	    schedCL->removeItem(counter);
-	    counter--;
-	  }
-	}
-	if(schedCL->getNumberOfItems()==0)
-	  *errors+=QString().sprintf("%s Rule broken: Must have code %s\n",(const char *)time.toString("hh:mm:ss"),(const char*)event_have_code);
-	schedCL->restore();
-      }
       
       // Scheduler Codes 
-      sql=QString().sprintf("select CODE,MAX_ROW,MIN_WAIT,NOT_AFTER, OR_AFTER,OR_AFTER_II from %s_RULES",(const char *)clockname);
+      sql=QString().sprintf("select CODE,MAX_ROW,MIN_WAIT,NOT_AFTER, OR_AFTER,\
+        OR_AFTER_II from `%s_RULES`",(const char *)clockname);
       q=new RDSqlQuery(sql);
       while (q->next())
       {
@@ -712,75 +741,78 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
 	schedCL->save();	
 	int range=q->value(1).toInt()+q->value(2).toInt(); 
 	int allowed=q->value(1).toInt();
-	QString wstr=q->value(0).toString();
-	wstr+="          ";
-	wstr=wstr.left(11);
-	sql=QString().sprintf("select CART from %s_STACK \
-			  where SCHED_STACK_ID > %d and SCHED_CODES like \"%%%s%%\"",(const char*)svcname_rp,(stackid-range),(const char *)wstr);
+	QString wstr=q->value(0).toString().leftJustify(11,' ',TRUE);
+	sql=QString().sprintf("select CART from `%s_STACK` \
+	  where SCHED_STACK_ID > %d and SCHED_CODES like \"%%%s%%\"",
+	  (const char*)svcname_rp,(stackid-range),(const char *)wstr);
 	q1=new RDSqlQuery(sql);
 	if (q1->size()>=allowed || allowed==0)	
-	  for(counter=0;counter<schedCL->getNumberOfItems();counter++)
-	    if (                           schedCL->removeIfCode(counter,q->value(0).toString()))
-	      counter--;
+	  for(counter=0;counter<schedCL->getTotalNumberOfItems();counter++)
+	    schedCL->removeIfCode(counter,q->value(0).toString());
 	delete q1;
-	if(schedCL->getNumberOfItems()==0)
-	  *errors+=QString().sprintf("%s Rule broken: Max. in a Row/Min. Wait for %s\n",(const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString());
+	if(schedCL->getNumberOfItems()==0) {
+           *errors+=QString().sprintf("%s Rule broken: Max. in a Row/Min. Wait for %s\n",
+                (const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString());
+        }
 	schedCL->restore();
 	// do not play after
 	if (q->value(3).toString()!="")
 	{ 
 	  schedCL->save();	
-	  QString wstr=q->value(3).toString();
-	  wstr+="          ";
-	  wstr=wstr.left(11);
-	  sql=QString().sprintf("select CART from %s_STACK \
-			  where SCHED_STACK_ID = %d and SCHED_CODES like \"%%%s%%\"",(const char*)svcname_rp,(stackid-1),(const char *)wstr);
+	  QString wstr=q->value(3).toString().leftJustify(11,' ',TRUE);
+	  sql=QString().sprintf("select CART from `%s_STACK` \
+   	     where SCHED_STACK_ID = %d and SCHED_CODES like \"%%%s%%\"",
+    	     (const char*)svcname_rp,(stackid-1),(const char *)wstr);
 	  q1=new RDSqlQuery(sql);
 	  if (q1->size()>0)	
-	    for(counter=0;counter<schedCL->getNumberOfItems();counter++)
-	      if (                           schedCL->removeIfCode(counter,q->value(0).toString()))
-		counter--;
+	    for(counter=0;counter<schedCL->getTotalNumberOfItems();counter++)
+              schedCL->removeIfCode(counter,q->value(0).toString());
 	  delete q1;
-	  if(schedCL->getNumberOfItems()==0)
-	    *errors+=QString().sprintf("%s Rule broken: Do not schedule %s after %s\n",(const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString(),(const char *)q->value(3).toString());
+	  if(schedCL->getNumberOfItems()==0) {
+            *errors+=QString().sprintf("%s Rule broken: Do not schedule %s after %s\n",
+                (const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString(),
+                (const char *)q->value(3).toString());
+          }
 	  schedCL->restore();
 	}
 	// or after
 	if (q->value(4).toString()!="")
 	{ 
 	  schedCL->save();
-	  QString wstr=q->value(4).toString();
-	  wstr+="          ";
-	  wstr=wstr.left(11);
-	  sql=QString().sprintf("select CART from %s_STACK \
-			  where SCHED_STACK_ID = %d and SCHED_CODES like \"%%%s%%\"",(const char*)svcname_rp,(stackid-1),(const char *)wstr);
+	  QString wstr=q->value(4).toString().leftJustify(11,' ',TRUE);
+	  sql=QString().sprintf("select CART from `%s_STACK` \
+  	    where SCHED_STACK_ID = %d and SCHED_CODES like \"%%%s%%\"",
+ 	    (const char*)svcname_rp,(stackid-1),(const char *)wstr);
 	  q1=new RDSqlQuery(sql);
 	  if (q1->size()>0)	
-	    for(counter=0;counter<schedCL->getNumberOfItems();counter++)
-	      if (                           schedCL->removeIfCode(counter,q->value(0).toString()))
-		counter--;
+	    for(counter=0;counter<schedCL->getTotalNumberOfItems();counter++)
+              schedCL->removeIfCode(counter,q->value(0).toString());
 	  delete q1;
-	  if(schedCL->getNumberOfItems()==0)
-	    *errors+=QString().sprintf("%s Rule broken: Do not schedule %s after %s\n",(const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString(),(const char *)q->value(4).toString());
+	  if(schedCL->getNumberOfItems()==0) {
+            *errors+=QString().sprintf("%s Rule broken: Do not schedule %s after %s\n",
+              (const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString(),
+              (const char *)q->value(4).toString());
+          }
 	  schedCL->restore();
 	}
 	// or after II
 	if (q->value(5).toString()!="")
 	{ 
 	  schedCL->save();
-	  QString wstr=q->value(5).toString();
-	  wstr+="          ";
-	  wstr=wstr.left(11);
-	  sql=QString().sprintf("select CART from %s_STACK \
-			  where SCHED_STACK_ID = %d and SCHED_CODES like \"%%%s%%\"",(const char*)svcname_rp,(stackid-1),(const char *)wstr);
+	  QString wstr=q->value(5).toString().leftJustify(11,' ',TRUE);
+	  sql=QString().sprintf("select CART from `%s_STACK` \
+  	    where SCHED_STACK_ID = %d and SCHED_CODES like \"%%%s%%\"",
+  	    (const char*)svcname_rp,(stackid-1),(const char *)wstr);
 	  q1=new RDSqlQuery(sql);
 	  if (q1->size()>0)	
-	    for(counter=0;counter<schedCL->getNumberOfItems();counter++)
-	      if (                           schedCL->removeIfCode(counter,q->value(0).toString()))
-		counter--;
+	    for(counter=0;counter<schedCL->getTotalNumberOfItems();counter++)
+              schedCL->removeIfCode(counter,q->value(0).toString());
 	  delete q1;
-	  if(schedCL->getNumberOfItems()==0)
-	    *errors+=QString().sprintf("%s Rule broken: Do not schedule %s after %s\n",(const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString(),(const char *)q->value(5).toString());
+	  if(schedCL->getNumberOfItems()==0) {
+            *errors+=QString().sprintf("%s Rule broken: Do not schedule %s after %s\n",
+               (const char *)time.toString("hh:mm:ss"),(const char *)q->value(0).toString(),
+               (const char *)q->value(5).toString());
+          }
 	  schedCL->restore();
 	}
       }
@@ -789,27 +821,114 @@ bool RDEventLine::generateLog(QString logname,const QString &svcname,
       
 // end of deconflicting rules
       
-      int schedpos = rand()%schedCL->getNumberOfItems();
-      sql=QString().sprintf("insert into %s_LOG set ID=%d,COUNT=%d,TYPE=%d,\
-				  SOURCE=%d,START_TIME=%d,GRACE_TIME=-1, \
-				  CART_NUMBER=%u,TIME_TYPE=%d,POST_POINT=\"%s\", \
-				  TRANS_TYPE=%d,EXT_START_TIME=%d",
-			    (const char *)logname,count,count,
-			    RDLogLine::Cart,source,
-			    QTime().msecsTo(time),
-			    schedCL->getItemCartnumber(schedpos),
-			    time_type,
-			    (const char *)RDYesNo(post_point),
-			    trans_type,
-			    QTime().msecsTo(time));
+      int schedpos = schedCL->getRandom();
+ 		  
+// transition cart
+      unsigned trans_cart=0;
+      sql=QString().sprintf("select NUMBER from CART where GROUP_NAME='%s'",
+          (const char *)transGroup()); 
+      q=new RDSqlQuery(sql);
+      if(q->size()>0)
+      {
+        SchedCartList *trans_group_list;
+  	int matches=(int)q->size();
+  	trans_group_list=new SchedCartList();
+   	for(counter=0;counter<matches;counter++)
+  	{
+  	  q->seek(counter);
+          trans_group_list->insertItem(q->value(0).toUInt(),0,0," "," ");
+        }
+        trans_cart=trans_group_list->
+        getItemCartnumber(trans_group_list->getRandom());
+        delete trans_group_list;
+      }
+      delete q;
+      if(trans_cart>0) {
+        int segue_duration=GetSegueDuration(trans_cart);
+	int segue_end=GetSegueEndPoint(trans_cart);
+  	int talk_length=GetTalkLength(schedCL->getItemCartnumber(schedpos));
+  	int segue_gain=-3000;
+  	if(event_duck_up<0) {
+          segue_gain=0;
+  	}
+        if(talk_length>=segue_duration || event_duck_up==0) {
+          sql=QString().sprintf("insert into `%s_LOG` set ID=%d,COUNT=%d,TYPE=%d,\
+ 	    SOURCE=%d,START_TIME=\"%s\",GRACE_TIME=%d,\
+ 	    CART_NUMBER=%u,TIME_TYPE=%d,POST_POINT=\"%s\",\
+            TRANS_TYPE=%d,EXT_START_TIME=\"%s\",SEGUE_GAIN=%d",
+            (const char *)logname,count,count,
+            RDLogLine::Cart,source,
+ 	    (const char *)time.toString("hh:mm:ss"),
+  	    grace_time,
+            trans_cart,
+            time_type,
+            (const char *)RDYesNo(post_point),
+            trans_type,
+            (const char *)time.toString("hh:mm:ss"),segue_gain);
+ 	  q=new RDSqlQuery(sql);
+ 	  delete q;
+          count++;
+          trans_type=event_default_transtype;
+          time_type=RDLogLine::Relative;
+          post_point=false;
+          grace_time=-1;
+ 	}
+        else {
+          sql=QString().sprintf("insert into `%s_LOG` set ID=%d,COUNT=%d,TYPE=%d,\
+ 	    SOURCE=%d,START_TIME=\"%s\",GRACE_TIME=%d,\
+ 	    CART_NUMBER=%u,TIME_TYPE=%d,POST_POINT=\"%s\",\
+            TRANS_TYPE=%d,EXT_START_TIME=\"%s\",SEGUE_START_POINT=%d,\
+            SEGUE_END_POINT=%d,SEGUE_GAIN=%d",
+ 	    (const char *)logname,count,count,
+            RDLogLine::Cart,source,
+ 	    (const char *)time.toString("hh:mm:ss"),
+ 	    grace_time,
+ 	    trans_cart,
+ 	    time_type,
+ 	    (const char *)RDYesNo(post_point),
+ 	    trans_type,
+            (const char *)time.toString("hh:mm:ss"),
+            (segue_end-talk_length),segue_end,segue_gain);
+          q=new RDSqlQuery(sql);
+ 	  delete q;
+          count++;
+          trans_type=event_default_transtype;
+          time_type=RDLogLine::Relative;
+          post_point=false;
+          grace_time=-1;
+        }
+      }
+// insert into log	
+      sql=QString().sprintf("insert into `%s_LOG` set ID=%d,COUNT=%d,TYPE=%d,\
+        SOURCE=%d,START_TIME=%d,GRACE_TIME=%d,\
+        CART_NUMBER=%u,TIME_TYPE=%d,POST_POINT=\"%s\",\
+        TRANS_TYPE=%d,EXT_START_TIME=\"%s\",DUCK_UP_GAIN=%d",
+        (const char *)logname,count,count,
+        RDLogLine::Cart,source,
+        QTime().msecsTo(time),
+        grace_time,
+        schedCL->getItemCartnumber(schedpos),
+        time_type,
+        (const char *)RDYesNo(post_point),
+        trans_type,
+        (const char *)time.toString("hh:mm:ss"),
+        (event_duck_up*100));
       q=new RDSqlQuery(sql);
       delete q;
-      
-      sql=QString().sprintf("insert into %s_STACK set SCHED_STACK_ID=%u,CART=%u,ARTIST=\"%s\",SCHED_CODES=\"%s\"",(const char*)svcname_rp,
-			    stackid,schedCL->getItemCartnumber(schedpos),
-			    (const char *)RDEscapeString(schedCL->getItemArtist(schedpos)),(const char *)schedCL->getItemSchedCodes(schedpos));
+      count++;
+      trans_type=event_default_transtype;
+      time_type=RDLogLine::Relative;
+      post_point=false;
+      grace_time=-1;
+      sql=QString().sprintf("insert into `%s_STACK` set SCHED_STACK_ID=%u,\
+        CART=%u,ARTIST=\"%s\",SCHED_CODES=\"%s\"",
+        (const char*)svcname_rp,
+        stackid,schedCL->getItemCartnumber(schedpos),
+        (const char *)RDEscapeString(schedCL->getItemArtist(schedpos)),
+        (const char *)schedCL->getItemSchedCodes(schedpos));
       q=new RDSqlQuery(sql);
       delete q;
+      *real_length=GetSegueLength(schedCL->getItemCartnumber(schedpos));
       delete schedCL;
     }
     else
@@ -1147,4 +1266,93 @@ int RDEventLine::GetLength(unsigned cartnum,int def_length)
   int length=cart->forcedLength();
   delete cart;
   return length;
+}
+
+
+int RDEventLine::GetSegueLength(unsigned cartnum,int def_length)
+{
+  RDCart *cart=new RDCart(cartnum);
+  if(!cart->exists()) {
+    delete cart;
+    return def_length;
+  }
+  int length=cart->averageSegueLength();
+  delete cart;
+  return length;
+}
+
+
+int RDEventLine::GetSegueDuration(unsigned cartnum)
+{
+  RDCart *cart=new RDCart(cartnum);
+  if(!cart->exists()) {
+    delete cart;
+    return 0;
+  }
+  int length=cart->averageLength()-cart->averageSegueLength();
+  delete cart;
+  if (length>=0) {
+    return length;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+int RDEventLine::GetSegueEndPoint(unsigned cartnum)
+{
+  RDCut *cut;
+  
+  for(int i=1;i<1000;i++)  {
+    cut=new RDCut(cartnum,i);
+    if(cut->exists()) {
+      i=1000;
+    }
+  }
+  if(!cut->exists()) {
+    delete cut;
+    return 0;
+  }
+  int segue_end=cut->segueEndPoint();
+  delete cut;
+  if (segue_end>=0) {
+    return segue_end;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+int RDEventLine::GetTalkLength(unsigned cartnum)
+{
+  RDCut *cut;
+  
+  for(int i=1;i<1000;i++)  {
+    cut=new RDCut(cartnum,i);
+    if(cut->exists()) {
+      i=1000;
+    }
+  }
+  if(!cut->exists()) {
+    delete cut;
+    return 0;
+  }
+  int talkend=cut->talkEndPoint();
+  int start=cut->startPoint();
+  delete cut;
+  if(talkend<0) {
+    talkend=0;
+  }
+  if(start<0) {
+    start=0;
+  }
+  int length=talkend-start;
+  if (length>=0) {
+    return length;
+  }
+  else {
+    return 0;
+  }
 }

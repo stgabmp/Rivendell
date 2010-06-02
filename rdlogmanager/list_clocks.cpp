@@ -255,6 +255,9 @@ void ListClocks::addData()
   sql=RDCreateClockTableSql(clockname);
   q=new RDSqlQuery(sql);
   delete q;
+  sql=RDCreateRulesTableSql(clockname);
+  q=new RDSqlQuery(sql);
+  delete q;
   EditClock *clock_dialog=new EditClock(clockname,true,&new_clocks,
 					this,"clock_dialog");
   if(clock_dialog->exec()<0) {
@@ -402,12 +405,12 @@ void ListClocks::renameData()
   old_name_esc.replace(" ","_");
   QString new_name_esc=new_name;
   new_name_esc.replace(" ","_");
-  sql=QString().sprintf("alter table %s_CLK rename to %s_CLK",
+  sql=QString().sprintf("alter table `%s_CLK` rename to `%s_CLK`",
 			(const char *)old_name_esc,
 			(const char *)new_name_esc);
   q=new RDSqlQuery(sql);
   delete q;
-  sql=QString().sprintf("alter table %s_RULES rename to %s_RULES",
+  sql=QString().sprintf("alter table `%s_RULES` rename to `%s_RULES`",
 			(const char *)old_name_esc,
 			(const char *)new_name_esc);
   q=new RDSqlQuery(sql);
@@ -620,10 +623,10 @@ void ListClocks::DeleteClock(QString clockname)
 				(const char *)clockname);
   q=new RDSqlQuery(sql);
   delete q;
-  sql=QString().sprintf("drop table %s_CLK",(const char *)base_name);
+  sql=QString().sprintf("drop table `%s_CLK`",(const char *)base_name);
   q=new RDSqlQuery(sql);
   delete q;
-  sql=QString().sprintf("drop table %s_RULES",(const char *)base_name);
+  sql=QString().sprintf("drop table `%s_RULES`",(const char *)base_name);
   q=new RDSqlQuery(sql);
   delete q;
 }

@@ -26,8 +26,8 @@
 #include <qstring.h>
 
 
-bool OpenDb(QString dbname,QString username,QString password,QString hostname,
-	    QString stationname,bool interactive);
+bool OpenDb(QString dbname,QString login,QString password,QString hostname,
+	    QString stationname,bool interactive,QString username=QString::QString(""));
 
 
 #endif

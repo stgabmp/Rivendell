@@ -86,6 +86,8 @@ class RDCartDialog : public QDialog
   QPushButton *cart_editor_button;
   QLabel *cart_group_label;
   RDComboBox *cart_group_box;
+  RDComboBox *cart_codes_box;
+  QLabel *cart_codes_label;
   QString *cart_filter;
   QString *cart_group;
   bool local_filter;

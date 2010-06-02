@@ -30,21 +30,6 @@ SchedRulesList::SchedRulesList(QString clockname)
   RDSqlQuery *q;
   RDSqlQuery *q1;
 
-  sql=QString().sprintf("create table if not exists `%s_RULES` (\
-      CODE varchar(10) not null primary key,\
-      MAX_ROW int unsigned,\
-      MIN_WAIT int unsigned,\
-      NOT_AFTER varchar(10),\
-      OR_AFTER varchar(10),\
-      OR_AFTER_II varchar(10))",(const char*)clockname.replace(" ","_")); 
-
-  q=new RDSqlQuery(sql);
-  if(!q->isActive()) {
-    printf("SQL: %s\n",(const char *)sql);
-    printf("SQL Error: %s\n",(const char *)q->lastError().databaseText());
-  }
-  delete q;
-
   sql=QString().sprintf("select CODE,DESCRIPTION from SCHED_CODES order by `CODE` asc"); 
 
   q=new RDSqlQuery(sql);
@@ -62,7 +47,7 @@ SchedRulesList::SchedRulesList(QString clockname)
     q->next();
     sched_code[i] = q->value(0).toString();
     description[i] = q->value(1).toString();
-    sql=QString().sprintf("select MAX_ROW,MIN_WAIT,NOT_AFTER,OR_AFTER,OR_AFTER_II from %s_RULES where CODE=\"%s\"",
+    sql=QString().sprintf("select MAX_ROW,MIN_WAIT,NOT_AFTER,OR_AFTER,OR_AFTER_II from `%s_RULES` where CODE=\"%s\"",
 	(const char *)clockname.replace(" ","_"),(const char *)sched_code[i]);
     q1=new RDSqlQuery(sql);
     if(q1->first())
@@ -97,13 +82,17 @@ SchedRulesList::~SchedRulesList()
   delete []description;
 }
 
-void SchedRulesList::insertItem(int pos,int maxrow,int minwait,QString notafter,QString orafter,QString orafterii)
+void SchedRulesList::insertItem(QString code,int maxrow,int minwait,QString notafter,QString orafter,QString orafterii)
 {
-  max_row[pos] = maxrow;
-  min_wait[pos] = minwait;
-  not_after[pos] = notafter;
-  or_after[pos] = orafter;
-  or_after_II[pos] = orafterii;
+  for(int i=0;i<itemcounter;i++) {
+    if(code==sched_code[i]) {
+      max_row[i] = maxrow;
+      min_wait[i] = minwait;
+      not_after[i] = notafter;
+      or_after[i] = orafter;
+      or_after_II[i] = orafterii;
+    }
+  }
 }
 
 QString SchedRulesList::getItemSchedCode(int pos)
@@ -151,13 +140,13 @@ void SchedRulesList::Save(QString clockname)
   QString sql;
   RDSqlQuery *q;
 
-  sql=QString().sprintf("delete from %s_RULES",
+  sql=QString().sprintf("delete from `%s_RULES`",
 			(const char *)clockname.replace(" ","_"));
   q=new RDSqlQuery(sql);
   delete q;
   for (int i=0;i<itemcounter;i++) 
    {
-   sql=QString().sprintf("insert into %s_RULES set CODE=\"%s\",MAX_ROW=%d,MIN_WAIT=%d,NOT_AFTER=\"%s\",OR_AFTER=\"%s\",OR_AFTER_II=\"%s\"",(const char *)clockname.replace(" ","_"),(const char *)sched_code[i],max_row[i],min_wait[i],(const char *)not_after[i],(const char *)or_after[i],(const char *)or_after_II[i]);
+   sql=QString().sprintf("insert into `%s_RULES` set CODE=\"%s\",MAX_ROW=%d,MIN_WAIT=%d,NOT_AFTER=\"%s\",OR_AFTER=\"%s\",OR_AFTER_II=\"%s\"",(const char *)clockname.replace(" ","_"),(const char *)sched_code[i],max_row[i],min_wait[i],(const char *)not_after[i],(const char *)or_after[i],(const char *)or_after_II[i]);
    q=new RDSqlQuery(sql);
    delete q;
    }

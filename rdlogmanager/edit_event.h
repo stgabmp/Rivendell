@@ -105,8 +105,12 @@ class EditEvent : public QDialog
   QButtonGroup *event_lib_type_group;
   QComboBox *event_group_box;
   QComboBox *event_sched_group_box;
+  QComboBox *event_trans_group_box;
+  QLabel *event_trans_group_label;
   QSpinBox* event_title_sep_spinbox;
   QLabel *event_title_sep_label;
+  QSpinBox* event_duck_spinbox;
+  QLabel *event_duck_label;
   QComboBox* event_have_code_box;
   QLabel *event_have_code_label;
   LibListView *event_lib_list;

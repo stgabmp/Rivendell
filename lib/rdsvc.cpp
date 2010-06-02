@@ -788,6 +788,20 @@ bool RDSvc::generateLog(const QDate &date,const QString &logname,
   }
   delete q;
 
+
+  //
+  // Predict Start Times for Scheduler Events
+  //
+  RDLogEvent *log_event=new RDLogEvent(logname+"_LOG");
+  log_event->load();
+  for(int x=0;x<log_event->size();x++) {
+    log_event->logLine(x)->setStartTime(RDLogLine::Logged,
+                  log_event->blockStartTime(x));
+    log_event->save(false,x);
+  }
+  delete log_event;
+
+
   //
   // Log Chain To
   //
@@ -1039,6 +1053,9 @@ void RDSvc::create(const QString exemplar) const
   if(exemplar.isEmpty()) {  // Create Empty Service
     sql=QString().sprintf("insert into SERVICES set NAME=\"%s\"",
 			  (const char *)RDEscapeString(svc_name));
+    q=new RDSqlQuery(sql);
+    delete q;
+    sql=RDCreateStackTableSql(svc_name);
     q=new RDSqlQuery(sql);
     delete q;
 
@@ -1349,7 +1366,7 @@ void RDSvc::remove() const
   q=new RDSqlQuery(sql);
   delete q;
 
-  sql=QString().sprintf("drop table %s_STACK",(const char *)tablename);
+  sql=QString().sprintf("drop table `%s_STACK`",(const char *)tablename);
   q=new RDSqlQuery(sql);
   delete q;
 

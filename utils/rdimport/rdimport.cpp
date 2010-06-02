@@ -1324,7 +1324,7 @@ QDateTime MainObject::GetCachedTimestamp(const QString &filename)
   sql=QString().sprintf("select FILE_DATETIME from DROPBOX_PATHS \
                          where (DROPBOX_ID=%d)&&(FILE_PATH=\"%s\")",
 			import_persistent_dropbox_id,
-			(const char *)RDEscapeString(filename));
+			(const char *)RDEscapeString(filename.utf8()));
   q=new RDSqlQuery(sql);
   if(q->first()) {
     dt=q->value(0).toDateTime();
@@ -1348,7 +1348,7 @@ void MainObject::WriteTimestampCache(const QString &filename,
                            FILE_PATH=\"%s\",\
                            FILE_DATETIME=\"%s\"",
 			  import_persistent_dropbox_id,
-			  (const char *)RDEscapeString(filename),
+			  (const char *)RDEscapeString(filename.utf8()),
 			  (const char *)dt.toString("yyyy-MM-dd hh:mm:ss"));
   }
   else {
@@ -1356,7 +1356,7 @@ void MainObject::WriteTimestampCache(const QString &filename,
                            where (DROPBOX_ID=%d)&&(FILE_PATH=\"%s\")",
 			  (const char *)dt.toString("yyyy-MM-dd hh:mm:ss"),
 			  import_persistent_dropbox_id,
-			  (const char *)RDEscapeString(filename));
+			  (const char *)RDEscapeString(filename.utf8()));
   }
   q=new RDSqlQuery(sql);
   delete q;

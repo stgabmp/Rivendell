@@ -303,6 +303,13 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   connect(lib_showmacro_box,SIGNAL(stateChanged(int)),
 	  this,SLOT(macroChangedData(int)));
 
+
+  lib_search_button->setEnabled(false);
+  lib_group_box->setEnabled(false);
+  lib_showaudio_box->setEnabled(false);
+  lib_codes_box->setEnabled(false);
+  lib_showmacro_box->setEnabled(false);
+
   //
   // Show Cart Notes Checkbox
   //
@@ -378,6 +385,12 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 
   lib_cart_list->addColumn(tr("OWNED BY"));
   lib_cart_list->setColumnAlignment(17,Qt::AlignHCenter);
+  connect(lib_cart_list,
+	  SIGNAL(doubleClicked(QListViewItem *,const QPoint &,int)),
+	  this,
+	  SLOT(cartDoubleclickedData(QListViewItem *,const QPoint &,int)));
+  connect(lib_cart_list,SIGNAL(pressed(QListViewItem *)),
+	  this,SLOT(cartClickedData(QListViewItem *)));
 
   //
   // Add Button
@@ -404,6 +417,15 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   connect(lib_delete_button,SIGNAL(clicked()),this,SLOT(deleteData()));
 
   //
+  // Selected
+  //
+  lib_selected_label=new QLabel(lib_group_box,tr(""),
+			     this,"lib_selected_label");
+  lib_selected_label->setFont(button_font);
+  lib_selected_label->setAlignment(AlignVCenter|AlignCenter);
+
+
+  //
   // Disk Gauge
   //
   disk_gauge=new DiskGauge(rdlibrary_conf->defaultSampleRate(),
@@ -427,6 +449,18 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   connect(lib_reports_button,SIGNAL(clicked()),this,SLOT(reportsData()));
 
   //
+  // Cart Player
+  //
+  lib_player=
+    new RDSimplePlayer(rdcae,rdripc,rdlibrary_conf->outputCard(),rdlibrary_conf->outputPort(),
+		       0,0,this,"lib_player");
+  lib_player->playButton()->
+    setPalette(QPalette(backgroundColor(),QColor(lightGray)));
+  lib_player->stopButton()->
+    setPalette(QPalette(backgroundColor(),QColor(lightGray)));
+  lib_player->stopButton()->setOnColor(red);
+
+  //
   // Close Button
   //
   lib_close_button=new QPushButton(this,"lib_close_button");
@@ -445,7 +479,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 
 QSize MainWidget::sizeHint() const
 {
-  return QSize(800,600);
+  return QSize(980,600);
 }
 
 
@@ -810,6 +844,13 @@ void MainWidget::cartClickedData(QListViewItem *item)
   else {
     lib_edit_button->setEnabled(true);
     }
+
+  if(item==NULL) {
+    lib_player->setCart(0);
+  }
+  else {
+    lib_player->setCart(item->text(1).toUInt());
+  }
 }
 
 
@@ -835,6 +876,7 @@ void MainWidget::quitMainWidget()
 {
   SaveGeometry();
   lib_lock->unlock();
+  lib_player->stop();
   exit(0);
 }
 
@@ -874,17 +916,14 @@ void MainWidget::resizeEvent(QResizeEvent *e)
   lib_add_button->setGeometry(10,e->size().height()-60,80,50);
   lib_edit_button->setGeometry(100,e->size().height()-60,80,50);
   lib_delete_button->setGeometry(190,e->size().height()-60,80,50);
-  disk_gauge->setGeometry(290,e->size().height()-45,
+  lib_selected_label->setGeometry(290,e->size().height()-55,disk_gauge->sizeHint().width(),20);
+  disk_gauge->setGeometry(290,e->size().height()-30,
 			  disk_gauge->sizeHint().width(),
 			  disk_gauge->sizeHint().height());
-  lib_rip_button->setGeometry(240+disk_gauge->sizeHint().width()+
-			      (e->size().width()-90-
-			       (280+disk_gauge->sizeHint().width()))/2-45,
-			      e->size().height()-60,80,50);
-  lib_reports_button->setGeometry(340+disk_gauge->sizeHint().width()+
-				  (e->size().width()-90-
-				   (280+disk_gauge->sizeHint().width()))/2-45,
-				  e->size().height()-60,80,50);
+  lib_rip_button->setGeometry(490,e->size().height()-60,80,50);
+  lib_reports_button->setGeometry(590,e->size().height()-60,80,50);
+  lib_player->playButton()->setGeometry(690,e->size().height()-60,80,50);
+  lib_player->stopButton()->setGeometry(780,e->size().height()-60,80,50);
   lib_close_button->setGeometry(e->size().width()-90,e->size().height()-60,
 				80,50);
 }
@@ -902,6 +941,12 @@ void MainWidget::RefreshList()
   QDateTime end_datetime;
 
   lib_cart_list->clear();
+
+  lib_search_button->setEnabled(false);
+  lib_group_box->setEnabled(false);
+  lib_showaudio_box->setEnabled(false);
+  lib_codes_box->setEnabled(false);
+  lib_showmacro_box->setEnabled(false);
 
   type_filter=GetTypeFilter();
   if(type_filter.isEmpty()) {
@@ -1051,6 +1096,13 @@ void MainWidget::RefreshList()
   UpdateItemColor(l,validity,end_datetime,current_datetime);
   lib_progress_dialog->reset();
   delete q;
+
+  lib_search_button->setEnabled(true);
+  lib_group_box->setEnabled(true);
+  lib_showaudio_box->setEnabled(true);
+  lib_codes_box->setEnabled(true);
+  lib_showmacro_box->setEnabled(true);
+  lib_selected_label->setText(QString().sprintf("Filtered  %d Carts",lib_cart_list->childCount()));
 }
 
 
@@ -1336,3 +1388,4 @@ int main(int argc,char *argv[])
   w->show();
   return a.exec();
 }
+

@@ -149,6 +149,17 @@ RDCartDialog::RDCartDialog(QString *filter,QString *group,
 	  this,SLOT(groupActivatedData(const QString &)));
 
   //
+  // Scheduler Codes Filter
+  //
+  cart_codes_box=new RDComboBox(this,"cart_codes_box");
+  cart_codes_label=new QLabel(cart_codes_box,tr("Label:"),
+			     this,"cart_codes_label");
+  cart_codes_label->setFont(button_font);
+  cart_codes_label->setAlignment(AlignVCenter|AlignRight);
+  connect(cart_codes_box,SIGNAL(activated(const QString &)),
+	  this,SLOT(groupActivatedData(const QString &)));
+
+  //
   // Cart List
   //
   cart_cart_list=new RDListView(this,"cart_cart_list");
@@ -473,8 +484,10 @@ void RDCartDialog::resizeEvent(QResizeEvent *e)
 
   cart_search_button->setGeometry(size().width()-160,5,70,30);
   cart_clear_button->setGeometry(size().width()-80,5,70,30);
-  cart_group_box->setGeometry(100,35,150,20);
-  cart_group_label->setGeometry(10,35,85,20);
+  cart_group_box->setGeometry(100,40,150,20);
+  cart_group_label->setGeometry(10,40,85,20);
+  cart_codes_box->setGeometry(350,40,150,20);
+  cart_codes_label->setGeometry(260,40,85,20);
   cart_cart_label->setGeometry(15,60,100,20);
   cart_cart_list->setGeometry(10,80,size().width()-20,size().height()-150);
   cart_editor_button->setGeometry(235,size().height()-60,80,50);
@@ -542,6 +555,13 @@ void RDCartDialog::RefreshCarts()
 		(const char *)GetSearchFilter(cart_filter_edit->text(),group),
 			  cart_type);
   }
+  QString code=cart_codes_box->currentText();
+  if(code!=QString("")) {
+  	code+="          ";
+    code=code.left(11);
+  	sql+=QString().sprintf(" && SCHED_CODES like \"%%%s%%\"",(const char *)code);
+  }  
+
   q=new RDSqlQuery(sql);
   int step=0;
   int count=0;
@@ -617,6 +637,15 @@ void RDCartDialog::BuildGroupList()
   q=new RDSqlQuery(sql);
   while(q->next()) {
     cart_group_box->insertItem(q->value(0).toString(),true);
+  }
+  delete q;
+
+  cart_codes_box->clear();
+  cart_codes_box->insertItem(tr(""));
+  sql=QString().sprintf("select CODE from SCHED_CODES");
+  q=new RDSqlQuery(sql);
+  while(q->next()) {
+    cart_codes_box->insertItem(q->value(0).toString());
   }
   delete q;
 

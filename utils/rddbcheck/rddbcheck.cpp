@@ -244,7 +244,7 @@ void MainObject::CheckClocks()
     //
     // Check the CLK Table
     //
-    sql=QString().sprintf ("select EVENT_NAME,ID from %s_CLK",
+    sql=QString().sprintf ("select EVENT_NAME,ID from `%s_CLK`",
 			   (const char *)clockname);
     q1=new QSqlQuery(sql);
     if(q1->isActive()) {
@@ -262,7 +262,7 @@ void MainObject::CheckClocks()
 		   (const char *)q2->value(0).toString());
 	    fflush(NULL);
 	    if(UserResponse()) {
-	      sql=QString().sprintf("update %s_CLK set EVENT_NAME=\"%s\"\
+	      sql=QString().sprintf("update `%s_CLK` set EVENT_NAME=\"%s\"\
                                      where ID=%d",
 				    (const char *)clockname,
 				    (const char *)q2->value(0).toString(),
@@ -281,6 +281,9 @@ void MainObject::CheckClocks()
       fflush(NULL);
       if(UserResponse()) {
 	sql=RDCreateClockTableSql(clockname);
+	q2=new QSqlQuery(sql);
+	delete q2;
+	sql=RDCreateRulesTableSql(clockname);
 	q2=new QSqlQuery(sql);
 	delete q2;
       }

@@ -20,17 +20,18 @@
 //   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <vector>
 #include <qsqldatabase.h>
-
 
 #ifndef SCHEDCARTLIST_H
 #define SCHEDCARTLIST_H
 
+using namespace std;
 
 class SchedCartList
 {
   public:
-   SchedCartList(int listsize);
+   SchedCartList();
    ~SchedCartList();
    void insertItem(unsigned cartnumber,int cartlength,int stack_id,QString stack_artist,QString stack_schedcodes);
    void removeItem(int itemnumber);
@@ -42,22 +43,26 @@ class SchedCartList
    QString getItemArtist(int itemnumber);
    QString getItemSchedCodes(int itemnumber);
    int getNumberOfItems(void);
+   int getTotalNumberOfItems(void);
+   int getRandom(void);
    void save(void);
    void restore(void);
    
   private:
    int itemcounter;
    int saveitemcounter;
-   unsigned* cartnum;
-   unsigned* savecartnum;
-   int* cartlen;
-   int* savecartlen;
-   int* stackid;
-   int* savestackid;
-   QString* saveartist;
-   QString* artist;
-   QString* sched_codes;
-   QString* save_sched_codes;
+   vector<unsigned> cartnum;
+   vector<unsigned> savecartnum;
+   vector<int> cartlen;
+   vector<int> savecartlen;
+   vector<int> stackid;
+   vector<int> savestackid;
+   vector<bool> valid;
+   vector<bool> save_valid;
+   vector<QString> saveartist;
+   vector<QString> artist;
+   vector<QString> sched_codes;
+   vector<QString> save_sched_codes;
 };
 
 

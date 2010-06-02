@@ -79,6 +79,7 @@ class EditLogLine : public QDialog
   RDTimeEdit *edit_grace_edit;
   QString edit_service;
   RDGroupList *edit_group_list;
+  bool cart_changed;
   RDLogEvent *edit_log_event;
   int edit_line;
 };

@@ -2525,7 +2525,8 @@ void MainObject::StartDropboxes()
                          AUTOTRIM_LEVEL,TO_CART,USE_CARTCHUNK_ID,\
                          TITLE_FROM_CARTCHUNK_ID,DELETE_CUTS,\
                          METADATA_PATTERN,FIX_BROKEN_FORMATS,LOG_PATH,\
-                         DELETE_SOURCE,STARTDATE_OFFSET,ENDDATE_OFFSET,ID \
+                         DELETE_SOURCE,STARTDATE_OFFSET,ENDDATE_OFFSET,ID,\
+ 		         SEGUE_LEVEL,SEGUE_LENGTH \
                          from DROPBOXES where STATION_NAME=\"%s\"",
 			(const char *)catch_config->stationName());
   q=new RDSqlQuery(sql);
@@ -2558,6 +2559,12 @@ void MainObject::StartDropboxes()
     }
     if(q->value(11).toString()=="Y") {
       cmd+=" --delete-source";
+    }
+    if(q->value(15).toInt()<0) {
+      cmd+=QString().sprintf(" --segue-level=%d",q->value(15).toInt()/100);;
+    }
+    if(q->value(16).toInt()>0) {
+      cmd+=QString().sprintf(" --segue-length=%d",q->value(16).toInt());;
     }
     cmd+=QString().sprintf(" --startdate-offset=%d",q->value(12).toInt());
     cmd+=QString().sprintf(" --enddate-offset=%d",q->value(13).toInt());

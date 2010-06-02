@@ -108,16 +108,20 @@ ListDropboxes::ListDropboxes(const QString &stationname,
   list_dropboxes_view->setColumnAlignment(2,Qt::AlignCenter);
   list_dropboxes_view->addColumn(tr("Autotrim Level"));
   list_dropboxes_view->setColumnAlignment(3,Qt::AlignCenter);
-  list_dropboxes_view->addColumn(tr("To Cart"));
+  list_dropboxes_view->addColumn(tr("Segue Level"));
   list_dropboxes_view->setColumnAlignment(4,Qt::AlignCenter);
-  list_dropboxes_view->addColumn(tr("Use CartChunk ID"));
+  list_dropboxes_view->addColumn(tr("Segue Length"));
   list_dropboxes_view->setColumnAlignment(5,Qt::AlignCenter);
-  list_dropboxes_view->addColumn(tr("Delete Cuts"));
+  list_dropboxes_view->addColumn(tr("To Cart"));
   list_dropboxes_view->setColumnAlignment(6,Qt::AlignCenter);
-  list_dropboxes_view->addColumn(tr("Metadata Pattern"));
+  list_dropboxes_view->addColumn(tr("Use CartChunk ID"));
   list_dropboxes_view->setColumnAlignment(7,Qt::AlignCenter);
-  list_dropboxes_view->addColumn(tr("Fix Broken Formats"));
+  list_dropboxes_view->addColumn(tr("Delete Cuts"));
   list_dropboxes_view->setColumnAlignment(8,Qt::AlignCenter);
+  list_dropboxes_view->addColumn(tr("Metadata Pattern"));
+  list_dropboxes_view->setColumnAlignment(9,Qt::AlignCenter);
+  list_dropboxes_view->addColumn(tr("Fix Broken Formats"));
+  list_dropboxes_view->setColumnAlignment(10,Qt::AlignCenter);
   connect(list_dropboxes_view,
 	  SIGNAL(doubleClicked(QListViewItem *,const QPoint &,int)),
 	  this,
@@ -235,7 +239,8 @@ void ListDropboxes::RefreshList()
                          DROPBOXES.AUTOTRIM_LEVEL,\
                          DROPBOXES.TO_CART,DROPBOXES.USE_CARTCHUNK_ID,\
                          DROPBOXES.DELETE_CUTS,DROPBOXES.METADATA_PATTERN,\
-                         DROPBOXES.FIX_BROKEN_FORMATS,GROUPS.COLOR \
+                         DROPBOXES.FIX_BROKEN_FORMATS,GROUPS.COLOR, \
+		         DROPBOXES.SEGUE_LEVEL, DROPBOXES.SEGUE_LENGTH\
                          from DROPBOXES left join GROUPS on \
                          DROPBOXES.GROUP_NAME=GROUPS.NAME \
                          where DROPBOXES.STATION_NAME=\"%s\"",
@@ -259,7 +264,8 @@ void ListDropboxes::RefreshItem(RDListViewItem *item)
                          DROPBOXES.AUTOTRIM_LEVEL,\
                          DROPBOXES.TO_CART,DROPBOXES.USE_CARTCHUNK_ID,\
                          DROPBOXES.DELETE_CUTS,DROPBOXES.METADATA_PATTERN,\
-                         DROPBOXES.FIX_BROKEN_FORMATS,GROUPS.COLOR \
+                         DROPBOXES.FIX_BROKEN_FORMATS,GROUPS.COLOR, \
+		         DROPBOXES.SEGUE_LEVEL, DROPBOXES.SEGUE_LENGTH\
                          from DROPBOXES left join GROUPS on \
                          DROPBOXES.GROUP_NAME=GROUPS.NAME \
                          where DROPBOXES.ID=%d",item->id());
@@ -290,18 +296,30 @@ void ListDropboxes::WriteItem(RDListViewItem *item,RDSqlQuery *q)
     item->setText(3,tr("[off]"));
   }
   if(q->value(5).toUInt()>0) {
-    item->setText(4,QString().sprintf("%06u",q->value(5).toUInt()));
+    item->setText(6,QString().sprintf("%06u",q->value(5).toUInt()));
   }
   else {
-    item->setText(4,tr("[auto]"));
+    item->setText(6,tr("[auto]"));
   }
-  item->setText(5,q->value(6).toString());
-  item->setText(6,q->value(7).toString());
+  item->setText(7,q->value(6).toString());
+  item->setText(8,q->value(7).toString());
   if(q->value(8).toString().isEmpty()) {
-    item->setText(7,tr("[none]"));
+    item->setText(9,tr("[none]"));
   }
   else {
-    item->setText(7,q->value(8).toString());
+    item->setText(9,q->value(8).toString());
   }
-  item->setText(8,q->value(9).toString());
+  item->setText(10,q->value(9).toString());
+  if(q->value(11).toInt()<0) {
+    item->setText(4,QString().sprintf("%d",q->value(11).toInt()/100));
+  }
+  else {
+    item->setText(4,tr("[off]"));
+  }
+  if(q->value(12).toInt()>0) {
+    item->setText(5,QString().sprintf("%d",q->value(12).toInt()));
+  }
+  else {
+    item->setText(5,tr("[off]"));
+  }
 }

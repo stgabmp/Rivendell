@@ -31,7 +31,7 @@ class SchedRulesList
   public:
    SchedRulesList(QString clockname);
    ~SchedRulesList();
-   void insertItem(int pos,int maxrow,int minwait,QString notafter,QString orafter,QString orafterii);
+   void insertItem(QString code,int maxrow,int minwait,QString notafter,QString orafter,QString orafterii);
    QString getItemSchedCode(int pos);
    int getItemMaxRow(int pos);
    int getItemMinWait(int pos);

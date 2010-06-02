@@ -153,7 +153,7 @@ bool RDClock::load()
   clock_remarks=q->value(3).toString();
   delete q;
 
-  sql=QString().sprintf("select EVENT_NAME,START_TIME,LENGTH from %s_CLK\
+  sql=QString().sprintf("select EVENT_NAME,START_TIME,LENGTH from `%s_CLK`\
                          order by ID",
 			(const char *)clock_name_esc);
   q=new RDSqlQuery(sql);
@@ -188,7 +188,7 @@ bool RDClock::save()
 			  (const char *)clock_name);
     q=new RDSqlQuery(sql);
     delete q;
-    sql=QString().sprintf("delete from %s_CLK",(const char *)clock_name_esc);
+    sql=QString().sprintf("delete from `%s_CLK`",(const char *)clock_name_esc);
     q=new RDSqlQuery(sql);
     delete q;
   }
@@ -206,12 +206,12 @@ bool RDClock::save()
     q=new RDSqlQuery(sql);
     delete q;
   }
-  sql=QString().sprintf("delete from %s_CLK",
+  sql=QString().sprintf("delete from `%s_CLK`",
 			(const char *)clock_name_esc);
   q=new RDSqlQuery(sql);
   delete q;
   for(unsigned i=0;i<clock_events.size();i++) {
-    sql=QString().sprintf("insert into %s_CLK set EVENT_NAME=\"%s\",\
+    sql=QString().sprintf("insert into `%s_CLK` set EVENT_NAME=\"%s\",\
                            START_TIME=%d,LENGTH=%d",
 			  (const char *)clock_name_esc,
 			  (const char *)clock_events[i].name(),
@@ -308,8 +308,11 @@ bool RDClock::generateLog(int hour,const QString &logname,
   QString sql;
   RDSqlQuery *q;
   RDEventLine eventline;
+  RDEventLine temp_line;
+  QTime length=QTime(0,0);
+  int real_length=0;
 
-  sql=QString().sprintf("select EVENT_NAME,START_TIME,LENGTH from %s_CLK\
+  sql=QString().sprintf("select EVENT_NAME,START_TIME,LENGTH from `%s_CLK`\
                          order by START_TIME",
 			(const char *)clock_name_esc);
   q=new RDSqlQuery(sql);
@@ -320,7 +323,36 @@ bool RDClock::generateLog(int hour,const QString &logname,
     eventline.setStartTime(QTime().addMSecs(q->value(1).toInt()).
 			   addSecs(3600*hour));
     eventline.setLength(q->value(2).toInt());
-    eventline.generateLog(logname,svc_name,errors,artistsep,clock_name_esc);
+    if(eventline.timeType()==RDLogLine::Hard) {
+      length=q->value(1).toTime();
+    }
+    if(eventline.importSource()==RDEventLine::Scheduler) {
+      QTime slop_length=QTime(0,0);
+      int pos=q->at();
+      while(q->next()) {
+        temp_line.setName(q->value(0).toString());
+        temp_line.load();
+        if(temp_line.timeType()==RDLogLine::Hard) {
+           slop_length=q->value(1).toTime();
+           slop_length=slop_length.addMSecs(eventline.endSlop());
+           q->last();
+        }
+      }
+      q->seek(pos);
+      if(slop_length==QTime(0,0)) {
+        slop_length=slop_length.addSecs(3600);      
+        slop_length=slop_length.addMSecs(eventline.endSlop());
+      }
+      if(slop_length>length) {
+        eventline.generateLog(logname,svc_name,errors,artistsep,clock_name_esc,&real_length);
+        length=length.addMSecs(real_length);
+      }
+    }
+    else {
+      eventline.generateLog(logname,svc_name,errors,artistsep,clock_name_esc,&real_length);
+      real_length=q->value(2).toInt();
+      length=length.addMSecs(real_length);
+    }
     eventline.clear();
   }
   delete q;

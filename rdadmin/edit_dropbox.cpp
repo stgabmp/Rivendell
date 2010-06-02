@@ -178,16 +178,16 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
   box_normalization_level_spin=
     new QSpinBox(this,"box_normalization_level_spin");
-  box_normalization_level_spin->setGeometry(275,146,50,20);
+  box_normalization_level_spin->setGeometry(300,146,50,20);
   box_normalization_level_spin->setRange(-100,-1);
   box_normalization_level_label=
     new QLabel(tr("Level:"),this,"box_normalization_level_label");
-  box_normalization_level_label->setGeometry(210,146,60,20);
+  box_normalization_level_label->setGeometry(235,146,60,20);
   box_normalization_level_label->setFont(font);
   box_normalization_level_label->setAlignment(AlignVCenter|AlignRight);
   box_normalization_level_unit=
     new QLabel(tr("dBFS"),this,"box_normalization_level_unit");
-  box_normalization_level_unit->setGeometry(330,146,60,20);
+  box_normalization_level_unit->setGeometry(355,146,60,20);
   box_normalization_level_unit->setAlignment(AlignVCenter|AlignLeft);
   connect(box_normalization_box,SIGNAL(toggled(bool)),
 	  this,SLOT(normalizationToggledData(bool)));
@@ -204,29 +204,81 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
   box_autotrim_level_spin=
     new QSpinBox(this,"box_autotrim_level_spin");
-  box_autotrim_level_spin->setGeometry(275,170,50,20);
+  box_autotrim_level_spin->setGeometry(300,170,50,20);
   box_autotrim_level_spin->setRange(-100,-1);
   box_autotrim_level_label=
     new QLabel(tr("Level:"),this,"box_autotrim_level_label");
-  box_autotrim_level_label->setGeometry(210,170,60,20);
+  box_autotrim_level_label->setGeometry(235,170,60,20);
   box_autotrim_level_label->setFont(font);
   box_autotrim_level_label->setAlignment(AlignVCenter|AlignRight);
   box_autotrim_level_unit=
     new QLabel(tr("dBFS"),this,"box_autotrim_level_unit");
-  box_autotrim_level_unit->setGeometry(330,170,60,20);
+  box_autotrim_level_unit->setGeometry(355,170,60,20);
   box_autotrim_level_unit->setAlignment(AlignVCenter|AlignLeft);
   connect(box_autotrim_box,SIGNAL(toggled(bool)),
 	  this,SLOT(autotrimToggledData(bool)));
 
   //
+  // Segue Level
+  //
+  box_seguelevel_box=new QCheckBox(this,"box_seguelevel_box");
+  box_seguelevel_box->setGeometry(90,196,15,15);
+  label=new QLabel(box_seguelevel_box,tr("Set Segue Marker"),
+		   this,"box_seguelevel_label");
+  label->setGeometry(110,194,120,20);
+  label->setFont(font);
+  label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
+  box_seguelevel_level_spin=
+		  new QSpinBox(this,"box_seguelevel_level_spin");
+  box_seguelevel_level_spin->setGeometry(300,194,50,20);
+  box_seguelevel_level_spin->setRange(-100,-1);
+  box_seguelevel_level_label=
+		  new QLabel(tr("Level:"),this,"box_seguelevel_level_label");
+  box_seguelevel_level_label->setGeometry(235,194,60,20);
+  box_seguelevel_level_label->setFont(font);
+  box_seguelevel_level_label->setAlignment(AlignVCenter|AlignRight);
+  box_seguelevel_level_unit=
+		  new QLabel(tr("dBFS"),this,"box_seguelevel_level_unit");
+  box_seguelevel_level_unit->setGeometry(355,194,60,20);
+  box_seguelevel_level_unit->setAlignment(AlignVCenter|AlignLeft);
+  connect(box_seguelevel_box,SIGNAL(toggled(bool)),
+	  this,SLOT(seguelevelToggledData(bool)));
+
+  //
+  // Segue Length
+  //
+  box_seguelength_box=new QCheckBox(this,"box_seguelength_box");
+  box_seguelength_box->setGeometry(90,220,15,15);
+  label=new QLabel(box_seguelength_box,tr("Set Segue Marker"),
+		   this,"box_seguelength_label");
+  label->setGeometry(110,218,120,20);
+  label->setFont(font);
+  label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
+  box_seguelength_length_spin=
+		    new QSpinBox(this,"box_seguelength_length_spin");
+  box_seguelength_length_spin->setGeometry(300,218,70,20);
+  box_seguelength_length_spin->setRange(1,999999);
+  box_seguelength_length_label=
+		  new QLabel(tr("Length:"),this,"box_seguelength_length_label");
+  box_seguelength_length_label->setGeometry(235,218,60,20);
+  box_seguelength_length_label->setFont(font);
+  box_seguelength_length_label->setAlignment(AlignVCenter|AlignRight);
+  box_seguelength_length_unit=
+		  new QLabel(tr("MSec"),this,"box_seguelength_length_unit");
+  box_seguelength_length_unit->setGeometry(380,218,60,20);
+  box_seguelength_length_unit->setAlignment(AlignVCenter|AlignLeft);
+  connect(box_seguelength_box,SIGNAL(toggled(bool)),
+	  this,SLOT(seguelengthToggledData(bool)));
+
+  //
   // Use CartChunk ID
   //
   box_use_cartchunk_id_box=new QCheckBox(this,"box_use_cartchunk_id_box");
-  box_use_cartchunk_id_box->setGeometry(90,198,15,15);
+  box_use_cartchunk_id_box->setGeometry(90,244,15,15);
   label=new QLabel(box_use_cartchunk_id_box,
 		   tr("Get cart number from CartChunk CutID"),
 		   this,"box_use_cartchunk_id_label");
-  label->setGeometry(110,196,sizeHint().width()-40,20);
+  label->setGeometry(110,242,sizeHint().width()-40,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
 
@@ -234,11 +286,11 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   // Title from CartChunk ID
   //
   box_title_from_cartchunk_id_box=new QCheckBox(this,"box_title_from_cartchunk_id_box");
-  box_title_from_cartchunk_id_box->setGeometry(90,222,15,15);
+  box_title_from_cartchunk_id_box->setGeometry(90,266,15,15);
   label=new QLabel(box_title_from_cartchunk_id_box,
 		   tr("Get cart title from CartChunk CutID"),
 		   this,"box_title_from_cartchunk_id_label");
-  label->setGeometry(110,220,sizeHint().width()-40,20);
+  label->setGeometry(110,262,sizeHint().width()-40,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
 
@@ -246,11 +298,11 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   // Fix Broken Formats
   //
   box_fix_broken_formats_box=new QCheckBox(this,"box_fix_broken_formats_box");
-  box_fix_broken_formats_box->setGeometry(90,246,15,15);
+  box_fix_broken_formats_box->setGeometry(90,288,15,15);
   label=new QLabel(box_fix_broken_formats_box,
 		   tr("Attempt to work around malformatted input files"),
 		   this,"box_fix_broken_formats_label");
-  label->setGeometry(110,244,sizeHint().width()-40,20);
+  label->setGeometry(110,286,sizeHint().width()-40,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
 
@@ -260,18 +312,18 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   //
   box_startoffset_spin=
     new QSpinBox(this,"box_startoffset_spin");
-  box_startoffset_spin->setGeometry(215,268,50,20);
+  box_startoffset_spin->setGeometry(215,314,50,20);
   box_startoffset_spin->setRange(-7,7);
   label=new QLabel(box_startoffset_spin,
 		   tr("Offset start date by"),
 		   this,"box_startoffset_label");
-  label->setGeometry(90,268,120,20);
+  label->setGeometry(90,312,120,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
   label=new QLabel(box_startoffset_spin,
 		   tr("days"),
 		   this,"box_startoffset_unit");
-  label->setGeometry(275,270,100,20);
+  label->setGeometry(275,312,100,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
 
@@ -280,18 +332,18 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   //
   box_endoffset_spin=
     new QSpinBox(this,"box_endoffset_spin");
-  box_endoffset_spin->setGeometry(215,292,50,20);
+  box_endoffset_spin->setGeometry(215,338,50,20);
   box_endoffset_spin->setRange(-7,7);
   label=new QLabel(box_endoffset_spin,
 		   tr("Offset end date by"),
 		   this,"box_endoffset_label");
-  label->setGeometry(90,292,120,20);
+  label->setGeometry(90,336,120,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
   label=new QLabel(box_endoffset_spin,
 		   tr("days"),
 		   this,"box_endoffset_unit");
-  label->setGeometry(275,294,100,20);
+  label->setGeometry(275,336,100,20);
   label->setFont(font);
   label->setAlignment(AlignLeft|AlignVCenter|ShowPrefix);
 
@@ -340,6 +392,10 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
     setValue(box_dropbox->normalizationLevel()/100);
   box_autotrim_box->setChecked(box_dropbox->autotrimLevel()<0);
   box_autotrim_level_spin->setValue(box_dropbox->autotrimLevel()/100);
+  box_seguelevel_box->setChecked(box_dropbox->segueLevel()<0);
+  box_seguelevel_level_spin->setValue(box_dropbox->segueLevel()/100);
+  box_seguelength_box->setChecked(box_dropbox->segueLength()>0);
+  box_seguelength_length_spin->setValue(box_dropbox->segueLength());
   box_use_cartchunk_id_box->setChecked(box_dropbox->useCartchunkId());
   box_title_from_cartchunk_id_box->setChecked(box_dropbox->titleFromCartchunkId());
   box_log_path_edit->setText(box_dropbox->logPath());
@@ -350,12 +406,14 @@ EditDropbox::EditDropbox(int id,QWidget *parent,const char *name)
   toCartChangedData(box_to_cart_edit->text());
   normalizationToggledData(box_normalization_box->isChecked());
   autotrimToggledData(box_autotrim_box->isChecked());
+  seguelevelToggledData(box_seguelevel_box->isChecked());
+  seguelengthToggledData(box_seguelength_box->isChecked());
 }
 
 
 QSize EditDropbox::sizeHint() const
 {
-  return QSize(450,400);
+  return QSize(600,400);
 } 
 
 
@@ -418,6 +476,22 @@ void EditDropbox::autotrimToggledData(bool state)
 }
 
 
+void EditDropbox::seguelevelToggledData(bool state)
+{
+  box_seguelevel_level_spin->setEnabled(state);
+  box_seguelevel_level_label->setEnabled(state);
+  box_seguelevel_level_unit->setEnabled(state);
+}
+
+
+void EditDropbox::seguelengthToggledData(bool state)
+{
+  box_seguelength_length_spin->setEnabled(state);
+  box_seguelength_length_label->setEnabled(state);
+  box_seguelength_length_unit->setEnabled(state);
+}
+
+
 void EditDropbox::okData()
 {
   box_dropbox->setGroupName(box_group_name_box->currentText());
@@ -444,6 +518,20 @@ void EditDropbox::okData()
   }
   else {
     box_dropbox->setAutotrimLevel(0);
+  }
+  if(box_seguelevel_box->isChecked()) {
+    box_dropbox->
+      setSegueLevel(box_seguelevel_level_spin->value()*100);
+  }
+  else {
+    box_dropbox->setSegueLevel(0);
+  }
+  if(box_seguelength_box->isChecked()) {
+    box_dropbox->
+      setSegueLength(box_seguelength_length_spin->value());
+  }
+  else {
+    box_dropbox->setSegueLength(0);
   }
   box_dropbox->setUseCartchunkId(box_use_cartchunk_id_box->isChecked());
   box_dropbox->setTitleFromCartchunkId(box_title_from_cartchunk_id_box->isChecked());

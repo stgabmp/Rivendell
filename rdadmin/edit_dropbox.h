@@ -54,6 +54,8 @@ class EditDropbox : public QDialog
   void selectLogPathData();
   void normalizationToggledData(bool state);
   void autotrimToggledData(bool state);
+  void seguelevelToggledData(bool state);
+  void seguelengthToggledData(bool state);
   void okData();
   void cancelData();
   
@@ -75,6 +77,14 @@ class EditDropbox : public QDialog
   QLabel *box_autotrim_level_label;
   QSpinBox *box_autotrim_level_spin;
   QLabel *box_autotrim_level_unit;
+  QCheckBox *box_seguelevel_box;
+  QLabel *box_seguelevel_level_label;
+  QSpinBox *box_seguelevel_level_spin;
+  QLabel *box_seguelevel_level_unit;
+  QCheckBox *box_seguelength_box;
+  QLabel *box_seguelength_length_label;
+  QSpinBox *box_seguelength_length_spin;
+  QLabel *box_seguelength_length_unit;
   QCheckBox *box_use_cartchunk_id_box;
   QCheckBox *box_title_from_cartchunk_id_box;
   QCheckBox *box_fix_broken_formats_box;

@@ -528,6 +528,39 @@ EditEvent::EditEvent(QString eventname,bool new_event,
   delete q2;
 
 
+// Transition Group
+
+  event_trans_group_label=
+    new QLabel(tr("Link"),this,"event_trans_group_label");
+  event_trans_group_label->setFont(bold_font);
+  event_trans_group_label->setGeometry(CENTER_LINE+420,425,100,20);
+
+  event_trans_group_box=new QComboBox(this,"event_trans_group_box");
+  event_trans_group_box->setGeometry(CENTER_LINE+510,425,100,20);
+  event_trans_group_box->insertItem("");
+  sql2="select NAME from GROUPS order by NAME";
+  q2=new RDSqlQuery(sql2);
+  while(q2->next()) {
+    event_trans_group_box->insertItem(q2->value(0).toString());
+  }
+  delete q2;
+ 
+
+// Title Separation SpinBox
+
+  event_duck_label=
+    new QLabel(tr("Duck Volume (dB)"),this,"event_duck_label");
+  event_duck_label->setFont(bold_font);
+  event_duck_label->setGeometry(CENTER_LINE+420,446,100,20);
+  
+
+  event_duck_spinbox = new QSpinBox( this, "event_duck_spinbox" );
+  event_duck_spinbox->setGeometry(CENTER_LINE+510,446,50,20);
+  event_duck_spinbox->setMinValue( -30 );
+  event_duck_spinbox->setMaxValue( 0 );
+
+
+
   //
   // Start Slop Time
   //
@@ -580,7 +613,8 @@ EditEvent::EditEvent(QString eventname,bool new_event,
   event_firsttrans_unit=new QLabel("transition.",this,"first_cart_label");
   event_firsttrans_unit->setFont(bold_font);
   event_firsttrans_unit->setGeometry(CENTER_LINE+215,428,
-		     sizeHint().width()-CENTER_LINE-450,22);
+//		     sizeHint().width()-CENTER_LINE-450,22);
+		     100,22);
   event_firsttrans_unit->setAlignment(AlignVCenter|AlignLeft);
   
   //
@@ -600,7 +634,8 @@ EditEvent::EditEvent(QString eventname,bool new_event,
 				     this,"default_cart_unit");
   event_defaulttrans_unit->setFont(bold_font);
   event_defaulttrans_unit->setGeometry(CENTER_LINE+255,451,
-		     sizeHint().width()-CENTER_LINE-420,22);
+//		     sizeHint().width()-CENTER_LINE-420,22);
+		     100,22);
   event_defaulttrans_unit->setAlignment(AlignVCenter|AlignLeft);
   
   //
@@ -796,6 +831,9 @@ EditEvent::EditEvent(QString eventname,bool new_event,
   }
   event_title_sep_spinbox->setValue(event_event->titleSep());
   event_have_code_box->setCurrentText(event_event->HaveCode());
+  event_duck_spinbox->setValue(event_event->duckVolume());
+  event_trans_group_box->setCurrentText(event_event->transGroup());
+
   QColor color=event_event->color();
   if(color.isValid()) {
     event_color_button->setPalette(QPalette(color,backgroundColor()));
@@ -900,6 +938,12 @@ void EditEvent::prepositionToggledData(bool state)
       event_firsttrans_unit->setDisabled(state);
     }
   }
+  if((RDEventLine::ImportSource)event_source_group->selectedId()==
+     RDEventLine::Scheduler) {
+      event_firsttrans_box->setDisabled(true);
+      event_firsttrans_label->setDisabled(true);
+      event_firsttrans_unit->setDisabled(true);
+  }  
   if(state) {
     event_preimport_list->setForceTrans(RDLogLine::Stop);
   }
@@ -969,12 +1013,19 @@ void EditEvent::timeToggledData(bool state)
     event_position_label->setEnabled(true);
     event_position_unit->setEnabled(true);
     if(((RDEventLine::ImportSource)event_source_group->selectedId()!=
-       RDEventLine::None)&&(!event_position_box->isChecked())&&
+       RDEventLine::None) && (RDEventLine::ImportSource)event_source_group->selectedId()!=
+       RDEventLine::Scheduler &&(!event_position_box->isChecked())&&
        (event_preimport_list->childCount()==0)) {
       event_firsttrans_box->setEnabled(true);
       event_firsttrans_label->setEnabled(true);
       event_firsttrans_unit->setEnabled(true);
     }
+    if((RDEventLine::ImportSource)event_source_group->selectedId()==
+       RDEventLine::Scheduler) {
+        event_firsttrans_box->setDisabled(true);
+        event_firsttrans_label->setDisabled(true);
+        event_firsttrans_unit->setDisabled(true);
+    }  
   }
   SetPostTransition();
 }
@@ -1041,18 +1092,24 @@ void EditEvent::importClickedData(int id)
   if(id==3) {
     statesched=false;
     stateschedinv=true;
+    event_endslop_label->setText(tr("Insert carts scheduled"));
+    event_endslop_unit->setText(tr("after end of block."));
+  }
+  else {
+    event_endslop_label->setText(tr("Import carts scheduled"));
+    event_endslop_unit->setText(tr("after the end of this event."));
   }
   event_startslop_edit->setEnabled(statesched);
   event_startslop_label->setEnabled(statesched);
   event_startslop_unit->setEnabled(statesched);
-  event_endslop_edit->setEnabled(statesched);
-  event_endslop_label->setEnabled(statesched);
-  event_endslop_unit->setEnabled(statesched);
+  event_endslop_edit->setEnabled(state);
+  event_endslop_label->setEnabled(state);
+  event_endslop_unit->setEnabled(state);
   if((!event_timetype_box->isChecked())&&(!event_position_box->isChecked())) {
     if((state&&(event_preimport_list->childCount()==0))||(!state)) {
-      event_firsttrans_box->setEnabled(state);
-      event_firsttrans_label->setEnabled(state);
-      event_firsttrans_unit->setEnabled(state);
+      event_firsttrans_box->setEnabled(statesched);
+      event_firsttrans_label->setEnabled(statesched);
+      event_firsttrans_unit->setEnabled(statesched);
     }
   }
   event_defaulttrans_box->setEnabled(state);
@@ -1068,6 +1125,10 @@ void EditEvent::importClickedData(int id)
   event_title_sep_spinbox->setEnabled(stateschedinv);
   event_have_code_box->setEnabled(stateschedinv);
   event_have_code_label->setEnabled(stateschedinv);
+  event_trans_group_label->setEnabled(stateschedinv);
+  event_trans_group_box->setEnabled(stateschedinv);
+  event_duck_label->setEnabled(stateschedinv);
+  event_duck_spinbox->setEnabled(stateschedinv);
 }
 
 
@@ -1084,6 +1145,12 @@ void EditEvent::preimportChangedData(int size)
     event_firsttrans_label->setDisabled(true);
     event_firsttrans_unit->setDisabled(true);
   }
+  if((RDEventLine::ImportSource)event_source_group->selectedId()==
+     RDEventLine::Scheduler) {
+      event_firsttrans_box->setDisabled(true);
+      event_firsttrans_label->setDisabled(true);
+      event_firsttrans_unit->setDisabled(true);
+  }  
   SetPostTransition();
 }
 
@@ -1293,7 +1360,7 @@ void EditEvent::paintEvent(QPaintEvent *e)
   p->lineTo(CENTER_LINE,sizeHint().height()-10);
   p->drawRect(CENTER_LINE+160,82,sizeHint().width()-CENTER_LINE-200,45);
   p->moveTo(CENTER_LINE+408,383);
-  p->lineTo(CENTER_LINE+408,450);
+  p->lineTo(CENTER_LINE+408,475);
   p->end();
 }
 
@@ -1511,6 +1578,8 @@ void EditEvent::Save()
   event_event->setSchedGroup(event_sched_group_box->currentText());  
   event_event->setTitleSep(event_title_sep_spinbox->value());
   event_event->setHaveCode(event_have_code_box->currentText()); 
+  event_event->setDuckVolume(event_duck_spinbox->value());
+  event_event->setTransGroup(event_trans_group_box->currentText()); 
   listname=event_name;
   listname.replace(" ","_");
   event_preimport_list->logEvent()->
@@ -1554,7 +1623,13 @@ QString EditEvent::GetProperties()
 	trans_type=RDLogLine::Stop;
       }
       else {
-	trans_type=(RDLogLine::TransType)event_firsttrans_box->currentItem();
+         if((RDEventLine::ImportSource)event_source_group->selectedId()==
+             RDEventLine::Scheduler) {
+ 	   trans_type=(RDLogLine::TransType)event_defaulttrans_box->currentItem();
+         }
+	 else {
+ 	   trans_type=(RDLogLine::TransType)event_firsttrans_box->currentItem();
+         }
       }
     }
   }

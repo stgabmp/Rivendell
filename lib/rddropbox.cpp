@@ -117,6 +117,30 @@ void RDDropbox::setAutotrimLevel(int lvl) const
 }
 
 
+int RDDropbox::segueLevel() const
+{
+  return RDGetSqlValue("DROPBOXES","ID",box_id,"SEGUE_LEVEL").toInt();
+}
+
+
+void RDDropbox::setSegueLevel(int lvl) const
+{
+  SetRow("SEGUE_LEVEL",lvl);
+}
+
+
+int RDDropbox::segueLength() const
+{
+  return RDGetSqlValue("DROPBOXES","ID",box_id,"SEGUE_LENGTH").toInt();
+}
+
+
+void RDDropbox::setSegueLength(int len) const
+{
+  SetRow("SEGUE_LENGTH",len);
+}
+
+
 bool RDDropbox::singleCart() const
 {
   return RDBool(RDGetSqlValue("DROPBOXES","ID",box_id,"SINGLE_CART").toString());

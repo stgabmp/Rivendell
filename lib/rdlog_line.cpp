@@ -1219,7 +1219,8 @@ int RDLogLine::segueLength(RDLogLine::TransType next_trans)
 	break;
 
       case RDLogLine::Macro:
-	return log_effective_length;
+//	return log_effective_length;
+	return log_forced_length;
 
       case RDLogLine::Marker:
 	return 0;
@@ -1518,8 +1519,9 @@ RDLogLine::State RDLogLine::setEvent(int mach,RDLogLine::TransType next_type,
 	  log_end_point[0]=q->value(2).toInt();
           if(log_start_point[RDLogLine::LogPointer]>=0 ||
              log_end_point[RDLogLine::LogPointer]>=0) {
-            log_effective_length=log_end_point[RDLogLine::LogPointer]-
-                                   log_start_point[RDLogLine::LogPointer];
+   //        log_effective_length=log_end_point[RDLogLine::LogPointer]-
+   //                               log_start_point[RDLogLine::LogPointer];
+            log_effective_length=endPoint()-startPoint();
           }
           else {
 	    log_effective_length=q->value(0).toUInt();
@@ -1568,6 +1570,7 @@ RDLogLine::State RDLogLine::setEvent(int mach,RDLogLine::TransType next_type,
       case RDLogLine::Macro:
 	cart=new RDCart(log_cart_number);
 	log_effective_length=cart->forcedLength();
+	log_forced_length=cart->forcedLength();
 	log_average_segue_length=log_effective_length;
 	log_forced_stop=false;
 	rml_event=new RDMacroEvent();
@@ -1593,6 +1596,8 @@ RDLogLine::State RDLogLine::setEvent(int mach,RDLogLine::TransType next_type,
 
       case RDLogLine::Marker:
       case RDLogLine::Track:
+        log_effective_length=0;
+        log_forced_length=0;
 	log_cut_number=0;
 	log_cut_name="";
 	log_effective_length=0;
@@ -1664,6 +1669,9 @@ void RDLogLine::loadCart(int cartnum,RDLogLine::TransType next_type,int mach,
   log_agency=q->value(9).toString();
   log_user_defined=q->value(10).toString();
   log_forced_length=q->value(11).toUInt();
+  if(log_type==RDLogLine::Macro) {
+    log_effective_length=log_forced_length;
+  }
   log_cut_quantity=q->value(12).toUInt();
   log_last_cut_played=q->value(13).toUInt();
   log_play_order=(RDCart::PlayOrder)q->value(14).toInt();

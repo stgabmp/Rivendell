@@ -897,6 +897,9 @@ QTime RDLogEvent::blockStartTime(int line)
     else {
       actual_length+=logLine(i)->forcedLength();
     }
+    if(logLine(i)->type()==RDLogLine::MusicLink || logLine(i)->type()==RDLogLine::TrafficLink) {
+      actual_length+=logLine(i)->linkLength();
+    }
   }
   return_time=start_time.addMSecs(actual_length);
   return return_time;
@@ -1017,6 +1020,9 @@ int RDLogEvent::nextLinkId() const
 
 void RDLogEvent::SaveLine(int line)
 {
+  if(log_line[line].id()==-1) {
+    return;
+  }
   QString sql;
   RDSqlQuery *q;
   sql=QString().sprintf("insert into %s set ID=%d,COUNT=%d,\

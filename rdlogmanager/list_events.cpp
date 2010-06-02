@@ -360,7 +360,7 @@ void ListEvents::renameData()
   while(q->next()) {
     clock_name_esc=q->value(0).toString();
     clock_name_esc.replace(" ","_");
-    sql=QString().sprintf("update %s_CLK set EVENT_NAME=\"%s\"\
+    sql=QString().sprintf("update `%s_CLK` set EVENT_NAME=\"%s\"\
                            where EVENT_NAME=\"%s\"",
 			  (const char *)clock_name_esc,
 			  (const char *)new_name,
@@ -539,7 +539,7 @@ int ListEvents::ActiveEvents(QString event_name,QString *clock_list)
   while(q->next()) {
     clockname=q->value(0).toString();
     clockname.replace(" ","_");
-    sql=QString().sprintf("select EVENT_NAME from %s_CLK\
+    sql=QString().sprintf("select EVENT_NAME from `%s_CLK`\
                            where EVENT_NAME=\"%s\"",(const char *)clockname,
 			  (const char *)event_name);
     q1=new RDSqlQuery(sql);
@@ -571,7 +571,7 @@ void ListEvents::DeleteEvent(QString event_name)
   while(q->next()) {
     clockname=q->value(0).toString();
     clockname.replace(" ","_");
-    sql=QString().sprintf("delete from %s_CLK\
+    sql=QString().sprintf("delete from `%s_CLK`\
                            where EVENT_NAME=\"%s\"",(const char *)clockname,
 			  (const char *)event_name);
     q1=new RDSqlQuery(sql);

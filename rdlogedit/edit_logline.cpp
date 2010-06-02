@@ -247,6 +247,7 @@ EditLogLine::EditLogLine(RDLogLine *line,QString *filter,QString *group,
     edit_overlap_label->setEnabled(false);
   }  
   FillCart(edit_logline->cartNumber());
+  cart_changed=false;
 }
 
 
@@ -276,6 +277,7 @@ void EditLogLine::selectCartData()
   }
   if(log_cart_dialog->exec(&cartnum,RDCart::All,&edit_service,1)==0) {
     FillCart(cartnum);
+    cart_changed=true;
   }
 }
 
@@ -381,6 +383,14 @@ void EditLogLine::okData()
   edit_logline->
     setTransType((RDLogLine::TransType)edit_transtype_box->currentItem());
   edit_logline->setCartNumber(edit_cart_edit->text().toUInt());
+  if(cart_changed) {
+    edit_logline->setSegueStartPoint(-1,RDLogLine::LogPointer);
+    edit_logline->setSegueEndPoint(-1,RDLogLine::LogPointer);
+    edit_logline->setStartPoint(-1,RDLogLine::LogPointer);
+    edit_logline->setEndPoint(-1,RDLogLine::LogPointer);
+    edit_logline->setFadeupPoint(-1,RDLogLine::LogPointer);
+    edit_logline->setFadedownPoint(-1,RDLogLine::LogPointer);
+  }
   if(edit_logline->segueStartPoint(RDLogLine::LogPointer)<0
      && edit_logline->segueEndPoint(RDLogLine::LogPointer)<0
      && edit_logline->endPoint(RDLogLine::LogPointer)<0

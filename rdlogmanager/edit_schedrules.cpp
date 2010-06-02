@@ -184,10 +184,11 @@ void EditSchedRules::Close()
 
   *edit_rules_modified=true;
 
-  for (int i=0; i< number_of_items; i++)  
+  for (int i=0; i<number_of_items; i++)  
    {
    item=list_schedCodes_view->firstChild();
-   sched_rules_list->insertItem(i,item->text(1).toInt(),item->text(2).toInt(),item->text(3),item->text(4),item->text(5));
+   sched_rules_list->insertItem(item->text(0),item->text(1).toInt(),
+                            item->text(2).toInt(),item->text(3),item->text(4),item->text(5));
    list_schedCodes_view->takeItem(item);
    }
 }

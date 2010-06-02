@@ -670,6 +670,7 @@ void VoiceTracker::hideMenuData()
 
 void VoiceTracker::playData()
 {
+  int start_deck=-1;
   if(TransportActive()) {
     return;
   }
@@ -712,6 +713,7 @@ void VoiceTracker::playData()
     edit_deck[0]->
       play(start,edit_logline[0]->segueStartPoint(),
 	   edit_logline[0]->segueEndPoint());
+    start_deck=0;
   }
   else {
     if(edit_wave_name[1].isEmpty()) {
@@ -729,6 +731,7 @@ void VoiceTracker::playData()
       edit_deck[2]->
 	play(start,edit_logline[2]->segueStartPoint(),
 	     edit_logline[2]->segueEndPoint());
+      start_deck=2;
     }
     else {
       start=edit_wave_origin[1]-
@@ -751,6 +754,7 @@ void VoiceTracker::playData()
 	edit_deck[1]->
 	  play(start,edit_logline[1]->segueStartPoint(),
 	       edit_logline[1]->segueEndPoint());
+        start_deck=1;
       }
       else {
 	start=edit_wave_origin[2]-
@@ -767,7 +771,47 @@ void VoiceTracker::playData()
 	edit_deck[2]->
 	  play(start,edit_logline[2]->segueStartPoint(),
 	       edit_logline[2]->segueEndPoint());
+        start_deck=2;
       }
+    }
+  }
+
+  if(start_deck==0) {
+    if(edit_wave_origin[1]-edit_logline[1]->startPoint()>=0 &&
+                    !edit_wave_name[1].isEmpty()) {
+      start=edit_wave_origin[1]-
+              edit_logline[1]->startPoint();
+      if(start<=(edit_logline[1]->segueEndPoint()-
+         edit_logline[1]->startPoint())) {
+        if(start<0) {
+          start=0;
+        }
+        if(start>(edit_logline[1]->segueStartPoint()-
+	     edit_logline[1]->startPoint())) {
+	  edit_segue_start_offset[2]=start-
+	    (edit_logline[1]->segueStartPoint()-
+	     edit_logline[1]->startPoint());
+          }
+        else {
+	  edit_segue_start_offset[2]=0;
+	}
+      edit_deck[1]->setCart(edit_logline[1],false);
+      edit_deck[1]->
+        play(start,edit_logline[1]->segueStartPoint(),
+	   edit_logline[1]->segueEndPoint());
+      }
+    }
+  }
+ 
+  if(start_deck==0 || start_deck==1) {
+    if(edit_wave_origin[2]-edit_logline[2]->startPoint()>=0 &&
+                      !edit_wave_name[2].isEmpty()) {
+      start=edit_wave_origin[2]-
+              edit_logline[2]->startPoint();
+      edit_deck[2]->setCart(edit_logline[2],false);
+      edit_deck[2]->
+	 play(start,edit_logline[2]->segueStartPoint(),
+	     edit_logline[2]->segueEndPoint());
     }
   }
 }

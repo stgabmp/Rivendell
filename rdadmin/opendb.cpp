@@ -148,7 +148,7 @@ QString format_remote_host(const char *hostname) {
 
 
 bool OpenDb(QString dbname,QString login,QString pwd,QString host,
-	    QString stationname,bool interactive)
+	    QString stationname,bool interactive,QString username)
 {
   int db_ver;
   QString admin_name;
@@ -171,10 +171,8 @@ bool OpenDb(QString dbname,QString login,QString pwd,QString host,
   db->setPassword(pwd);
   db->setHostName(host);
   if(!db->open()) {
-    if(!interactive) {
-      return false;
-    }
     RDKillDaemons();
+    if(interactive) {
     msg=QT_TR_NOOP("Unable to access the Rivendell Database!\n\
 Please enter a login for an account with\n\
 administrative rights on the mySQL server,\n\
@@ -188,7 +186,20 @@ and we will try to get this straightened out.");
     delete mysql_login;
     db->setUserName(admin_name);
     db->setPassword(admin_pwd);
+    } 
+    else { 
+      if(username==QString::QString("")) {    
+        printf("No Database\n");
+	return true;
+      }	
+      char pwd[100];
+      printf("Password:");
+      scanf("%s",pwd); 
+      db->setUserName(username);
+      db->setPassword(QString::QString(pwd));
+    }
     if(db->open()) {      // Fixup DB Access Permsissions
+      if(interactive)
       QMessageBox::warning(NULL,QT_TR_NOOP("Can't Connect"),
 	          QT_TR_NOOP("Wrong access permissions for accessing mySQL!"));
       db->removeDatabase("mysql");
@@ -197,6 +208,7 @@ and we will try to get this straightened out.");
     else {
       db->setDatabaseName("mysql");
       if(!db->open()) {   // mySQL is hosed -- scream and die.
+	if(interactive)
 	QMessageBox::warning(NULL,QT_TR_NOOP("Can't Connect"),
 			     QT_TR_NOOP("Unable to connect to mySQL!"));
 	db->removeDatabase("mysql");
@@ -207,6 +219,7 @@ and we will try to get this straightened out.");
 	q=new QSqlQuery(sql);
 	if(!q->isActive()) {   // Can't create DB.
 	  delete q;
+	  if(interactive)
 	  QMessageBox::warning(NULL,QT_TR_NOOP("Can't Create DB"),
 			 QT_TR_NOOP("Unable to create a Rivendell Database!"));
 	  db->removeDatabase("mysql");
@@ -241,13 +254,15 @@ and we will try to get this straightened out.");
 	db->setUserName(login);
 	db->setPassword(pwd);
 	if(!db->open()) {   // Can't open new database
+          if(interactive)
 	  QMessageBox::warning(NULL,QT_TR_NOOP("Can't Connect"),
 		 QT_TR_NOOP("Unable to connect to new Rivendell Database!"));
 	  db->removeDatabase(dbname);
 	  return false;
 	}
 	if(!CreateDb(login,pwd)) {   // Can't create tables.
-	  QMessageBox::warning(NULL,QT_TR_NOOP("Can't Create"),
+	  if(interactive)
+	  if(interactive)QMessageBox::warning(NULL,QT_TR_NOOP("Can't Create"),
 			       QT_TR_NOOP("Unable to create Rivendell Database!"));
 	  db->removeDatabase(dbname);
 	  return false;
@@ -257,17 +272,20 @@ and we will try to get this straightened out.");
 	db->setUserName(login);
 	db->setPassword(pwd);
 	if(!db->open()) {
+	  if(interactive)
 	  QMessageBox::warning(NULL,QT_TR_NOOP("Can't Connect"),
 			       QT_TR_NOOP("Unable to connect to Rivendell Database!"));
 	  db->removeDatabase(dbname);
 	  return false;
 	}	  
 	if(!InitDb(login,pwd,stationname)) {  // Can't initialize tables.
+	  if(interactive)
 	  QMessageBox::warning(NULL,QT_TR_NOOP("Can't Initialize"),
 			       QT_TR_NOOP("Unable to initialize Rivendell Database!"));
 	  db->removeDatabase(dbname);
 	  return false;
 	}
+	if(interactive)
 	QMessageBox::information(NULL,QT_TR_NOOP("Created Database"),
 			     QT_TR_NOOP("New Rivendell Database Created!"));
 	return true;
@@ -389,6 +407,6 @@ on this machine for a few seconds.  Continue?"),
       }
     }
   }
-
+  UpdateDb(500); // Database-Updates that have not an own Version Number!!!
   return true;
 }

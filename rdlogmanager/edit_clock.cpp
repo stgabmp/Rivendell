@@ -362,7 +362,8 @@ void EditClock::schedRules()
   QString clock_name = edit_clock->name();
   bool rules_modified = edit_clock->getRulesModified();
 
-  EditSchedRules *dialog=new EditSchedRules(clock_name,&edit_artistsep,sched_rules_list,&rules_modified,this,"dialog");
+  EditSchedRules *dialog=new EditSchedRules(clock_name,&edit_artistsep,
+        sched_rules_list,&rules_modified,this,"dialog");
   dialog->exec();
   
   if (edit_clock->getArtistSep()!=edit_artistsep)
@@ -464,8 +465,11 @@ void EditClock::saveAsData()
   sql=RDCreateClockTableSql(clockname);
   q=new RDSqlQuery(sql);
   delete q;
-
-
+  sql=RDCreateRulesTableSql(clockname);
+  q=new RDSqlQuery(sql);
+  delete q;
+  sched_rules_list->Save(clockname);
+  edit_clock->setRulesModified(false);
   Save();
   edit_new_clocks->push_back(clockname);
   CopyClockPerms(old_name,clockname);
@@ -734,7 +738,7 @@ void EditClock::AbandonClock(QString name)
   RDSqlQuery *q=new RDSqlQuery(sql);
   delete q;
   name.replace(" ","_");
-  sql=QString().sprintf("drop table %s_CLK",
+  sql=QString().sprintf("drop table `%s_CLK`",
 			(const char *)RDEscapeStringSQLColumn(name));
   q=new RDSqlQuery(sql);
   delete q;
