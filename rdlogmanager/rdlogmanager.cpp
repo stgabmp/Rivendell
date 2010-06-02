@@ -109,6 +109,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   bool cmd_generate = false;
   bool cmd_merge_music = false;
   bool cmd_merge_traffic = false;
+  bool cmd_overwrite = false;
   QString cmd_service = NULL;
   QDate cmd_date = QDate::currentDate().addDays(1);
 
@@ -118,6 +119,8 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
      {
      if (cmd->key(i)=="-g")
        cmd_generate = true;
+     if (cmd->key(i)=="-o")
+       cmd_overwrite = true;
      if (cmd->key(i)=="-m")
        cmd_merge_music = true;
      if (cmd->key(i)=="-t")
@@ -290,8 +293,16 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 
   if (cmd_generate)
     {
-    GenerateLog *generatelog=new GenerateLog(this,"list_grids",1,&cmd_service,&cmd_date);
-    delete generatelog;
+    if (cmd_overwrite) 
+      {
+      GenerateLog *generatelog=new GenerateLog(this,"list_grids",4,&cmd_service,&cmd_date);
+      delete generatelog;
+      }
+    else 
+      {
+      GenerateLog *generatelog=new GenerateLog(this,"list_grids",1,&cmd_service,&cmd_date);
+      delete generatelog;
+      }
     }
   if (cmd_merge_music)
     {

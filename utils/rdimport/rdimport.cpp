@@ -874,7 +874,7 @@ void MainObject::VerifyFile(const QString &filename,unsigned *cartnum)
       found=true;
       QFileInfo *file=new QFileInfo(filename);
       dt=GetCachedTimestamp(filename);
-      if(dt.isNull()||(file->lastModified()>dt)) {
+      if(import_delete_source||dt.isNull()||(file->lastModified()>dt)) {
 	if((file->size()==(*ci)->size)&&(!(*ci)->failed)) {
 	  (*ci)->pass++;
 	}

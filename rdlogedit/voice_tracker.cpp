@@ -2586,16 +2586,20 @@ void VoiceTracker::RefreshLine(RDListViewItem *item)
       default:
 	break;
   }
-  if(!logline->startTime(RDLogLine::Logged).isNull()) {
+//  if(!logline->startTime(RDLogLine::Logged).isNull()) {
     if(logline->timeType()==RDLogLine::Hard) {
       item->setText(1,logline->startTime(RDLogLine::Imported).
 		    toString("Hhh:mm:ss.zzz").left(11));
     }
-    else {
-      item->setText(1,logline->startTime(RDLogLine::Imported).
-		    toString("hh:mm:ss.zzz").left(10));
+    else { // TODO: Configure Time Display Mode in rdadmin
+      item->setText(1,track_log_event->
+			blockStartTime(item->line()).
+			toString("hh:mm:ss"));
+
+//      item->setText(1,logline->startTime(RDLogLine::Imported).
+//		    toString("hh:mm:ss.zzz").left(10));
     }
-  }
+//  }
   switch(logline->transType()) {
       case RDLogLine::Play:
 	item->setText(2,tr("PLAY"));

@@ -2,13 +2,13 @@ Source: rivendell
 Section: sound
 Priority: optional
 Maintainer: Alban Peignier <alban.peignier@free.fr>
-Build-Depends: debhelper, autoconf, automake1.9, dpatch, libtool, libjack0.80.0-dev | libjack0.100.0-dev, libqt3-mt-dev, libasound2-dev, libsamplerate0-dev, libvorbis-dev, libtag1-dev, libid3-dev, libflac-dev, libpam0g-dev, libhpi-dev
+Build-Depends: debhelper, autoconf, automake1.9, dpatch, libtool, libjack0.100.0-dev, libasound2-dev, libsamplerate0-dev, libvorbis-dev, libtag1-dev, libid3-dev, libflac-dev, libpam0g-dev, libmad0-dev, libqt3-mt-dev, libhpi-dev
 Standards-Version: 3.6.1
  
 Package: rivendell
 Architecture: i386
-Depends: ${shlibs:Depends}, bc, cdda2wav, cdparanoia, flac, lame, libqt3-mt-mysql | libqt3c102-mt-mysql, libhpi, mpg321, vorbis-tools
-Recommends: jackd, logrotate
+Depends: ${shlibs:Depends}, bc, cdda2wav, cdparanoia, flac, libqt3-mt-mysql, mpg321, sox (>= 14.0.0), libsox-fmt-all, vorbis-tools, lame, jackd, librivendell (=1.0.1-cvs20081010)
+Recommends: logrotate
 Description: Rivendell binaries - contains a full set of functionality needed to operate a radio
  automation system, consisting of the following components:
  .
@@ -36,3 +36,9 @@ Description: Rivendell library - C++ runtime library
  Contains a full set of functionality needed to operate a radio
  automation system, consisting of the following components.
 
+Package: librivendell-dev
+Architecture: any
+Depends: librivendell (= ${Source-Version})
+Description: Rivendell library - C++ development library
+ Contains a full set of functionality needed to operate a radio
+ automation system, consisting of the following components.

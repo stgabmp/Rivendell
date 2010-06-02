@@ -1333,6 +1333,7 @@ void LogPlay::transTimerData()
 				  addMSecs(grace));
 	    play_grace_line=play_trans_line;
 	    play_grace_timer->start(grace,true);
+	    makeNext(play_trans_line);
 	    break;
       }
     }
@@ -1673,8 +1674,14 @@ bool LogPlay::StartEvent(int line,RDLogLine::TransType trans_type,
 		  switch(logLine(lines[i])->cartType()) {
 		      case RDCart::Audio:
 			prev_logline->setStatus(RDLogLine::Finishing);
-			((RDPlayDeck *)prev_logline->playDeck())->
-			  stop(trans_length);
+                        if(src==RDLogLine::StartManual || src==RDLogLine::StartTime) {
+			  ((RDPlayDeck *)prev_logline->playDeck())->
+			    stop(trans_length,RD_FADE_DEPTH,true);
+                          }
+                        else {
+			  ((RDPlayDeck *)prev_logline->playDeck())->
+			    stop(trans_length,RD_FADE_DEPTH);
+                          }
 			break;
 			
 		      case RDCart::Macro:

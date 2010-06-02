@@ -32,9 +32,9 @@ if test ! -f ./building-debian ; then
   ldconfig
 fi
 
-chmod 4755 $1/bin/caed
-chmod 4755 $1/bin/ripcd
-chmod 4755 $1/bin/rdcatchd
+#chmod 4755 $1/bin/caed
+#chmod 4755 $1/bin/ripcd
+#chmod 4755 $1/bin/rdcatchd
 
 
 # End of install-init.sh

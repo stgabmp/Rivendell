@@ -26,6 +26,7 @@
 #include <qstring.h>
 
 
+pid_t GetPid(QString pidfile);
 void RDInitializeDaemons();
 bool RDCheckDaemon(QString name);
 bool RDCheckDaemons();

@@ -260,6 +260,11 @@ GenerateLog::GenerateLog(QWidget *parent,const char *name,int cmd_switch,QString
     gen_service_box->setCurrentText(*cmdservice);
     createData();
     }
+  if(cmdswitch==4 && cmdservicefit)
+    {
+    gen_service_box->setCurrentText(*cmdservice);
+    createData();
+    }
   if(cmdswitch==2 && cmdservicefit)
     {
     gen_service_box->setCurrentText(*cmdservice);
@@ -329,6 +334,12 @@ void GenerateLog::createData()
   RDSvc *svc=new RDSvc(gen_service_box->currentText(),this,"svc");
   QString logname=RDDateDecode(svc->nameTemplate(),gen_date_edit->date());
   RDLog *log=new RDLog(logname);
+  if(log->exists() && cmdswitch==1) {
+    delete log;
+    delete svc;
+    return;
+  }
+  
   if(log->exists() && cmdswitch==0) {
     str1=QString(tr("The log for"));
     str2=QString(tr("already exists.  Recreating it\nwill remove any merged Music or Traffic events.\n\nRecreate?"));

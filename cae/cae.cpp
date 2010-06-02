@@ -135,6 +135,12 @@ MainObject::MainObject(QObject *parent,const char *name)
     exit(1);
   }
 
+#ifdef JACK
+  system("if [ \"$(ps -A |grep jackd)\" = \"\" ] ; then $( cat /etc/jackdrc ) &  fi ");  
+  sleep(1);
+#endif  // JACK
+
+
   //
   // Initialize Data Structures
   //
@@ -232,6 +238,8 @@ MainObject::MainObject(QObject *parent,const char *name)
   }
   shmctl(meter_block_id,IPC_STAT,&shmid_ds);
   shmid_ds.shm_perm.uid=rd_config->uid();
+  shmid_ds.shm_perm.gid=rd_config->gid();
+  shmid_ds.shm_perm.mode=0660;
   shmctl(meter_block_id,IPC_SET,&shmid_ds);
   meter_block=(RDMeterBlock *)shmat(meter_block_id,NULL,0);
   for(int i=0;i<RD_MAX_CARDS;i++) {

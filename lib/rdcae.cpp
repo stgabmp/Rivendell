@@ -26,6 +26,8 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <syslog.h>
+#include <stdlib.h>
+#include <signal.h>
 
 #include <qobject.h>
 #include <ctype.h>
@@ -35,6 +37,7 @@
 
 #include <rdcae.h>
 #include <rddebug.h>
+#include <rdcheck_daemons.h>
 
 
 RDCae::RDCae(QObject *parent,const char *name)
@@ -43,6 +46,7 @@ RDCae::RDCae(QObject *parent,const char *name)
   cae_connected=false;
   argnum=0;
   argptr=0;
+  restart_lock=false;
 
   //
   // TCP Connection
@@ -96,6 +100,9 @@ RDCae::~RDCae() {
 
 void RDCae::connectHost(QString hostname,Q_UINT16 hostport,QString password)
 {
+  save_hostname=hostname;
+  save_hostport=hostport;
+  save_password=password;
   int count=10;
   QHostAddress addr;
   QTimer *timer=new QTimer(this,"read_timer");
@@ -283,6 +290,10 @@ bool RDCae::inputStatus(int card,int port) const
 
 void RDCae::inputMeterUpdate(int card,int port,short levels[2]) const
 {
+  if(restart_lock) {
+    return;
+  }
+
   if (meter_block){
     levels[0]=meter_block->input_meter[card][port][0];
     levels[1]=meter_block->input_meter[card][port][1];
@@ -294,6 +305,10 @@ void RDCae::inputMeterUpdate(int card,int port,short levels[2]) const
 
 void RDCae::outputMeterUpdate(int card,int port,short levels[2]) const
 {
+  if(restart_lock) {
+    return;
+  }
+
   if (meter_block){
     levels[0]=meter_block->output_meter[card][port][0];
     levels[1]=meter_block->output_meter[card][port][1];
@@ -324,6 +339,10 @@ void RDCae::requestTimescale(int card)
 
 bool RDCae::playPortActive(int card,int port,int except_stream)
 {
+  if(restart_lock) {
+    return false;
+  }
+
   for(int i=0;i<RD_MAX_STREAMS;i++) {
     if(meter_block && meter_block->output_state[card][port][i]&&(i!=except_stream)) {
       return true;
@@ -335,6 +354,10 @@ bool RDCae::playPortActive(int card,int port,int except_stream)
 
 void RDCae::setPlayPortActive(int card,int port,int stream)
 {
+  if(restart_lock) {
+    return;
+  }
+
   if (meter_block){
     meter_block->output_state[card][port][stream]=true;
   }
@@ -346,6 +369,10 @@ void RDCae::readyData(int *stream,int *handle,QString name)
   int c;
   RDCmdCache cmd;
 
+  if(restart_lock) {
+    return;
+  }
+
   if(stream==NULL) {
     for(unsigned i=0;i<delayed_cmds.size();i++) {
       DispatchCommand(&delayed_cmds[i]);
@@ -353,6 +380,9 @@ void RDCae::readyData(int *stream,int *handle,QString name)
     delayed_cmds.clear();
   }
 
+  if(cae_socket->readBlock(buf,0)==-1) {
+    restartCaed();
+  }
   while((c=cae_socket->readBlock(buf,256))>0) {
     buf[c]=0;
     for(int i=0;i<c;i++) {
@@ -419,6 +449,10 @@ void RDCae::readyData(int *stream,int *handle,QString name)
 
 void RDCae::clockData()
 {
+  if(restart_lock) {
+    return;
+  }
+
   for(int i=0;i<RD_MAX_CARDS;i++) {
     for(int j=0;j<RD_MAX_STREAMS;j++) {
       if(cae_handle[i][j]>=0) {
@@ -436,12 +470,22 @@ void RDCae::clockData()
 void RDCae::SendCommand(QString cmd)
 {
   // printf("RDCae: SendCommand(%s)\n",(const char *)cmd);
-  cae_socket->writeBlock((const char *)cmd,cmd.length());
+  if(restart_lock) {
+    return;
+  }
+  if(cae_socket->writeBlock((const char *)cmd,cmd.length())==-1) {
+    restartCaed();
+    cae_socket->writeBlock((const char *)cmd,cmd.length());
+  }
 }
 
 
 void RDCae::DispatchCommand(RDCmdCache *cmd)
 {
+  if(restart_lock) {
+    return;
+  }
+
   int pos;
   int card;
 
@@ -593,4 +637,74 @@ int RDCae::GetHandle(const char *arg)
 
   sscanf(arg,"%d",&n);
   return n;
+}
+
+
+bool RDCae::restartCaed(void)
+{
+  restart_lock=true;
+
+ 
+
+  // KILL and RESTART caed
+  //RDInitializeDaemons();
+  if(RDCheckDaemon(RD_CAED_PID)) {
+    kill(GetPid(RD_CAED_PID),SIGTERM);
+  }
+  system("caed");
+  sleep(RD_DAEMON_PAUSE_TIME);
+  
+  //
+  // TCP Connection
+  //
+  delete cae_socket;
+  cae_socket=new QSocketDevice(QSocketDevice::Stream);
+  cae_socket->setBlocking(false);
+
+  //
+  // Initialize Data Structures
+  //
+  for(int i=0;i<RD_MAX_CARDS;i++) {
+    for(int j=0;j<RD_MAX_PORTS;j++) {
+      input_status[i][j]=false;
+    }
+    for(int j=0;j<RD_MAX_STREAMS;j++) {
+      cae_handle[i][j]=-1;
+    }
+  }
+
+  //
+  // Attach Meter Block Segment
+  //
+  if(meter_block!=NULL) {
+    shmdt(meter_block);
+  }
+  if((meter_block_id=shmget(RD_METER_SHM_KEY,0,0))<0) {
+    fprintf(stderr," SHM error, failed to get meter block id : %s\n",
+			       strerror(errno));
+    meter_block=NULL;
+    }
+  else {
+    meter_block=(RDMeterBlock *)shmat(meter_block_id,NULL,0);
+    if (meter_block == ((void*) -1)){
+      meter_block = NULL;
+      fprintf(stderr," SHM error, failed to allocate meter block : %s\n",
+	    strerror(errno));
+    }
+  }
+
+  restart_lock=false;
+
+  // Connect
+  connectHost(save_hostname,save_hostport,save_password);
+  
+  for(int i=0;i<256;i++) {
+    emit playStopped(i);
+  }
+  for(int i=0;i<RD_MAX_CARDS;i++) {
+    for(int j=0;j<RD_MAX_STREAMS;j++) {
+      emit recordStopped(i,j);
+    }
+  }
+
 }

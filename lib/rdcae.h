@@ -102,6 +102,11 @@ class RDCae : public QObject
   int CardNumber(const char *arg);
   int StreamNumber(const char *arg);
   int GetHandle(const char *arg);
+  bool restartCaed(void);
+  bool restart_lock;
+  QString save_hostname;
+  Q_UINT16 save_hostport;
+  QString save_password;
   RDMeterBlock *meter_block;
   QSocketDevice *cae_socket;
   QString cae_password;
