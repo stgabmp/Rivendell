@@ -1017,6 +1017,7 @@ void ListLog::transportChangedData()
   if(list_scroll&&(transport_line[0]>=0)) {
     ScrollTo(transport_line[0]);
   }
+  UpdateTimes();
 }
 
 

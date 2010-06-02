@@ -779,9 +779,18 @@ int RDLogEvent::length(int from_line,int to_line,QTime *sched_time)
   }
   int len=0;
   for(int i=from_line;i<to_line;i++) {
-    len+=logLine(i)->forcedLength();
+    if(i+1<size()) {
+      if(logLine(i+1)->transType()==RDLogLine::Segue) {
+        len+=logLine(i)->averageSegueLength();
+      }
+      else {
+        len+=logLine(i)->forcedLength();
+      }
+    }
+    else {
+      len+=logLine(i)->forcedLength();
+    }
   }
-
   return len;
 }
 

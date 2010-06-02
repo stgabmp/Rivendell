@@ -40,6 +40,7 @@ ButtonLog::ButtonLog(LogPlay *log,int id,bool allow_pause,
   log_op_mode=RDAirPlayConf::LiveAssist;
   log_time_mode=RDAirPlayConf::TwentyFourHour;
   log_pause_enabled=allow_pause;
+  log_rml_cue=0;
 
   QFont font=QFont("Helvetica",14,QFont::Bold);
   font.setPixelSize(14);
@@ -295,7 +296,7 @@ void ButtonLog::setTimeMode(RDAirPlayConf::TimeMode mode)
 }
 
 
-void ButtonLog::startButton(int id)
+void ButtonLog::startButton(int id,int func)
 {
 #ifdef SHOW_SLOTS
   printf("startMapperData(%d)\n",id);
@@ -305,6 +306,51 @@ void ButtonLog::startButton(int id)
   RDLogLine *logline=log_log->logLine(line);
   if(line<0) {
     line=log_log->size();
+  }
+  if(logline!=NULL) {
+    switch(func) {
+      case 2:
+        if(log_rml_cue==0) {
+          log_rml_cue=1;
+        }
+        boxDoubleClickedData(line);
+        return;
+        break;
+ 
+      case 3: 
+        if(logline->status()==RDLogLine::Paused) {
+  	  log_log->play(line,RDLogLine::StartManual);
+        }
+        else {
+          log_log->pause(line);
+          log_log->makeNext(line);
+        }
+        return;
+        break;
+
+      case 4: 
+        if(logline->status()==RDLogLine::Paused) {
+  	  log_log->play(line,RDLogLine::StartManual);
+        }
+        else {
+          log_log->pause(line);
+          logline->setPlayPosition(0);
+          logline->playPositionChanged();
+          log_log->makeNext(line);
+        }
+        return;
+        break;
+
+      case 5: 
+        log_log->stop(line);
+        logline->setStatus(RDLogLine::Finished);
+        log_log->makeNext(line);
+        return;
+        break;
+
+      default:
+        break;
+    }
   }
   switch(log_start_button[id]->mode()) {
       case StartButton::Stop:
@@ -387,12 +433,58 @@ void ButtonLog::boxDoubleClickedData(int line)
   if(line<0) {
     return;
   }
-  if(log_event_edit->exec(line)==0) {
-    log_log->lineModified(line);
+  switch(log_rml_cue) {
+    case 0:
+      log_event_edit->setModal(FALSE);
+      log_event_edit->exec(line,false);
+      connect(log_event_edit,SIGNAL(endOk(int)),this,SLOT(cueOkData(int)));
+      connect(log_event_edit,SIGNAL(endCancel(int)),this,SLOT(cueCancelData(int)));
+      log_event_edit->show();
+      break;
+ 
+    case 1:
+      log_event_edit->setModal(FALSE);
+      log_event_edit->exec(line,false);
+      log_event_edit->auditionButtonData();
+      connect(log_event_edit,SIGNAL(endOk(int)),this,SLOT(cueOkData(int)));
+      connect(log_event_edit,SIGNAL(endCancel(int)),this,SLOT(cueCancelData(int)));
+      log_event_edit->show();
+      log_rml_cue++;
+      break;
+ 
+    case 2:
+      log_rml_cue++;
+      log_event_edit->auditionEnd();
+      break;
+
+    case 3:
+      log_rml_cue=0;
+      log_event_edit->okData();
+      break;
   }
-  if(line==1) {
-    return;
-  }
+ // if(log_event_edit->exec(line)==0) {
+ //   log_log->lineModified(line);
+ // }
+//  if(line==1) {
+//    return;
+//  }
+}
+
+
+void ButtonLog::cueOkData(int line)
+{
+  disconnect(log_event_edit,SIGNAL(endOk(int)),this,SLOT(cueOkData(int)));
+  disconnect(log_event_edit,SIGNAL(endCancel(int)),this,SLOT(cueCancelData(int)));
+  //log_log->lineModified(line);
+  log_rml_cue=0;
+}
+
+
+void ButtonLog::cueCancelData(int line)
+{
+  disconnect(log_event_edit,SIGNAL(endOk(int)),this,SLOT(cueOkData(int)));
+  disconnect(log_event_edit,SIGNAL(endCancel(int)),this,SLOT(cueCancelData(int)));
+  log_rml_cue=0;
 }
 
 

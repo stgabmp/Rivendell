@@ -48,9 +48,9 @@
 //
 #define LOGPLAY_MAX_PLAYS 7
 #define TRANSPORT_QUANTITY 7
-#define LOGPLAY_LOOKAHEAD_EVENTS 20
-#define LOGPLAY_RESCAN_INTERVAL 5000
-#define LOGPLAY_RESCAN_SIZE 30
+#define LOGPLAY_LOOKAHEAD_EVENTS 10
+#define LOGPLAY_RESCAN_INTERVAL 1000
+#define LOGPLAY_RESCAN_SIZE 5
 
 //
 // Debug Settings
@@ -160,9 +160,10 @@ class LogPlay : public QObject,public RDLogEvent
  private:
   bool StartEvent(int line,RDLogLine::TransType trans_type,int trans_length,
 		  RDLogLine::StartSource src,int mport=-1,int duck_length=0);
+  void CheckChainto(int line);
   bool StartAudioEvent(int line);
   void CleanupEvent(int id);
-  void UpdateStartTimes(int line);
+  void UpdateStartTimes(int line,bool all=false);
   void FinishEvent(int line);
   QTime GetStartTime(QTime sched_time,RDLogLine::TransType trans_type,
 		     RDLogLine::TimeType time_type,QTime prev_time,
@@ -175,7 +176,7 @@ class LogPlay : public QObject,public RDLogEvent
   void AdvanceActiveEvent();
   void SetTransTimer(QTime current_time=QTime(),bool stop=true);
   QString GetPortName(int card,int port);
-  int GetNextChannel(int mport,int *card,int *port);
+  int GetNextChannel(int mport,int *card,int *port,RDLogLine::StartSource src);
   int GetLineById(int id);
   RDPlayDeck *GetPlayDeck();
   void FreePlayDeck(RDPlayDeck *);
@@ -238,6 +239,7 @@ class LogPlay : public QObject,public RDLogEvent
   bool play_onair_flag;
   int play_duck_volume_port1;
   int play_duck_volume_port2;
+  int play_update_counter;
   std::vector<RLMHost *> *play_rlm_hosts;
   unsigned play_now_cartnum;
   unsigned play_next_cartnum;

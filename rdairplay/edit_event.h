@@ -50,11 +50,18 @@ class EditEvent : public QDialog
  public:
   EditEvent(LogPlay *log,QWidget *parent=0,const char *name=0);
   ~EditEvent();
+  void auditionEnd();
   QSize sizeHint() const;
   QSizePolicy sizePolicy() const;
 
  public slots:
-  int exec(int line);
+  int exec(int line,bool modal=true);
+  void auditionButtonData();
+  void okData();
+
+ signals:
+  void endOk(int line);
+  void endCancel(int line);
 
  private slots:
   void timeChangedData(const QTime &);
@@ -63,7 +70,6 @@ class EditEvent : public QDialog
   void sliderPressedData();
   void sliderReleasedData();
   void sliderChangedData(int pos);
-  void auditionButtonData();
   void pauseButtonData();
   void stopButtonData();
   void stateChangedData(int id,RDPlayDeck::State state);
@@ -71,7 +77,6 @@ class EditEvent : public QDialog
   void startClickedData();
   void endClickedData();
   void auditionTimerData();
-  void okData();
   void cancelData();
   virtual void wheelEvent(QWheelEvent *e);
   virtual void mousePressEvent(QMouseEvent *e);

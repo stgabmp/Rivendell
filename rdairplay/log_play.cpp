@@ -62,6 +62,7 @@ LogPlay::LogPlay(RDCae *cae,int id,QSocketDevice *nn_sock,QString logname,
   play_timescaling_available=false;
   play_rescan_pos=0;
   play_refreshable=false;
+  play_update_counter=0;
   play_audition_preroll=rdairplay_conf->auditionPreroll();
   for(int i=0;i<LOGPLAY_MAX_PLAYS;i++) {
     play_slot_id[i]=i;
@@ -198,7 +199,7 @@ void LogPlay::setMode(RDAirPlayConf::OpMode mode)
     return;
   }
   play_op_mode=mode;
-  UpdateStartTimes(play_line_counter);
+  UpdateStartTimes(play_line_counter,true);
 }
 
 
@@ -335,8 +336,10 @@ bool LogPlay::play(int line,RDLogLine::StartSource src,
   //
   // Play it
   //
-  if(!GetNextPlayable(&line,skip_meta,true)) {
-    return false;
+  if(!((logline=logLine(line))->status()==RDLogLine::Paused && src==RDLogLine::StartManual)) {
+    if(!GetNextPlayable(&line,skip_meta,true)) {
+      return false;
+    }
   }
 
   bool ret = false;
@@ -461,6 +464,7 @@ void LogPlay::makeNext(int line,bool refresh_status)
   UpdatePostPoint();
   emit nextEventChanged(line);
   emit transportChanged();
+  CheckChainto(play_next_line);
 }
 
 
@@ -506,7 +510,7 @@ void LogPlay::load()
   delete log;
   play_line_counter=0;
   play_next_line=0;
-  UpdateStartTimes(0);
+  UpdateStartTimes(0,true);
   emit reloaded();
   SetTransTimer();
   emit transportChanged();
@@ -654,7 +658,7 @@ bool LogPlay::refresh()
     logLine(i)->clearPass();
   }
   RefreshEvents(0,size());
-  UpdateStartTimes(next_line);
+  UpdateStartTimes(next_line,true);
   UpdatePostPoint();
   SetTransTimer();
   emit transportChanged();
@@ -754,7 +758,7 @@ void LogPlay::insert(int line,int cartnum,RDLogLine::TransType next_type,
 		    rdairplay_conf->defaultTransType());
   logline->
     setTimescalingActive(play_timescaling_available&&logline->enforceLength());
-  UpdateStartTimes(line);
+  UpdateStartTimes(line,true);
   emit inserted(line);
   UpdatePostPoint();
   if(mod_line>=0) {
@@ -808,7 +812,7 @@ void LogPlay::insert(int line,RDLogLine *l,bool update,bool preserv_custom_trans
   logline->
     setTimescalingActive(play_timescaling_available&&logline->enforceLength());
   if(update) {
-    UpdateStartTimes(line);
+    UpdateStartTimes(line,true);
     emit inserted(line);
     UpdatePostPoint();
     if(mod_line>=0) {
@@ -870,7 +874,7 @@ void LogPlay::remove(int line,int num_lines,bool update,bool preserv_custom_tran
     if(nextLine()>line) {
       makeNext(nextLine()-num_lines);
     }
-    UpdateStartTimes(line);
+    UpdateStartTimes(line,true);
     if(size()==0) {
       emit reloaded();
     }
@@ -950,10 +954,10 @@ void LogPlay::move(int from_line,int to_line)
   }
   RDLogEvent::move(from_line,to_line);
   if(from_line>to_line) {
-    UpdateStartTimes(to_line);
+    UpdateStartTimes(to_line,true);
   }
   else {
-    UpdateStartTimes(from_line);
+    UpdateStartTimes(from_line,true);
   }
   SetTransTimer();
   UpdatePostPoint();
@@ -1198,7 +1202,7 @@ void LogPlay::lineModified(int line)
   RDLogLine *next_logline;
 
   SetTransTimer();
-  UpdateStartTimes(line);
+  UpdateStartTimes(line,true);
 
   if((logline=logLine(line))!=NULL) {
     if((next_logline=logLine(line+1))==NULL) {
@@ -1219,6 +1223,7 @@ void LogPlay::lineModified(int line)
   }
   UpdatePostPoint();
   emit transportChanged();
+  CheckChainto(play_next_line);
 }
 
 
@@ -1452,7 +1457,7 @@ void LogPlay::segueEndData(int id)
      (logline->status()==RDLogLine::Finishing)) {
     ((RDPlayDeck *)logline->playDeck())->stop();
     CleanupEvent(id);
-    UpdateStartTimes(line);
+//    UpdateStartTimes(line);
     LogTraffic(serviceName(),logName().left(logName().length()-4),logline,
 	       (RDLogLine::PlaySource)(play_id+1),
 	       RDAirPlayConf::TrafficFinish,play_onair_flag);
@@ -1583,6 +1588,15 @@ void LogPlay::rescanEventsData()
 {
   int start_pos=play_rescan_pos;
   int start_size=LOGPLAY_RESCAN_SIZE;
+
+  if (play_update_counter>0) {
+    play_update_counter--;
+    if (play_update_counter==0) {
+      UpdateStartTimes(0,true);
+      emit transportChanged();
+    }
+  }
+
   if((start_pos+start_size)>=size()) {
     start_size=size()-start_pos;
     play_rescan_pos=0;
@@ -1632,6 +1646,8 @@ bool LogPlay::StartEvent(int line,RDLogLine::TransType trans_type,
   if(logline->id()<0) {
     return false;
   }
+
+  //  rdairplay_conf->setLogCurrentLine(play_id,line);
 
   //
   // Transition running events
@@ -1714,15 +1730,19 @@ bool LogPlay::StartEvent(int line,RDLogLine::TransType trans_type,
 	  rdairplay_conf->setLogCurrentLine(play_id,nextLine());
 	  return false;
 	}
-	aport=GetNextChannel(mport,&card,&port);
 	playdeck=(RDPlayDeck *)logline->playDeck();
-	playdeck->setCard(card);
-	playdeck->setPort(port);
-	playdeck->setChannel(aport);
-	logline->setPauseCard(card);
-	logline->setPausePort(port);
-	logline->setPortName(GetPortName(playdeck->card(),
+        if(logline->status()!=RDLogLine::Paused) {
+ 	  aport=GetNextChannel(mport,&card,&port,src);
+   	  playdeck->setCard(card);
+	  playdeck->setPort(port);
+	  logline->setPauseCard(card);
+	  logline->setPausePort(port);
+	  logline->setPortName(GetPortName(playdeck->card(),
 					 playdeck->port()));
+        }
+        else {
+          aport=logline->portName().toInt()-1;
+        }
 	if(logline->portName().toInt()==2){
 	  playdeck->duckVolume(play_duck_volume_port2,0);
 	  }
@@ -1862,7 +1882,7 @@ bool LogPlay::StartEvent(int line,RDLogLine::TransType trans_type,
 	// Skip Past
 	//
 	logline->setStatus(RDLogLine::Finished);
-	UpdateStartTimes(line);
+//	UpdateStartTimes(line);
 	emit played(line);
 	FinishEvent(line);
 	emit nextEventChanged(play_next_line);
@@ -1910,6 +1930,8 @@ bool LogPlay::StartEvent(int line,RDLogLine::TransType trans_type,
       default:
 	break;
   }
+  CheckChainto(play_next_line);
+
   while((play_next_line<size())&&((logline=logLine(play_next_line))!=NULL)) {
     if((logline->state()==RDLogLine::Ok)||
        (logline->state()==RDLogLine::NoCart)||
@@ -1922,6 +1944,33 @@ bool LogPlay::StartEvent(int line,RDLogLine::TransType trans_type,
   play_next_line=-1;
   rdairplay_conf->setLogCurrentLine(play_id,nextLine());
   return true;
+}
+
+
+void LogPlay::CheckChainto(int line)
+{
+  RDLogLine *logline=logLine(line);
+  if(logline==NULL) {
+    return;
+  }
+  if(logline->transType()==RDLogLine::Stop) {
+    return;
+  }
+  if(logline->type()==RDLogLine::Chain)  {
+    play_macro_deck->
+      load(QString().sprintf("LL %d!",play_id+1));
+    play_macro_deck->setLine(line);
+    play_macro_deck->exec();
+    play_macro_deck->
+      load(QString().sprintf("LL %d %s!",
+				   play_id+1,
+				   (const char *)logline->markerLabel()));
+    play_macro_deck->setLine(line);
+    play_macro_deck->exec();
+    LogLine(RDConfig::LogInfo,QString().sprintf("chained to log: Line: %d  Log: %s",
+				  line,
+				  (const char *)logline->markerLabel()));
+  }
 }
 
 
@@ -2011,8 +2060,9 @@ void LogPlay::CleanupEvent(int id)
 }
 
 
-void LogPlay::UpdateStartTimes(int line)
+void LogPlay::UpdateStartTimes(int line,bool all)
 {
+  int update_line=line;
   QTime time;
   QTime new_time;
   QTime end_time;
@@ -2027,25 +2077,35 @@ void LogPlay::UpdateStartTimes(int line)
   RDLogLine *logline;
   RDLogLine *next_logline;
   RDLogLine::TransType next_trans;
-  int next_length=0;
+  RDLogLine::TimeType next_time_type;
   int lines[TRANSPORT_QUANTITY];
 
   if((running=runningEvents(lines,false))>0) {
-    line=lines[0];
+    update_line=lines[0];
   }
   else {
-    line=play_next_line;
+    update_line=play_next_line;
   }
-  for(int i=line;i<size();i++) {
+  if(all) {
+    play_update_counter=0;
+  }
+  else {
+    play_update_counter=3;
+  }
+  int c=0;
+  for(int i=update_line;i<size();i++) {
+    c++;
     if((logline=logLine(i))!=NULL) {
       if((next_logline=logLine(nextLine(i)))!=NULL) {
 	next_trans=next_logline->transType();
-	next_length=next_logline->segueLength(next_trans);
+	next_time_type=next_logline->timeType();
       }
       else {
 	next_trans=RDLogLine::Stop;
+	next_time_type=RDLogLine::Relative;
       }
       stop=false;
+
       switch(logline->status()) {
 	  case RDLogLine::Playing:
 	  case RDLogLine::Finishing:
@@ -2066,14 +2126,13 @@ void LogPlay::UpdateStartTimes(int line)
 	next_stop=time.addMSecs(prev_total_length);
 	stop_set=true;
       }
-
-      prev_total_length=logline->effectiveLength()-
-	logline->playPosition();
-      prev_segue_length=
-	logline->segueLength(next_trans)-logline->playPosition();
-      end_time=
-	time.addMSecs(logline->effectiveLength()-
-		      logline->playPosition());
+//    prev_total_length=logline->effectiveLength()-
+//	logline->playPosition();
+//    prev_segue_length=
+//	logline->segueLength(next_trans)-logline->playPosition();
+//      end_time=
+//	time.addMSecs(logline->effectiveLength()-
+//		      logline->playPosition());
 
       switch(logline->status()) {
       case RDLogLine::Scheduled:
@@ -2092,10 +2151,17 @@ void LogPlay::UpdateStartTimes(int line)
 	  logline->segueLength(next_trans);
 	end_time=
 	  time.addMSecs(logline->effectiveLength());
+        break;
+      }
+  //    if(!all && next_time_type==RDLogLine::Hard && next_logline!=NULL) {
+      if(!all && c>8) {
+//        if(next_logline->startTime(RDLogLine::Logged)>time) {
+           i=size();
+  //      }
       }
     }
   }
-  next_stop=GetNextStop(line);
+  next_stop=GetNextStop(update_line);
 
   if(next_stop!=play_next_stop) {
     play_next_stop=next_stop;
@@ -2129,7 +2195,7 @@ void LogPlay::FinishEvent(int line)
       }
     }
   }
-  UpdateStartTimes(line);
+//  UpdateStartTimes(line);
   emit stopped(line);
 }
 
@@ -2184,10 +2250,10 @@ QTime LogPlay::GetStartTime(QTime sched_time,
 	else {
 	  *stop=false;
 	}
-	if(running_events&&(time<sched_time)&&(trans_type!=RDLogLine::Stop)) {
+	if((running_events>0)&&(time<sched_time)&&(trans_type!=RDLogLine::Stop)) {
 	  return time;
 	}
-	return sched_time;
+        return sched_time;
 	break;
   }
   return QTime();
@@ -2273,7 +2339,12 @@ void LogPlay::UpdatePostPoint(int line)
     if((line<size())&&(play_trans_line>=0)&&(play_trans_line<size())) {
       post_line=play_trans_line;
       post_time=logLine(post_line)->startTime(RDLogLine::Logged);
-      offset=length(line,post_line)-QTime::currentTime().msecsTo(post_time);
+      if(logLine(line)->status()==RDLogLine::Playing || logLine(line)->status()==RDLogLine::Finishing) {
+        offset=length(line,post_line)-logLine(line)->startTime(RDLogLine::Actual).msecsTo(post_time);
+      }
+      else {
+        offset=length(line,post_line)-QTime::currentTime().msecsTo(post_time);
+      }
     }
   }
   if((post_time!=play_post_time)||(offset!=play_post_offset)) {
@@ -2371,24 +2442,34 @@ void LogPlay::SetTransTimer(QTime current_time,bool stop)
 }
 
 
-int LogPlay::GetNextChannel(int mport,int *card,int *port)
+int LogPlay::GetNextChannel(int mport,int *card,int *port,RDLogLine::StartSource src)
 {
   int chan=next_channel;
+  int lines[TRANSPORT_QUANTITY];
+
   if(mport<0) {
+    if(src==RDLogLine::StartManual) {
+      if(runningEvents(lines)==0) {
+        next_channel=0;
+        }
+      else {
+        if(++next_channel>1) {
+          next_channel=0;
+        }
+      }
+    }
+    chan=next_channel;
     *card=play_card[next_channel];
     *port=play_port[next_channel];
-    if(++next_channel>1) {
-      next_channel=0;
-    }
   }
   else {
     chan=mport;
     *card=play_card[mport];
     *port=play_port[mport];
-    next_channel=mport+1;
+    next_channel=mport;
     if(next_channel>1) {
       next_channel=0;
-    }
+     }
   }
   return chan;
 }
@@ -2448,8 +2529,9 @@ bool LogPlay::GetNextPlayable(int *line,bool skip_meta,bool forced_start)
       emit modified(i);
     }
     else {
-      if(logline->status()==RDLogLine::Scheduled || logline->status()==RDLogLine::Paused || 
-		      logline->status()==RDLogLine::Auditioning) {
+ //     if(logline->status()==RDLogLine::Scheduled || logline->status()==RDLogLine::Paused || 
+//		      logline->status()==RDLogLine::Auditioning) {
+      if(logline->status()==RDLogLine::Scheduled || logline->status()==RDLogLine::Auditioning) {
         if(((logline->transType()==RDLogLine::Stop)||
 	    (play_op_mode==RDAirPlayConf::LiveAssist))&&((i-skipped)!=*line)) {
 	  makeNext(i);
@@ -2458,10 +2540,12 @@ bool LogPlay::GetNextPlayable(int *line,bool skip_meta,bool forced_start)
         if((next_logline=logLine(i+1))!=NULL) {
 	  next_type=next_logline->transType();
         }
+//        if((logline->setEvent(play_id,next_type,logline->timescalingActive())==
+//	    RDLogLine::Ok)&&((logline->status()==RDLogLine::Scheduled)||
+//	  		     (logline->status()==RDLogLine::Paused))&&
+//	   (!logline->zombified())) {
         if((logline->setEvent(play_id,next_type,logline->timescalingActive())==
-	    RDLogLine::Ok)&&((logline->status()==RDLogLine::Scheduled)||
-	  		     (logline->status()==RDLogLine::Paused))&&
-	   (!logline->zombified())) {
+	    RDLogLine::Ok) && logline->status()==RDLogLine::Scheduled && (!logline->zombified())) {
 	  emit modified(i);
 	  *line=i;
 	  return true;
@@ -2603,10 +2687,10 @@ void LogPlay::Paused(int id)
   RDLogLine *logline=logLine(line);
   if(logline!=NULL) {
     logline->playDeck()->disconnect();
-    logline->setPortName("");
+   // logline->setPortName("");
     logline->setStatus(RDLogLine::Paused);
   }
-  UpdateStartTimes(line);
+  // UpdateStartTimes(line);
   emit paused(line);
   UpdatePostPoint();
   LogTraffic(serviceName(),logName().left(logName().length()-4),logLine(line),
@@ -2626,7 +2710,7 @@ void LogPlay::Stopped(int id)
   int line=GetLineById(id);
   int lines[TRANSPORT_QUANTITY];
   CleanupEvent(id);
-  UpdateStartTimes(line);
+//  UpdateStartTimes(line);
   emit stopped(line);
   AdvanceActiveEvent();
   UpdatePostPoint();

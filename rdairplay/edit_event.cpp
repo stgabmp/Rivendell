@@ -323,7 +323,7 @@ QSizePolicy EditEvent::sizePolicy() const
 }
 
 
-int EditEvent::exec(int line)
+int EditEvent::exec(int line,bool modal)
 {
   edit_line=line;
   edit_time_changed=false;
@@ -441,7 +441,10 @@ int EditEvent::exec(int line)
 	ShowAudioControls(false);
 	break;
   }
-  return QDialog::exec();
+  if(modal) {
+    return QDialog::exec();
+  }
+  return 0;
 }
 
 
@@ -721,6 +724,7 @@ void EditEvent::okData()
     }
     edit_log->lineModified(edit_line);
   }
+  emit endOk(edit_line);
   done(0);
 }
 
@@ -730,6 +734,7 @@ void EditEvent::cancelData()
   if(edit_play_deck->state()==RDPlayDeck::Playing) {
     edit_play_deck->stop();
   }
+  emit endCancel(edit_line);
   done(1);
 }
 
@@ -989,16 +994,7 @@ void EditEvent::mousePressEvent(QMouseEvent *e)
         break;
 
       case QMouseEvent::MidButton:
-        if(edit_audition_button->isShown()) {
-          if(edit_logline->forcedLength()>10000) {
-            if(edit_play_deck->state()==RDPlayDeck::Playing) {
-              edit_play_deck->pause();
-              }
-            edit_slider->setValue((edit_logline->forcedLength())-10000);
-            sliderChangedData(edit_slider->value());
-            }
-          auditionButtonData();
-          }
+           auditionEnd();
         break;
 
       default:
@@ -1035,3 +1031,22 @@ void EditEvent::keyReleaseEvent(QKeyEvent *e)
 	break;
   }
 }
+
+
+void EditEvent::auditionEnd()
+{
+  if(edit_audition_button->isShown()) {
+    if(edit_right_click_stop) {
+        stopButtonData();
+    }
+    if(edit_logline->effectiveLength()>10000) {
+      if(edit_play_deck->state()==RDPlayDeck::Playing) {
+        edit_play_deck->pause();
+      }
+      edit_slider->setValue((edit_logline->effectiveLength())-10000);
+      sliderChangedData(edit_slider->value());
+      }
+    auditionButtonData();
+    }
+}
+

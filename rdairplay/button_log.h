@@ -63,7 +63,7 @@ class ButtonLog : public QWidget
   void setTimeMode(RDAirPlayConf::TimeMode mode);
 
  public slots:
-  void startButton(int);
+  void startButton(int id,int func=1);
 
  private slots:
   void transportChangedData();
@@ -73,6 +73,8 @@ class ButtonLog : public QWidget
   void stoppedData(int line);
   void pausedData(int line);
   void positionData(int line,int point);
+  void cueOkData(int line);
+  void cueCancelData(int line);
 
  signals:
   void selectClicked(int id,int line,RDLogLine::Status);
@@ -91,6 +93,7 @@ class ButtonLog : public QWidget
   RDAirPlayConf::TimeMode log_time_mode;
   EditEvent *log_event_edit;
   bool log_pause_enabled;
+  int log_rml_cue;
 };
 
 

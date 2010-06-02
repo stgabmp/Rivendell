@@ -203,7 +203,7 @@ void MainWidget::RunLocalMacros(RDMacro *rml)
 	break;
 
       case RDMacro::PB:   // Push Button
-	if(rml->argQuantity()!=1) {
+	if(rml->argQuantity()<1 && rml->argQuantity()>2) {
 	  if(rml->echoRequested()) {
 	    rml->acknowledge(false);
 	    rdripc->sendRml(rml);
@@ -218,7 +218,12 @@ void MainWidget::RunLocalMacros(RDMacro *rml)
 	    return;
 	  }
 	}
-	air_button_list->startButton(rml->arg(0).toInt()-1);
+	if(rml->argQuantity()<2) {
+	  air_button_list->startButton(rml->arg(0).toInt()-1);
+ 	}
+	else {
+	  air_button_list->startButton(rml->arg(0).toInt()-1,rml->arg(1).toInt());
+	}
 	if(rml->echoRequested()) {
 	  rml->acknowledge(true);
 	  rdripc->sendRml(rml);
