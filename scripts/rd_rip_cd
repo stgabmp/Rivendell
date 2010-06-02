@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# CD Ripping Script for Rivendell
+#
+#   (C) Copyright 2003-2005 Fred Gleason <fredg@paravelsystems.com>
+#
+#      $Id: rd_rip_cd,v 1.14.6.2 2009/09/04 01:29:50 cvs Exp $
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License version 2 as
+#   published by the Free Software Foundation.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# Usage:
+#  rd_rip_cd [args]
+#
+# Argument Order:
+#        <track> = CD track to rip.
+#       <ripdev> = CD Device
+#     <paranoia> = Paranoia level. 0 = Normal, 1 = Low, 2 = None
+#        <level> = Normalization level, expressed as linear ratio, 
+#                  0 = No normalization
+#       <format> = Output format, 0 = PCM16, 1 = MPEG-1 Layer 2
+#        <chans> = Output channels, 1 or 2
+#     <samprate> = Output sample rate, in samples/sec
+#      <bitrate> = MPEG Bitrate, in kbps, or 0 for PCM16
+#      <wavfile> = Destination file for ripped WAV data.
+#      <datfile> = Temporary file for peak level data.
+#      <tmpfile> = Temporary file for intermediate audio
+#<src-converter> = The sample-rate converter type to be used.  Integer value.
+#                  See the converter types listed in the documentation for 
+#                  libsamplerate for more info.
+
+#
+# Some sane variable names
+#
+TRACK=${1}
+RIPDEV=${2}
+PARANOIA_LEVEL=${3}
+NORMAL_LEVEL=${4}
+FORMAT=${5}
+CHANS=${6}
+SAMPRATE=${7}
+BITRATE=${8}
+WAVE=${9}
+PEAK=${10}
+WORK=${11}
+SRC_CONV=${12}
+
+#
+# Sanity Checks
+#
+set -e
+if [ $FORMAT = "2" ]; then    # MPEG Layer 3 not supported!
+   exit 1;
+fi 
+
+#
+# Set Paranoia Level
+#
+if [ $PARANOIA_LEVEL = "0" ]; then
+    PARANOIA_FLAG="--paranoia"
+fi
+if [ $PARANOIA_LEVEL = "1" ]; then
+    PARANOIA_FLAG="-P 10"
+fi
+
+#
+# Rip from CD
+#
+cdda2wav -D $RIPDEV -t $TRACK $PARANOIA_FLAG $WORK
+if [ $NORMAL_LEVEL = "0" ]; then
+    RATIO=1
+else
+    PEAK_LEVEL=`rdaconvert --operation=ratio $WORK`
+    RATIO=`echo $NORMAL_LEVEL*$PEAK_LEVEL | bc -l`
+fi
+
+#
+# Encode to the library
+#
+if [ $FORMAT = 0 ]; then
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS --sample-rate=$SAMPRATE --gain-ratio=$RATIO $WORK - | rdfilewrite --channels=$CHANS --sample-rate=$SAMPRATE $WAVE
+fi
+
+if [ $FORMAT = 1 ]; then
+    if [ $CHANS = 1 ]; then
+	MODE="m"
+    else
+	MODE="s"
+    fi
+    case "$SAMPRATE" in
+	"32000")
+	    LAMERATE="32"
+        ;;
+	"44100")
+	    LAMERATE="44.1"
+        ;;
+	"48000")
+	    LAMERATE="48"
+	;;
+    esac
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS --sample-rate=$SAMPRATE --gain-ratio=$RATIO $WORK - | toolame -t 0 -W -m $MODE -b $BITRATE -s $LAMERATE - $WAVE
+fi
+rm -f $WORK
+
+
+# End of rd_rip_cd

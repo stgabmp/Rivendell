@@ -1,0 +1,12 @@
+             REPORT_SERVICES Table Layout for Rivendell
+
+The REPORT_SERVICES table holds data concerning which services are 
+to be included in a given report.  Following is the layout of a record 
+in the REPORT_SERVICES table:
+
+
+FIELD NAME           TYPE              REMARKS
+---------------------------------------------------------------
+ID                   unsigned int(10)  Primary key, auto increment
+REPORT_NAME          char(64)          From REPORTS.NAME
+SERVICE_NAME         char(10)          From SERVICES.NAME

@@ -1,0 +1,18 @@
+                OUTPUTS Table Layout for Rivendell
+
+The OUTPUTS table holds data concerning the outputs of each
+configured switcher device on the system.  Following is the layout 
+of a record in the ENDPOINTS table:
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------
+ID                   int(10) unsigned  Primary key, auto increment
+STATION_NAME         char(64)          From STATIONS.NAME
+MATRIX               int(10) unsigned
+NUMBER               int(11)
+NAME                 char(64)
+ENGINE_NUM           int(11)
+DEVICE_NUM           int(11)
+NODE_HOSTNAME        char(255)         From SWITCHER_NODES.HOSTNAME
+NODE_TCP_PORT        int(11)           From SWITCHER_NODES.TCP_PORT
+NODE_SLOT            int(11)

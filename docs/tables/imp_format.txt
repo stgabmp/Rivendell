@@ -1,0 +1,15 @@
+               *_IMP Table Layout for Rivendell
+
+*_IMP tables holds data concerning a particular import log that exists
+on the system.  Following is the layout of a record in the *_IMP format:
+
+
+FIELD NAME           TYPE             REMARKS
+-------------------------------------------------------------------
+START_TIME           time
+CART_NUMBER          unsigned int(10)
+LENGTH               int(11)
+
+Table name is of the form:
+
+      <station-name>_<service_name>_IMP

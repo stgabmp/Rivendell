@@ -1,0 +1,43 @@
+                  RDPANEL Table Layout for Rivendell
+
+The RDPANEL table holds configuration data for the RDPanel widget.
+Following is the layout of a record in the RDPANEL table:
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------------------
+ID                     int(10) unsigned  * Primary key, Auto Increment
+STATION                char(40)          Workstation, Indexed
+INSTANCE               int(10) unsigned
+CARD2                  int(11)           None=-1, Sound Panel Card (1st play)
+PORT2                  int(11)           None=-1, Sound Panel Port
+START_RML2             char(255)
+STOP_RML2              char(255)
+CARD3                  int(11)           None=-1, Sound Panel Card (1st play)
+PORT3                  int(11)           None=-1, Sound Panel Port
+START_RML3             char(255)
+STOP_RML3              char(255)
+CARD6                  int(11)           None=-1, Sound Panel Card (2nd play)
+PORT6                  int(11)           None=-1, Sound Panel Port
+START_RML6             char(255)
+STOP_RML6              char(255)
+CARD7                  int(11)           None=-1, Sound Panel Card (3rd play)
+PORT7                  int(11)           None=-1, Sound Panel Port
+START_RML7             char(255)
+STOP_RML7              char(255)
+CARD8                  int(11)           None=-1, Sound Panel Card (4th play)
+PORT8                  int(11)           None=-1, Sound Panel Port
+START_RML8             char(255)
+STOP_RML8              char(255)
+CARD9                  int(11)           None=-1, Sound Panel Card (5th play)
+PORT9                  int(11)           None=-1, Sound Panel Port
+START_RML9             char(255)
+STOP_RML9              char(255)
+STATION_PANELS         int(11)
+USER_PANELS            int(11)
+CLEAR_FILTER           enum('N','Y')
+FLASH_PANEL            enum('N','Y')
+PANEL_PAUSE_ENABLED    enum('N','Y')
+BUTTON_LABEL_TEMPLATE  char(32)
+PAUSE_ENABLED          enum('N','Y')
+DEFAULT_SERVICE        char(10)          From SERVICES.NAME
+SKIN_PATH              char(255)

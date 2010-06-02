@@ -1,0 +1,50 @@
+#!/sbin/runscript
+
+##
+##    A Rivendell init script for Gentoo Linux.
+##
+##    (C) Copyright 2005 Fred Gleason <fredg@paravelsystems.com>
+##
+##      $Id: rivendell-gentoo,v 1.5 2007/10/05 14:31:21 fredg Exp $
+##
+##    Adapted from the Gentoo init script for Rivendell 
+##    by Andres Toomsalu <andres@active.ee>
+##
+##    This program is free software; you can redistribute it and/or modify
+##    it under the terms of version 2 of the GNU General Public License as
+##    published by the Free Software Foundation;
+##
+##    This program is distributed in the hope that it will be useful,
+##    but WITHOUT ANY WARRANTY; without even the implied warranty of
+##    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##    GNU General Public License for more details.
+##
+##    You should have received a copy of the GNU General Public License
+##    along with this program; if not, write to the Free Software
+##    Foundation, Inc., 59 Temple Place, Suite 330, 
+##    Boston, MA  02111-1307  USA
+##
+
+depend() {
+        need jackd
+        use mysql
+}
+
+start() {
+        ebegin "Starting Rivendell"
+        ipcrm -M 0x5005 2> /dev/null
+        start-stop-daemon --start --quiet --exec /usr/bin/caed
+        start-stop-daemon --start --quiet --exec /usr/bin/ripcd
+        sleep 1
+        start-stop-daemon --start --quiet --exec /usr/bin/rdcatchd
+        eend $?
+}
+
+stop() {
+        ebegin "Stopping Rivendell"
+        killall rdimport > /dev/null 2> /dev/null
+        start-stop-daemon --stop --quiet --pidfile /var/run/rivendell/caed.pid
+        start-stop-daemon --stop --quiet --pidfile /var/run/rivendell/ripcd.pid
+        start-stop-daemon --stop --quiet --pidfile /var/run/rivendell/rdcatchd.pid
+        eend $?
+}

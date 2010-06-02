@@ -1,0 +1,87 @@
+; rd.conf
+;
+; This is the SLAX configuration file for Rivendell
+;
+; by Fred Gleason <fredg@paravelsystems.com>
+;
+
+[Identity]
+Password=letmein
+AudioOwner=salem
+AudioGroup=users
+
+[Tuning]
+UseRealtime=Yes
+RealtimePriority=9
+
+[mySQL]
+Hostname=localhost
+Loginname=rduser
+Password=letmein
+Database=Rivendell
+Driver=QMYSQL3
+
+[Hacks]
+; If you are getting no output level meter indications with an older
+; ASI card (such as the ASI4215, ASI4113 or ASI4111), tru uncommenting
+; the following line:
+; UseStreamMeters=Yes
+
+;
+; Log Generation
+;
+;  These are mainly useful for debugging!
+;
+; [RDAirPlay]
+; Logfile=/home/myself/rdairplay.log
+;
+; [RDCatchd]
+; Logfile=/home/myself/rdcatchd.log
+;
+; [Ripcd]
+; Logfile=/home/myself/ripcd.log
+;
+; [Caed]
+; Logfile=/home/myself/caed.log
+
+;
+; JACK Session Management
+;
+;  See the 'JACK.txt' file for details on how this works!
+;
+; [JackSession]
+; Source1=rivendell_1:playout_0L
+; Destination1=alsa_pcm:playback_1
+; 
+; Source2=rivendell_1:playout_0R
+; Destination2=alsa_pcm:playback_2
+; 
+; Source3=rivendell_1:playout_1L
+; Destination3=alsa_pcm:playback_3
+; 
+; Source4=rivendell_1:playout_1R
+; Destination4=alsa_pcm:playback_4
+; 
+; Source5=rivendell_1:playout_2L
+; Destination5=alsa_pcm:playback_9
+; 
+; Source6=rivendell_1:playout_2R
+; Destination6=alsa_pcm:playback_10
+; 
+; Source7=alsa_pcm:capture_1
+; Destination7=rivendell_1:record_0L
+; 
+; Source8=alsa_pcm:capture_2
+; Destination8=rivendell_1:record_0R
+;
+; Source9=alsa_pcm:capture_3
+; Destination9=rivendell_1:record_1L
+;
+; Source10=alsa_pcm:capture_4
+; Destination10=rivendell_1:record_1R
+;
+; Source11=alsa_pcm:capture_9
+; Destination11=rivendell_1:record_2L
+;
+; Source12=alsa_pcm:capture_10
+; Destination12=rivendell_1:record_2R

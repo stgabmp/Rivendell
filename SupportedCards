@@ -1,0 +1,66 @@
+The following AudioScience audio adapters have been tested with
+Rivendell.  Most work fine with the package.  A few have issues, which
+are noted.
+
+     ASI4111 -- No level meter in RDAirPlay, meters should otherwise work
+                properly with 'UseStreamMeters=Yes' in the [Hacks]
+                section of '/etc/rd.conf'.
+     ASI4113 -- No level meter in RDAirPlay, meters should otherwise work
+                properly with 'UseStreamMeters=Yes' in the [Hacks]
+                section of '/etc/rd.conf'.
+     ASI4215 -- No level meter in RDAirPlay, meters should otherwise work
+                properly with 'UseStreamMeters=Yes' in the [Hacks]
+                section of '/etc/rd.conf'.  Due to the unique mixer 
+		architecture of this card, only output number 4 is
+                supported.
+     ASI4334 -- Fully supported
+     ASI4336 -- Fully supported
+     ASI4346 -- Fully supported
+     ASI5111 -- Fully supported
+     ASI5041 -- Fully supported
+     ASI5042 -- Fully supported
+     ASI5044 -- Fully supported
+     ASI6012 -- Fully supported
+     ASI6044 -- Fully supported
+     ASI6114 -- Fully supported
+     ASI6122 -- Fully supported
+     ASI6201 -- First input only is supported.  All outputs (analog
+                and AES3) work properly.
+     ASI6244 -- Fully supported
+     ASI6585 -- Fully supported
+     ASI6620 -- Fully supported
+
+The following cards have not been tested, but should work properly,
+except as noted:
+
+     ASI4344
+     ASI5020
+     ASI6118
+     ASI6418
+     ASI6514
+     ASI6518
+     ASI6520
+     ASI6522
+     ASI6540
+     ASI6544
+     ASI6614
+     ASI6618
+     ASI6622
+     ASI6640
+     ASI6644
+
+The status of the following cards is unknown:
+
+     ASI2214
+     ASI6416
+     ASI8702
+     ASI8703
+
+Please send additions/modifications to this list to:
+
+     Fred Gleason <fredg@paravelsystems.com>
+
+Thanks!
+
+
+Fred Gleason

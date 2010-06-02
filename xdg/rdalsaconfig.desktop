@@ -1,0 +1,14 @@
+[Desktop Entry]
+Categories=System;Applet
+Encoding=UTF-8
+BinaryPattern=
+Name=RDAlsaConfig
+GenericName=Rivendell ALSA Configuration
+Exec=rdalsaconfig
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+X-KDE-SubstituteUID=true
+X-KDE-Username=root

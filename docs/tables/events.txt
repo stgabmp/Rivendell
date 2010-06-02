@@ -1,0 +1,28 @@
+               EVENTS Table Layout for Rivendell
+
+The EVENTS table holds data concerning each log event that exists
+on the system.  Following is the layout of a record in the EVENTS
+table:
+
+FIELD NAME           TYPE             REMARKS
+-------------------------------------------------------------------
+NAME                 char(64)         Table name, ends with '_EVT'
+PROPERTIES           char(64)
+DISPLAY_TEXT         char(64)
+NOTE_TEXT            char(255)
+PREPOSITION          int(11)
+TIME_TYPE            int(11) signed   0=Relative, 1=Hard
+GRACE_TIME           int(11) signed
+POST_POINT           enum('N','Y')
+USE_AUTOFILL         enum('N','Y')
+AUTOFILL_SLOP        int(11)
+USE_TIMESCALE        enum('N','Y')
+IMPORT_SOURCE        int(11)          0=Traffic, 1=Music
+START_SLOP           int(11)
+END_SLOP             int(11)
+FIRST_TRANS_TYPE     int(11) signed   0 = Play, 1 = Stop, 2 = Segue
+DEFAULT_TRANS_TYPE   int(11) signed   0 = Play, 1 = Stop, 2 = Segue
+COLOR                char(7)          Pie widge color, in hex format 
+                                      '#RRGGBB'.
+NESTED_EVENT         char(64)         From EVENTS.NAME
+REMARKS              char(255)

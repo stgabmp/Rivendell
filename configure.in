@@ -1,0 +1,346 @@
+dnl configure.in
+dnl
+dnl Autoconf configuration for Rivendell.
+dnl Use autoconf to process this into a configure script
+dnl
+dnl   (C) Copyright 2002-2007 Fred Gleason <fredg@paravelsystems.com>
+dnl
+dnl      $Id: configure.in,v 1.231.2.7 2010/02/01 19:58:16 cvs Exp $
+dnl      $Date: 2010/02/01 19:58:16 $
+dnl
+dnl   This program is free software; you can redistribute it and/or modify
+dnl   it under the terms of the GNU General Public License version 2 as
+dnl   published by the Free Software Foundation.
+dnl
+dnl   This program is distributed in the hope that it will be useful,
+dnl   but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl   GNU General Public License for more details.
+dnl
+dnl   You should have received a copy of the GNU General Public
+dnl   License along with this program; if not, write to the Free Software
+dnl   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+dnl
+
+AC_INIT(rivendell,`cat PACKAGE_VERSION`,Fred Gleason <fredg@paravelsystems.com>)
+AM_INIT_AUTOMAKE(rivendell,`cat PACKAGE_VERSION`)
+AC_SUBST(RPM_RELEASE,1)
+
+#
+# Some Fully Resolved Install Paths
+# (for the packaging system and friends)
+#
+if test ${prefix} = "NONE" ; then
+  AC_SUBST(LOCAL_PREFIX,/usr/local)
+else
+  AC_SUBST(LOCAL_PREFIX,${prefix})
+fi
+
+#
+# Basic Compiler Checks
+#
+AC_PROG_CXX
+AC_PROG_LIBTOOL
+AC_LANG(C++)
+
+# to avoid rpath usage :
+# http://wiki.debian.net/index.cgi?RpathIssue
+case ${host} in
+  *-pc-linux-gnu)
+    AC_MSG_RESULT([Fixing libtool for -rpath problems.])
+    sed < libtool > libtool-2 \
+    's/^hardcode_libdir_flag_spec.*$/hardcode_libdir_flag_spec=" -D__LIBTOOL_IS_A_FOOL__ "/'
+    mv libtool-2 libtool
+    chmod 755 libtool
+  ;;
+esac
+
+
+#
+# Option Switches
+#
+AC_ARG_ENABLE(hpi,[  --disable-hpi           disable AudioScience HPI sound support],
+		      [HPI_DISABLED=yes],[])
+AC_ARG_ENABLE(jack,[  --disable-jack          disable JACK sound support],
+		      [JACK_DISABLED=yes],[])
+AC_ARG_ENABLE(alsa,[  --disable-alsa          disable direct ALSA sound support],
+		      [ALSA_DISABLED=yes],[])
+AC_ARG_ENABLE(gpio,[  --disable-gpio          disable General Purpose Input/Output GPIO support],
+		      [GPIO_DISABLED=yes],[])
+AC_ARG_ENABLE(pam,[  --disable-pam           disable Rivendell PAM pam_rd.so support],
+		      [PAM_DISABLED=yes],[])
+
+#
+# Check for Qt
+#
+BNV_HAVE_QT
+if test $have_qt = "no" ; then
+  AC_MSG_ERROR([*** Qt toolkit not found, unable to continue ***])
+fi
+
+#
+# Determine the target architecture
+#
+AR_GCC_TARGET()
+AC_SUBST(VENDOR,$ar_gcc_distro)
+AC_SUBST(ARCH,$ar_gcc_arch)
+
+#
+# Determine Distro
+#
+AR_GET_DISTRO()
+if test $ar_gcc_distro = suse ; then
+  if test `echo $ar_distro_version | sed "s/\.//"` -lt 103 ; then
+    AC_SUBST(CDDA_DEPS,cdda2wav)
+  else
+    AC_SUBST(CDDA_DEPS,cdrkit-cdrtools-compat)
+  fi
+else
+  AC_SUBST(CDDA_DEPS,cdda2wav)
+fi
+
+#
+# Check for OggVorbis
+#
+AC_CHECK_HEADER(vorbis/vorbisfile.h,[VORBIS_FOUND=yes],[])
+if test $VORBIS_FOUND = yes ; then
+  AC_DEFINE(HAVE_VORBIS)
+  AC_SUBST(LIBVORBIS,"-lvorbisfile -lvorbisenc")
+else
+  AC_SUBST(LIBVORBIS,"")
+fi
+
+#
+# Check for FLAC
+#
+AC_CHECK_HEADER(FLAC/metadata.h,[FLAC_FOUND=yes],[])
+if test -z $FLAC_FOUND ; then
+  AC_MSG_ERROR([*** FLAC not found ***])
+fi
+AC_CHECK_LIB(FLAC,FLAC__metadata_get_tags,[FLAC_METADATA_FOUND=yes],[])
+
+#
+# Check for Secret Rabbit Code
+#
+AC_CHECK_HEADER(samplerate.h,[SRC_FOUND=yes],[])
+AC_CHECK_FUNC(src_short_to_float_array,[SRC_CONV_FOUND=yes],[])
+
+#
+# Sound Drivers
+#
+AC_CHECK_HEADER(asihpi/hpi.h,[HPI_FOUND=yes],[])
+AC_CHECK_HEADER(jack/jack.h,[JACK_FOUND=yes],[])
+AC_CHECK_HEADER(alsa/asoundlib.h,[ALSA_FOUND=yes],[])
+
+#
+# Setup Sound API Dependencies
+#
+if test $HPI_FOUND ; then
+  if test -z $HPI_DISABLED ; then
+    AC_DEFINE(HPI,yes)
+    AC_SUBST(LIBHPI,"-lrdhpi -lhpi")
+    USING_HPI=yes
+  else 
+    AC_SUBST(LIBHPI,"")
+  fi
+else
+  AC_SUBST(LIBHPI,"")
+fi
+AM_CONDITIONAL([HPI_RD_AM], [test "$USING_HPI" = yes])
+
+if test $JACK_FOUND ; then
+  if test -z $JACK_DISABLED ; then
+    if test -z $SRC_FOUND ; then
+      AC_MSG_ERROR([*** libsamplerate not found, but is needed for JACK support ***])
+    fi
+    AC_DEFINE(JACK,yes)
+    AC_SUBST(LIBJACK,-ljack)
+    SRC_NEEDED=yes
+    USING_JACK=yes
+  else 
+    AC_SUBST(LIBJACK,"")
+  fi
+else 
+  AC_SUBST(LIBJACK,"")
+fi
+
+if test $ALSA_FOUND ; then
+  if test -z $ALSA_DISABLED ; then
+    if test -z $SRC_FOUND ; then
+      AC_MSG_ERROR([*** libsamplerate not found, but is needed for ALSA support ***])
+    fi
+    AC_DEFINE(ALSA,yes)
+    AC_SUBST(LIBALSA,-lasound)
+    SRC_NEEDED=yes
+    USING_ALSA=yes
+  else 
+    AC_SUBST(LIBALSA,"")
+  fi
+else 
+  AC_SUBST(LIBALSA,"")
+fi
+AM_CONDITIONAL([ALSA_RD_AM], [test "$USING_ALSA" = yes])
+
+if test -z $SRC_NEEDED ; then
+  AC_SUBST(LIBSRC,"")
+else
+  AC_DEFINE(SRC,yes)
+  AC_SUBST(LIBSRC,-lsamplerate)
+fi
+if test -z $SRC_CONV_FOUND ; then
+  AC_MSG_NOTICE([Using local format converters])
+else
+  AC_MSG_NOTICE([Using SRC format converters])
+  AC_DEFINE(HAVE_SRC_CONV,yes)
+fi
+if test -z $FLAC_METADATA_FOUND ; then
+  AC_MSG_NOTICE([Ogg Metadata tags will not be supported])
+else
+  AC_DEFINE(HAVE_FLAC_METADATA,yes)
+fi
+
+#
+# pam_rd hooks
+#
+if test -z $PAM_DISABLED ; then
+  AC_CHECK_HEADERS([security/pam_modules.h security/_pam_macros.h],[PAM_FOUND=yes],[PAM_FOUND=no;break])
+  if test $PAM_FOUND = yes ; then
+    USING_PAM=yes
+  fi
+fi
+AM_CONDITIONAL([PAM_RD_AM], [test "$USING_PAM" = yes])
+
+#
+# Distro-Specific Stuff
+#
+if test -f /etc/gentoo-release ; then
+  rm -f rivendell
+  ln -s rivendell-gentoo rivendell
+  AC_MSG_NOTICE([Configured to install Gentoo-specific init script])
+else
+  rm -f rivendell
+  ln -s rivendell-suse rivendell
+  AC_MSG_NOTICE([Configured to install generic init script])
+fi
+
+#
+# Configure RPM Build
+#
+AC_CHECK_PROG(RPMBUILD_FOUND,rpmbuild,[yes],[])
+if test -z $RPMBUILD_FOUND ; then
+  AC_SUBST(RPMBUILD,rpm)
+else
+  AC_SUBST(RPMBUILD,rpmbuild)
+fi
+if test -d /usr/src/redhat ; then
+  AC_SUBST(RPM_ROOT,/usr/src/redhat)
+  AC_SUBST(VENDOR,redhat)
+else
+  AC_SUBST(RPM_ROOT,/usr/src/packages)
+  AC_SUBST(VENDOR,suse)
+fi 
+if test $ar_gcc_arch = x86_64 ; then
+  AC_SUBST(RD_LIB_PATH,lib64)
+else
+  AC_SUBST(RD_LIB_PATH,lib)
+fi
+
+AC_CONFIG_FILES([rivendell.spec \
+    ./Makefile \
+    ./make_slack \
+    ./slack-desc \
+    ./rivendell-suse \
+    conf/rd-bin.conf \
+    icons/Makefile \
+    helpers/Makefile \
+    lib/rdpaths.h \
+    lib/Makefile \
+    rdhpi/Makefile \
+    toolame/Makefile \
+    rlm/Makefile \
+    cae/Makefile \
+    utils/Makefile \
+    utils/rdgen/Makefile \
+    utils/rmlsend/Makefile \
+    utils/rdgpimon/Makefile \
+    utils/rdimport/Makefile \
+    utils/sas_shim/Makefile \
+    utils/rdfilewrite/Makefile \
+    utils/rdsoftkeys/Makefile \
+    utils/rddbcheck/Makefile \
+    utils/rdalsaconfig/Makefile \
+    utils/rdhpiinfo/Makefile \
+    utils/rdpurgecasts/Makefile \
+    utils/rdchunk/Makefile \
+    utils/rdmaint/Makefile \
+    utils/rdpopup/Makefile \
+    utils/rdaconvert/Makefile \
+    utils/rdcollect/Makefile \
+    web/Makefile \
+    web/rdfeed/Makefile \
+    web/rdcastmanager/Makefile \
+    conf/Makefile \
+    docs/Makefile \
+    docs/tables/Makefile \
+    debian/Makefile \
+    debian/patches/Makefile \
+    xdg/Makefile \
+    rdadmin/Makefile \
+    scripts/Makefile \
+    ripcd/Makefile \
+    rdlogin/Makefile \
+    rdlibrary/Makefile \
+    rdcatch/Makefile \
+    rdcatchd/Makefile \
+    rdlogedit/Makefile \
+    rdlogmanager/Makefile \
+    rdairplay/Makefile \
+    rdpanel/Makefile \
+    rdcastmanager/Makefile \
+    tests/Makefile \
+    importers/Makefile \
+    pam_rd/Makefile ])
+AC_OUTPUT()
+chmod 755 make_slack
+chmod 755 rivendell-suse
+
+#
+# Configuration Results
+#
+AC_MSG_NOTICE()
+AC_MSG_NOTICE("|-----------------------------------------------------|")
+AC_MSG_NOTICE("|       *** RIVENDELL CONFIGURATION SUMMARY ***       |")
+AC_MSG_NOTICE("|-----------------------------------------------------|")
+AC_MSG_NOTICE("| Configured Audio Drivers:                           |")
+if test -z $USING_ALSA ; then
+AC_MSG_NOTICE("|  Advanced Linux Sound Architecture (ALSA) ... No    |")
+else
+AC_MSG_NOTICE("|  Advanced Linux Sound Architecture (ALSA) ... Yes   |")
+fi
+if test -z $USING_HPI ; then
+AC_MSG_NOTICE("|                          AudioScience HPI ... No    |")
+else
+AC_MSG_NOTICE("|                          AudioScience HPI ... Yes   |")
+fi
+if test -z $USING_JACK ; then
+AC_MSG_NOTICE("|                 JACK Audio Connection Kit ... No    |")
+else
+AC_MSG_NOTICE("|                 JACK Audio Connection Kit ... Yes   |")
+fi
+AC_MSG_NOTICE("|                                                     |")
+AC_MSG_NOTICE("| Optional Components:                                |")
+if test -z $VORBIS_FOUND ; then
+AC_MSG_NOTICE("|                         OggVorbis Support ... No    |")
+else
+AC_MSG_NOTICE("|                         OggVorbis Support ... Yes   |")
+fi
+if test -z $USING_PAM ; then
+AC_MSG_NOTICE("|           Rivendell PAM pam_rd.so Support ... No    |")
+else
+AC_MSG_NOTICE("|           Rivendell PAM pam_rd.so Support ... Yes   |")
+fi
+AC_MSG_NOTICE("|-----------------------------------------------------|")
+AC_MSG_NOTICE()
+AC_MSG_NOTICE()
+AC_MSG_NOTICE(Now enter 'make' to build the software.)
+AC_MSG_NOTICE()

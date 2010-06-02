@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=Qt
+Encoding=UTF-8
+BinaryPattern=
+Name=RDLogManager
+GenericName=Rivendell Log Management
+Exec=rdlogmanager
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

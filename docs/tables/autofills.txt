@@ -1,0 +1,10 @@
+                  AUTOFILLS Table Layout for Rivendell
+
+The AUTOFILLS table holds data mapping autofill carts to services.
+Following is the layout of a record in the AUTOFILLS table:
+
+FIELD NAME           TYPE              REMARKS
+--------------------------------------------------------------------------
+ID                   int(11)           Primary Key, Auto Increment
+SERVICE              char(10)          Foreign Key -> SERVICES.NAME
+CART_NUMBER          int(10) unsigned

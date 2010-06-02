@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=Qt
+Encoding=UTF-8
+BinaryPattern=
+Name=RDLogin
+GenericName=Rivendell Login
+Exec=rdlogin
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

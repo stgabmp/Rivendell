@@ -1,0 +1,11 @@
+             AUX_FIELDS Table Layout for Rivendell
+
+The AUX_FIELDS table holds data concerning the auxiliary metadata fields
+configured for each RSS feed.
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------
+ID                   int(10) unsigned  Primary key, auto increment
+FEED_ID              int(10) unsigned  From FEEDS.ID
+VAR_NAME             char(16)
+CAPTION              char(64)

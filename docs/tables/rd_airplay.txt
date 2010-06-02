@@ -1,0 +1,125 @@
+                  RDAIRPLAY Table Layout for Rivendell
+
+The RDLIBRARY table holds configuration data for the RDAirPlay widget.
+Following is the layout of a record in the RDAIRPLAY table:
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------------------
+ID                     int(10) unsigned  * Primary key, Auto Increment
+STATION                char(40)          Workstation, Indexed
+INSTANCE               int(10) unsigned
+CARD                   int(11)           RETIRED
+CARD0                  int(11)           None=-1, Main Log Machine Card 1
+PORT0                  int(11)           None=-1, Main Log Machine Port 1
+START_RML0             char(255)
+STOP_RML0              char(255)
+CARD1                  int(11)           None=-1, Main Log Machine Card 2
+PORT1                  int(11)           None=-1, Main Log Machine Port 2
+START_RML1             char(255)
+STOP_RML1              char(255)
+CARD2                  int(11)           None=-1, Sound Panel Card (1st play)
+PORT2                  int(11)           None=-1, Sound Panel Port
+START_RML2             char(255)
+STOP_RML2              char(255)
+CARD3                  int(11)           None=-1, Cue Card
+PORT3                  int(11)           None=-1, Cue Port
+START_RML3             char(255)
+STOP_RML3              char(255)
+CARD4                  int(11)           None=-1, Aux 1 Log Machine Card
+PORT4		       int(11)	       None=-1, Aux 1 Log Machine Port
+START_RML4             char(255)
+STOP_RML4              char(255)
+CARD5                  int(11)           None=-1, Aux 2 Log Machine Card
+PORT5		       int(11)	       None=-1, Aux 2 Log Machine Port
+START_RML5             char(255)
+STOP_RML5              char(255)
+CARD6                  int(11)           None=-1, Sound Panel Card (2nd play)
+PORT6                  int(11)           None=-1, Sound Panel Port
+START_RML6             char(255)
+STOP_RML6              char(255)
+CARD7                  int(11)           None=-1, Sound Panel Card (3rd play)
+PORT7                  int(11)           None=-1, Sound Panel Port
+START_RML7             char(255)
+STOP_RML7              char(255)
+CARD8                  int(11)           None=-1, Sound Panel Card (4th play)
+PORT8                  int(11)           None=-1, Sound Panel Port
+START_RML8             char(255)
+STOP_RML8              char(255)
+CARD9                  int(11)           None=-1, Sound Panel Card (5th play)
+PORT9                  int(11)           None=-1, Sound Panel Port
+START_RML9             char(255)
+STOP_RML9              char(255)
+STREAM0                int(11)           RETIRED
+STREAM1                int(11)           RETIRED
+STREAM2                int(11)           RETIRED
+STREAM3                int(11)           RETIRED
+STREAM5                int(11)           RETIRED
+STREAM6                int(11)           RETIRED
+STREAM7                int(11)           RETIRED
+STREAM8                int(11)           RETIRED
+SEGUE_LENGTH           int(11)
+TRANS_LENGTH           int(11)
+OP_MODE                int(11)           1=Manual, 2=Automatic
+START_MODE             int(11)           0=Previous, 1=Manual, 2=Automatic
+PIE_COUNT_LENGTH       int(11)
+PIE_COUNT_ENDPOINT     int(11)           0=EOF, 1=Segue Point
+CHECK_TIMESYNC         enum('N','Y')
+STATION_PANELS         int(11)
+USER_PANELS            int(11)
+SHOW_AUX_1             enum('N','Y')
+SHOW_AUX_2             enum('N','Y')
+CLEAR_FILTER           enum('N','Y')
+DEFAULT_TRANS_TYPE     int(11)
+BAR_ACTION             int(10) unsigned  0=None, 1=Start Next
+FLASH_PANEL            enum('N','Y')
+PANEL_PAUSE_ENABLED    enum('N','Y')
+BUTTON_LABEL_TEMPLATE  char(32)
+PAUSE_ENABLED          enum('N','Y')
+DEFAULT_SERVICE        char(10)          From SERVICES.NAME
+UDP_ADDR0              char(255)
+UDP_PORT0              int(10) unsigned
+UDP_STRING0            char(255)
+LOG_RML0               char(255)
+UDP_ADDR1              char(255)
+UDP_PORT1              int(10) unsigned
+UDP_STRING1            char(255)
+LOG_RML1               char(255)
+UDP_ADDR2              char(255)
+UDP_PORT2              int(10) unsigned
+UDP_STRING2            char(255)
+LOG_RML2               char(255)
+EXIT_CODE              int(11)           0=clean, 1=dirty
+EXIT_PASSWORD          char(41)
+SKIN_PATH              char(255)
+SHOW_COUNTERS          enum('N','Y')
+AUDITION_PREROLL       int(11)
+LOG0_START_MODE        int(11)           0=start empty, 1=load last, 
+                                       2=load specified
+LOG0_AUTO_RESTART      enum('N','Y')
+LOG0_LOG_NAME          char(64)          From LOGS.NAME
+LOG0_CURRENT_LOG       char(64)          From LOGS.NAME
+LOG0_RUNNING           enum('N','Y')
+LOG0_LOG_ID            int(11)
+LOG0_LOG_LINE          int(11)
+LOG0_NOW_CART          int(10) unsigned
+LOG0_NEXT_CART         int(10) unsigned
+LOG1_START_MODE        int(11)           0=start empty, 1=load last, 
+                                       2=load specified
+LOG1_AUTO_RESTART      enum('N','Y')
+LOG1_LOG_NAME          char(64)          From LOGS.NAME
+LOG1_CURRENT_LOG       char(64)          From LOGS.NAME
+LOG1_RUNNING           enum('N','Y')
+LOG1_LOG_ID            int(11)
+LOG1_LOG_LINE          int(11)
+LOG1_NOW_CART          int(10) unsigned
+LOG1_NEXT_CART         int(10) unsigned
+LOG2_START_MODE        int(11)           0=start empty, 1=load last, 
+                                       2=load specified
+LOG2_AUTO_RESTART      enum('N','Y')
+LOG2_LOG_NAME          char(64)          From LOGS.NAME
+LOG2_CURRENT_LOG       char(64)          From LOGS.NAME
+LOG2_RUNNING           enum('N','Y')
+LOG2_LOG_ID            int(11)
+LOG2_LOG_LINE          int(11)
+LOG2_NOW_CART          int(10) unsigned
+LOG2_NEXT_CART         int(10) unsigned

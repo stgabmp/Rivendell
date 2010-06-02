@@ -1,0 +1,12 @@
+             Feed Log Format Table Layout for Rivendell
+
+This is the generic layout of all podcast feed log tables.  Each of 
+these tables will be have a name ending in '_FLG' and be listed in the 'FEEDS'
+table.
+
+FIELD NAME           TYPE               REMARKS
+------------------------------------------------------------------------
+ID                   int(11) signed     Primary key, auto-increment
+CAST_ID              int(10) unsigned   From PODCASTS.ID
+ACCESS_DATE          date
+ACCESS_COUNT         int(10) unsigned

@@ -1,0 +1,36 @@
+RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  
+
+          Reconciliation Format Table Layout for Rivendell
+
+NOTE:  This format has been RETIRED from service as of v0.9.60.  It is
+listed purely as a matter of historical interest.  See the format
+definition for services-based reconciliation data in
+'svc_rec_format.txt' for the modern implementation of these features.
+-- FFG 11/07/2005
+
+This is the generic layout of all reconciliation tables.  Each of 
+these tables will be have a name ending in '_REC' and be listed in 
+the 'LOGS' table.
+
+FIELD NAME           TYPE               REMARKS
+------------------------------------------------------------------------
+ID                   int(10) unsigned   Primary key, auto-increment
+LENGTH               int(11) signed
+LOG_ID               int(11) signed     From *_LOG.ID
+CART_NUMBER          int(10) unsigned   From CART.NUMBER
+CUT_NUMBER           int(11)
+STATION_NAME         char(64)           From STATIONS.NAME
+EVENT_DATETIME       datetime           
+EVENT_TYPE           int(11)            1=Start, 2=Stop
+EVENT_SOURCE         int(11)            0=Manual,1=Traffic,2=Music,3=Template
+PLAY_SOURCE          int(11)            0=Unknown,1=MainLog,
+                                        2=AuxLog1,3=AuxLog2,4=SoundPanel
+EXT_START_TIME       time               Scheduler Start Time
+EXT_LENGTH           int(11)            Scheduler Length
+EXT_CART_NAME        char(32)           Scheduler Cart Name
+EXT_DATA             char(32)           Scheduler Data
+EXT_EVENT_ID         char(8)            Scheduler Event ID
+EXT_ANNC_TYPE        char(8)            External Scheduler Announcement Type
+
+
+RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  RETIRED  

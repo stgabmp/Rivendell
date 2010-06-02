@@ -1,0 +1,12 @@
+               *_CLK Table Layout for Rivendell
+
+*_CLK tables holds data concerning a particular log clock that exists
+on the system.  Following is the layout of a record in the *_CLK format:
+
+
+FIELD NAME           TYPE             REMARKS
+-------------------------------------------------------------------
+ID                   int(11)
+EVENT_NAME           char(64)         Joins to 'EVENTS.NAME'
+START_TIME           int(11)          Milliseconds after 00:00:00
+LENGTH               int(11)          Milliseconds.

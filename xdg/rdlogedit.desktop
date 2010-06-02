@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=Qt
+Encoding=UTF-8
+BinaryPattern=
+Name=RDLogEdit
+GenericName=Rivendell Log Editor
+Exec=rdlogedit
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

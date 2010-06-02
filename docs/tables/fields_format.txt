@@ -1,0 +1,8 @@
+             <feed>_FIELDS Table Layout for Rivendell
+
+<feed>_FIELDS tables hold data concerning auxiliary metadata field
+for the <feed> feed.  The schema is dynamic, defined by the AUX_FIELDS table.
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------
+CAST_ID              int(10) unsigned  Primary key, From PODCASTS.ID

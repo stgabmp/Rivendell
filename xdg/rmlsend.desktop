@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=System;Applet
+Encoding=UTF-8
+BinaryPattern=
+Name=RMLSend
+GenericName=Rivendell RML Applet
+Exec=rmlsend
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

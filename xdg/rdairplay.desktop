@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=Qt
+Encoding=UTF-8
+BinaryPattern=
+Name=RDAirPlay
+GenericName=Rivendell On-Air Playout
+Exec=rdairplay
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

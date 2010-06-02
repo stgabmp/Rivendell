@@ -1,0 +1,13 @@
+               CLOCKS Table Layout for Rivendell
+
+The CLOCKS table holds data concerning each log clock that exists
+on the system.  Following is the layout of a record in the CLOCKS
+table:
+
+FIELD NAME           TYPE             REMARKS
+-------------------------------------------------------------------
+NAME                 char(64)         Table name, ends with '_CLK'
+SHORT_NAME           char(8)          Used for grid displays
+COLOR                char(7)          Pie widge color, in hex format 
+                                      '#RRGGBB'.
+REMARKS              char(255)

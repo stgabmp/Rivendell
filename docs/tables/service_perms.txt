@@ -1,0 +1,12 @@
+                SERVICE_PERMS Table Layout for Rivendell
+
+The SERVICE_PERMS table holds data concerning which audio services are 
+are allowed to air on which Stations (hosts).  Following is the layout 
+of a record in the SERVICE_PERMS table:
+
+
+FIELD NAME           TYPE              REMARKS
+---------------------------------------------------------------
+ID                   int(10) unsigned  Primary key, auto increment
+STATION_NAME         char(64)          Index
+SERVICE_NAME         char(10)          Index

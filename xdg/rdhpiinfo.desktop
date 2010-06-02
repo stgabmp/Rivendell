@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=System;Applet
+Encoding=UTF-8
+BinaryPattern=
+Name=RDHPIInfo
+GenericName=AudioScience Card Information
+Exec=rdhpiinfo
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

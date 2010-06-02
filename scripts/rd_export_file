@@ -1,0 +1,174 @@
+#!/bin/bash
+
+# Audio File Export Script for Rivendell
+#
+#   (C) Copyright 2003-2005 Fred Gleason <fredg@paravelsystems.com>
+#
+#      $Id: rd_export_file,v 1.8.2.5 2009/09/04 11:40:08 cvs Exp $
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License version 2 as
+#   published by the Free Software Foundation.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# Usage:
+#  rd_export_file [args]
+#
+# Argument Order:
+#
+#        <level> = Normalization level, expressed as linear ratio, 
+#                  0 = No normalization
+#    <in-format> = Input format, 0 = PCM16, 1 = MPEG Layer 2
+#  <in-samprate> = Input sample rate, in samples/sec
+#   <in-wavfile> = Source file for export.
+#   <out-format> = Output format, 0 = PCM16, 1 = MPEG Layer 1
+#                  2 = MPEG Layer 2, 3 = MPEG Layer 3, 4 = FLAC,
+#                  5 = OggVorbis, >100 = Custom format
+#    <out-chans> = Output channels, 1 or 2
+# <out-samprate> = Output sample rate, in samples/sec
+#  <out-bitrate> = MPEG Bitrate, in kbps, or 0 for PCM16/VBR
+#  <out-quality> = Quality (for VBR), 0 for fixed-rate or PCM16
+#  <out-wavfile> = Destination file
+#      <datfile> = Temporary file for peak level data.
+#      <tmpfile> = Temporary file for intermediate audio
+#<src-converter> = The sample-rate converter type to be used.  Integer value.
+#                  See the converter types listed in the documentation for 
+#                  libsamplerate for more info.
+#   <custom-cmd> = The custom encoder command (optional)
+
+if [ "$#" -lt 13 ]; then
+    cat <<EOF 
+Usage: `basename $0` <level> <in-samprate> <in-wavfile> <out-format> <out-chans> <out-samprate> <out-bitrate> <out-wavfile> <datfile> <tmpfile>
+    <level> = Normalization level, expressed as linear ratio (0 = No normalization)
+    <in-format> = Input format, 0 = PCM16, 1 = MPEG-1 Layer 2
+    <in-samprate> = Input sample rate, in samples/sec
+    <in-wavfile> = Source file for import.
+    <out-format> = Output format, 0 = PCM16, 2 = MPEG-1 Layer 2
+    <out-chans> = Output channels, 1 or 2
+    <out-samprate> = Output sample rate, in samples/sec
+    <out-bitrate> = MPEG Bitrate, in kbps, or 0 for PCM16
+    <out-quality> = Quality (for VBR)
+    <out-wavfile> = Destination file for imported WAV data.
+    <datfile> = Temporary file for peak level data.
+    <tmpfile> = Temporary file for intermediate audio
+  <src-converter> = Sample rate converter type.
+    <custom-cmd> = The custom encoder command (optional)
+EOF
+    exit 1
+fi
+
+#
+# Some sane variable names
+#
+NORMAL_LEVEL=${1}
+FORMAT_IN=${2}
+SAMPRATE_IN=${3}
+FILE_IN=${4}
+FORMAT_OUT=${5}
+CHANS_OUT=${6}
+SAMPRATE_OUT=${7}
+BITRATE_OUT=${8}
+QUALITY_OUT=${9}
+FILE_OUT=${10}
+PEAK=${11}
+WORK=${12}
+SRC_CONV=${13}
+CUSTOM_CMD=${14}
+
+#
+# MPEG Stuff
+#
+if [ $CHANS_OUT = 1 ] ; then
+  MPEG_MODE="m"
+else
+  MPEG_MODE="s"
+fi
+if [ $BITRATE_OUT = 0 ] ; then
+  LAME_RATE="-q $QUALITY_OUT"
+else
+  LAME_RATE="-b $BITRATE_OUT"
+fi
+case "$SAMPRATE_OUT" in
+  32000)
+    TOOLAME_SAMPRATE=32
+  ;;
+
+  44100)
+    TOOLAME_SAMPRATE=44.1
+  ;;
+
+  48000)
+    TOOLAME_SAMPRATE=48
+  ;;
+esac
+
+#
+# Convert to PCM (if necessary)
+#
+if [ $FORMAT_IN = 0 ] ; then
+  cp $FILE_IN $WORK
+else
+  mpg321 -q -w $WORK $FILE_IN
+fi
+
+#
+# Get Peak Level
+#
+if [ $NORMAL_LEVEL != 0 ] ; then
+  PEAK_LEVEL=`rdaconvert --operation=ratio $WORK`
+  SCALE=`echo "$NORMAL_LEVEL * $PEAK_LEVEL" | bc -l`
+  if [ "$SCALE" == "1.00000000000000000000" ]; then
+    SCALE="1"
+  fi
+else
+  SCALE=1;
+fi
+chmod 644 $WORK
+
+case "$FORMAT_OUT" in
+  0)  # PCM16
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK "$FILE_OUT"
+  ;;
+
+  1)  # MPEG Layer 1
+    exit 1
+  ;;
+
+  2)  # Mpeg Layer 2
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | toolame -t 0 -s $TOOLAME_SAMPRATE -m $MPEG_MODE -b $BITRATE_OUT /dev/stdin "$FILE_OUT"
+  ;;
+
+  3)  # MPEG Layer 3
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | lame --silent -r -x -s $SAMPRATE_OUT -m $MPEG_MODE $LAME_RATE - "$FILE_OUT"
+  ;;
+
+  4)  # FLAC
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | flac -f --silent --best --endian=little --sign=signed --bps=16 --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --force-raw-format -o "$FILE_OUT" -
+  ;;
+
+  5)  # OggVorbis
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | oggenc -r -B 16 -C $CHANS_OUT -R $SAMPRATE_OUT -q $QUALITY_OUT -o "$FILE_OUT" -
+  ;;
+
+  *)  # Custom Format
+    if [ -z "$CUSTOM_CMD" ] ; then
+      rm -f $WORK
+      rm -f $PEAK
+      exit 1
+    fi
+    rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | $CUSTOM_CMD
+  ;;
+esac
+
+rm -f $WORK
+rm -f $PEAK
+
+exit 0

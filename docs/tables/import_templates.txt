@@ -1,0 +1,37 @@
+             IMPORT_FORMATS Table Layout for Rivendell
+
+The IMPORT_FORMATS table holds data concerning the data field positions
+of various 'standard' import log formats.  These formats are documented
+in 'docs/scheduler_formats.ods'.
+
+FIELD NAME           TYPE             REMARKS
+-------------------------------------------------------------------
+NAME                 char(64)         Primary key
+LABEL_CART           char(32)
+TRACK_CART           char(32)
+BREAK_STRING         char(64)
+TRACK_STRING         char(64)
+CART_OFFSET          int(11)
+CART_LENGTH          int(11)
+TITLE_OFFSET         int(11)
+TITLE_LENGTH         int(11)
+HOURS_OFFSET         int(11)
+HOURS_LENGTH         int(11)
+MINUTES_OFFSET       int(11)
+MINUTES_LENGTH       int(11)
+SECONDS_OFFSET       int(11)
+SECONDS_LENGTH       int(11)
+LEN_HOURS_OFFSET     int(11)
+LEN_HOURS_LENGTH     int(11)
+LEN_MINUTES_OFFSET   int(11)
+LEN_MINUTES_LENGTH   int(11)
+LEN_SECONDS_OFFSET   int(11)
+LEN_SECONDS_LENGTH   int(11)
+LENGTH_OFFSET        int(11)
+LENGTH_LENGTH        int(11)
+DATA_OFFSET          int(11)
+DATA_LENGTH          int(11)
+EVENT_ID_OFFSET      int(11)
+EVENT_ID_LENGTH      int(11)
+ANNC_TYPE_OFFSET     int(11)
+ANNC_TYPE_LENGTH     int(11)

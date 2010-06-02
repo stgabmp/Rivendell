@@ -1,0 +1,25 @@
+                  REPORTS Table Layout for Rivendell
+
+The REPORTS table contains data about each defined report format.
+Following is the layout of a record in the REPORTS table:
+
+FIELD NAME           TYPE               REMARKS
+---------------------------------------------------------------
+ID                   unsigned int(10)   Primary Key
+NAME                 char(64)           Unique
+DESCRIPTION          char(64)           Indexed
+EXPORT_FILTER        int(11)
+EXPORT_PATH          char(255)
+WIN_EXPORT_PATH      char(255)
+EXPORT_TFC           enum('N','Y')
+FORCE_TFC            enum('N','Y')
+EXPORT_MUS           enum('N','Y')
+FORCE_MUS            enum('N','Y')
+EXPORT_GEN           enum('N','Y')
+STATION_ID           char(16)
+CART_DIGITS          int(10) unsigned
+USE_LEADING_ZEROS    enum('N','Y')
+LINES_PER_PAGE       int(10) unsigned
+STATION_TYPE         int(11)            0=Other, 1=AM, 2=FM
+STATION_FORMAT       char(64)
+FILTER_ONAIR_FLAG    enum('N','Y')

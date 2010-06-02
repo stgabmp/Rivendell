@@ -1,0 +1,40 @@
+                   FEEDS Table Layout for Rivendell
+
+The FEEDS table holds data concerning each configured RSS feed.
+Following is the layout of a record in the FEEDS table:
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------
+ID                   int(10) unsigned  Primary key, auto increment
+KEY_NAME             char(8)
+CHANNEL_TITLE        char(255)
+CHANNEL_DESCRIPTION  text(1024)
+CHANNEL_CATEGORY     char(64)
+CHANNEL_LINK         char(255)
+CHANNEL_COPYRIGHT    char(64)
+CHANNEL_WEBMASTER    char(64)
+CHANNEL_LANGUAGE     char(5)
+BASE_URL             char(255)
+BASE_PREAMBLE        char(255)
+PURGE_URL            char(255)
+PURGE_USERNAME       char(64)
+PURGE_PASSWORD       char(64)
+HEADER_XML           text(1024)
+CHANNEL_XML          text(8192)
+ITEM_XML             text(8192)
+MAX_SHELF_LIFE       int(11)
+CAST_ORDER           enum('N','Y')
+ORIGIN_DATETIME      datetime
+LAST_BUILD_DATETIME  datetime
+ENABLE_AUTOPOST      enum('N','Y')
+KEEP_METADATA        enum('N','Y')
+UPLOAD_FORMAT        int(11)
+UPLOAD_CHANNELS      int(11)
+UPLOAD_SAMPRATE      int(11)
+UPLOAD_BITRATE       int(11)
+UPLOAD_QUALITY       int(11)
+UPLOAD_EXTENSION     char(16)
+NORMALIZE_LEVEL      int(11)
+REDIRECT_PATH        char(255)
+MEDIA_LINK_MODE      int(11)           0=No link, 1=Direct Link,
+                                       2=Logged Link

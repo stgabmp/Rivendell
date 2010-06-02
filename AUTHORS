@@ -1,0 +1,36 @@
+The following folks have contributed to Rivendell:
+
+Luigino Bracci <lbracci@gmail.com>
+   Spanish translation.
+
+Michael Cheng <mikecheng@planckenergy.com>
+   The tooLame MPEG Layer 2 encoder.
+
+Stefan Gabriel <stg@st-gabriel.de>
+   Integrated Music Scheduler
+   RDLibrary MultiCart Editing Mode
+
+Federico Grau <grauf@rfa.org>
+   JACK driver cleanups, RDAdmin Audio Ports Dialog enhancements.
+   PAM Authentication Module
+
+Fred Gleason <fredg@paravelsystems.com>
+   Application Architect
+
+Dan Mills <dmills@spamblock.demon.co.uk>
+   General Bughunter Extrordinaire
+
+Eivind Ødegård <gingermig@yahoo.no>
+   Norwegian Translation (nb_NO and nn_NO)
+
+Michael Papsdorf <info@emitworks.com>
+   German translation.
+
+Alban Peignier <alban.peignier@free.fr>
+   RDImport batch file importer.
+   RDScheduler music scheduler.
+   Debian Packaging.
+
+Scott Spillers <scotts@paravelsystems.com>
+   The Icon set
+

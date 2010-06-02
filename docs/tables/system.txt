@@ -1,0 +1,9 @@
+                  SYSTEM Table Layout for Rivendell
+
+The SYSTEM table contains system-wide configuration data.
+
+FIELD NAME           TYPE               REMARKS
+---------------------------------------------------------------
+ID                   int                Primary key
+DUP_CART_TITLES      enum('N','Y')
+MAX_POST_LENGTH      unsigned

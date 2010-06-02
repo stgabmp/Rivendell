@@ -1,0 +1,12 @@
+             REPORT_STATIONS Table Layout for Rivendell
+
+The REPORT_STATIONS table holds data concerning which stations are 
+to be included in a given report.  Following is the layout of a record 
+in the REPORT_STATIONS table:
+
+
+FIELD NAME           TYPE              REMARKS
+---------------------------------------------------------------
+ID                   unsigned int(10)  Primary key, auto increment
+REPORT_NAME          char(64)          From REPORTS.NAME
+STATION_NAME         char(64)          From STATIONS.NAME

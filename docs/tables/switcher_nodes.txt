@@ -1,0 +1,15 @@
+              SWITCHER_NODES Table Layout for Rivendell
+
+The SWITCHER_NODES table contains data about each LiveWire node in the 
+system.
+
+FIELD NAME           TYPE               REMARKS
+----------------------------------------------------------------------
+ID                   int(10) unsigned   Auto incrementing, primary key
+STATION_NAME         char(64)           From STATIONS.NAME
+MATRIX               int(11) signed     From MATRICES.MATRIX
+BASE_OUTPUT          int(11) signed
+HOSTNAME             char(64)
+TCP_PORT             int(11) signed
+PASSWORD             char(64)
+DESCRIPTION          char(255)

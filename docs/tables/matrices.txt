@@ -1,0 +1,41 @@
+                MATRICES Table Layout for Rivendell
+
+The MATRICES table holds data concerning each configured switcher
+device on the system.  Following is the layout of a record in the 
+MATRICES table:
+
+FIELD NAME           TYPE              REMARKS
+------------------------------------------------------------------
+ID                   int(10) unsigned  Primary key, auto increment
+STATION_NAME         char(64)          From STATIONS.NAME
+NAME                 char(64)
+MATRIX               int(11)
+TYPE                 int(11)           0=Generic GPO, 1=Generic Serial
+                                       2=SAS 32000, 3=SAS 64000,
+                                       4=Wegener Unity4000,
+                                       5=Broadcast Tools SS 8.2
+LAYER                int(11)           For Quartz protocol
+PORT_TYPE            int(11)           0=TTY, 1=TCP/IP
+PORT_TYPE_2          int(11)           0=TTY, 1=TCP/IP
+CARD                 int(11)           For local audio adapters
+PORT                 int(11)           From TTYS.PORT_ID, -1=N/A
+PORT_2               int(11)           From TTYS.PORT_ID, -1=N/A
+IP_ADDRESS           char(16)
+IP_ADDRESS_2         char(16)
+IP_PORT              int(11)
+IP_PORT_2            int(11)
+USERNAME             char(32)
+USERNAME_2           char(32)
+PASSWORD             char(32)
+PASSWORD_2           char(32)
+START_CART           int(10) unsigned
+START_CART_2         int(10) unsigned
+STOP_CART            int(10) unsigned
+STOP_CART_2          int(10) unsigned
+GPIO_DEVICE          char(255)
+INPUTS               int(11)
+OUTPUTS              int(11)
+GPIS                 int(11)
+GPOS                 int(11)
+FADERS               int(11)
+DISPLAYS             int(11)

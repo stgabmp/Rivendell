@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=Qt
+Encoding=UTF-8
+BinaryPattern=
+Name=RDCatch
+GenericName=Rivendell Event Scheduler
+Exec=rdcatch
+Icon=rivendell
+TerminalOptions=
+Path=
+Type=Application
+Terminal=0
+

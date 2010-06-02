@@ -1,0 +1,217 @@
+#!/bin/bash
+
+# Audio File Importation Script for Rivendell
+#
+#   (C) Copyright 2003-2004 Fred Gleason <fredg@paravelsystems.com>
+#
+#      $Id: rd_import_file,v 1.20.6.3 2009/09/04 11:40:08 cvs Exp $
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License version 2 as
+#   published by the Free Software Foundation.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# Usage:
+#  rd_import_file [args]
+#
+# Argument Order:
+#
+#        <level> = Normalization level, expressed as linear ratio, 
+#                  0 = No normalization
+#    <in-format> = Input format, 0 = PCM16, 1 = MPEG-1 Layer 2
+#  <in-samprate> = Input sample rate, in samples/sec
+#   <in-wavfile> = Source file for import.
+#   <out-format> = Output format, 0 = PCM16, 1 = MPEG-1 Layer 2
+#    <out-chans> = Output channels, 1 or 2
+# <out-samprate> = Output sample rate, in samples/sec
+#  <out-bitrate> = MPEG Bitrate, in kbps, or 0 for PCM16
+#  <out-wavfile> = Destination file for imported WAV data.
+#      <datfile> = Temporary file for peak level data.
+#      <tmpfile> = Temporary file for intermediate audio
+#<src-converter> = The sample-rate converter type to be used.  Integer value.
+#                  See the converter types listed in the documentation for 
+#                  libsamplerate for more info.
+
+if [ "$#" -lt 11 ]; then
+    cat <<EOF 
+Usage: `basename $0` <level> <in-samprate> <in-wavfile> <out-format> <out-chans> <out-samprate> <out-bitrate> <out-wavfile> <datfile> <tmpfile>
+        <level> = Normalization level, expressed as linear ratio (0 = No normalization)
+    <in-format> = Input format, 0 = PCM16, 1 = MPEG-1 Layer 2
+  <in-samprate> = Input sample rate, in samples/sec
+   <in-wavfile> = Source file for import.
+   <out-format> = Output format, 0 = PCM16, 1 = MPEG-1 Layer 2
+    <out-chans> = Output channels, 1 or 2
+ <out-samprate> = Output sample rate, in samples/sec
+  <out-bitrate> = MPEG Bitrate, in kbps, or 0 for PCM16
+  <out-wavfile> = Destination file for imported WAV data.
+      <datfile> = Temporary file for peak level data.
+      <tmpfile> = Temporary file for intermediate audio
+<src-converter> = Sample rate converter type.
+EOF
+    exit 1
+fi
+
+#
+# Some sane variable names
+#
+NORMAL_LEVEL=${1}
+FORMAT_IN=${2}
+SAMPRATE_IN=${3}
+FILE_IN=${4}
+FORMAT_OUT=${5}
+CHANS_OUT=${6}
+SAMPRATE_OUT=${7}
+BITRATE_OUT=${8}
+FILE_OUT=${9}
+PEAK=${10}
+WORK=${11}
+SRC_CONV=${12}
+
+set -e
+
+EXTENSION_IN=`echo $FILE_IN | sed 's/.*\.\([a-zA-Z0-9]\)/\1/'`
+
+case "$EXTENSION_IN" in
+    atx)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    ATX)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    tmc)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    TMC)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    mp2)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    MP2)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    mp3)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    MP3)
+    function convert() {
+       mpg321 -q --stereo -w $2 "$1"
+    }
+    ;;
+    ogg)
+    function convert() {
+       ogg123 -q -d wav -f $2 "$1"
+    }
+    ;;
+    OGG)
+    function convert() {
+       ogg123 -q -d wav -f $2 "$1"
+    }
+    ;;
+    flac)
+    function convert() {
+      flac -f -s -d -o $2 "$1"
+    }
+    ;;
+    FLAC)
+    function convert() {
+      flac -f -s -d -o $2 "$1"
+    }
+    ;;
+    wav)
+    if [ $FORMAT_IN = "0" ] ; then
+      function convert() {
+        cp "$1" $2
+      }
+    else 
+      function convert() {
+         mpg321 -q --stereo -w $2 "$1"
+      }
+    fi
+    ;;
+    WAV)
+    if [ $FORMAT_IN = "0" ] ; then
+      function convert() {
+        cp "$1" $2
+      }
+    else 
+      function convert() {
+         mpg321 -q --stereo -w $2 "$1"
+      }
+    fi
+    ;;
+    *)
+    echo "unsupported input format: $FILE_IN"
+    exit 1
+esac
+
+case "$FORMAT_OUT" in
+    0)
+    function masterize() {
+	rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$3 $1 - | rdfilewrite --channels=$4 --sample-rate=$5 $2
+    }
+    ;;
+    1)
+    function masterize() {
+        if [ $CHANS_OUT = 1 ]; then
+	    MODE="m"
+        else
+	    MODE="s"
+        fi
+        case "$SAMPRATE_OUT" in
+	    32000)
+		LAMERATE=32
+	    ;;
+	    44100)
+		LAMERATE=44.1
+	    ;;
+	    48000)
+		LAMERATE=48
+            ;;
+        esac
+        LAME_OPTIONS="-t 0 -m $MODE -s $LAMERATE -b $BITRATE_OUT"
+	rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$3 $1 - | toolame $LAME_OPTIONS /dev/stdin -W $2 > /dev/null 2> /dev/null
+    }
+    ;;
+    *)
+    echo "unsupported output format $FORMAT_OUT";
+    ;;
+esac
+
+convert "$FILE_IN" $WORK
+SCALE=1
+if [ $NORMAL_LEVEL != 0 ]; then
+    PEAK_LEVEL=`rdaconvert --operation=ratio $WORK` 
+    SCALE=`echo "$NORMAL_LEVEL * $PEAK_LEVEL" | bc -l`
+    if [ "$SCALE" == "1.00000000000000000000" ]; then
+	SCALE="1"
+    fi
+    chmod 644 $WORK
+fi
+
+rm -f $FILE_OUT
+
+masterize $WORK $FILE_OUT $SCALE $CHANS_OUT $SAMPRATE_OUT
+# > /dev/null 2>&1
