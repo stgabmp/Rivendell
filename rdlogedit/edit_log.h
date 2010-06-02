@@ -40,6 +40,7 @@
 #include <rduser.h>
 #include <rdgroup_list.h>
 #include <rdsimpleplayer.h>
+#include <rdcart_dialog.h>
 
 #include <list_reports.h>
 
@@ -68,6 +69,7 @@ class EditLog : public QDialog
   void startDateEnabledData(bool);
   void endDateEnabledData(bool);
   void insertCartButtonData();
+  void addCartData();
   void insertMarkerButtonData();
   void clickedData(QListViewItem *item);
   void selectionChangedData();
@@ -81,6 +83,7 @@ class EditLog : public QDialog
   void pasteButtonData();
   void saveData();
   void saveasData();
+  void libData();
   void reportsData();
   void okData();
   void cancelData();
@@ -154,6 +157,7 @@ class EditLog : public QDialog
   QPushButton *edit_paste_button;
   QPushButton *edit_save_button;
   QPushButton *edit_saveas_button;
+  QPushButton *edit_lib_button;
   QPushButton *edit_reports_button;
   RDTransportButton *edit_play_button;
   RDTransportButton *edit_stop_button;
@@ -175,6 +179,8 @@ class EditLog : public QDialog
   QLabel *edit_purgedate_label;
   QDateEdit *edit_purgedate_edit;
   QPushButton *edit_purgedate_button;
+  int edit_cartnum;
+  RDCartDialog *edit_cart_dialog;
 };
 
 

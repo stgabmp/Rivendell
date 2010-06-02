@@ -209,6 +209,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   if (rdairplay_conf->panels(RDAirPlayConf::StationPanel) || 
       rdairplay_conf->panels(RDAirPlayConf::UserPanel)){
     int card=-1;
+    int button_x_size=(1024-5-15*RDPANEL_PANEL_BUTTON_COLUMNS)/RDPANEL_PANEL_BUTTON_COLUMNS;
     panel_panel=
       new RDSoundPanel(RDPANEL_PANEL_BUTTON_COLUMNS,RDPANEL_PANEL_BUTTON_ROWS,
 		       rdairplay_conf->panels(RDAirPlayConf::StationPanel),
@@ -216,7 +217,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 		       rdairplay_conf->flashPanel(),
 		       rdairplay_conf->buttonLabelTemplate(),true,panel_player,
 		       rdripc,panel_cae,rdstation_conf,panel_cart_dialog,
-		       this,"panel_panel");
+		       this,"panel_panel",button_x_size);
     panel_panel->setLogfile(panel_config->airplayLogname());
     panel_panel->setGeometry(10,10,panel_panel->sizeHint().width(),
 			 panel_panel->sizeHint().height());
@@ -232,38 +233,47 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
     panel_panel->setPauseEnabled(rdairplay_conf->panelPauseEnabled());
     panel_panel->setCard(0,rdairplay_conf->card(2));
     panel_panel->setPort(0,rdairplay_conf->port(2));
+    panel_panel->setOutputText(0,"1");    
     panel_panel->setFocusPolicy(QWidget::NoFocus);
     if((card=rdairplay_conf->card(6))<0) {
       panel_panel->setCard(1,panel_panel->card(0));
       panel_panel->setPort(1,panel_panel->port(0));
+      panel_panel->setOutputText(1,panel_panel->outputText(0));    
     }
     else {
       panel_panel->setCard(1,card);
       panel_panel->setPort(1,rdairplay_conf->port(6));
+      panel_panel->setOutputText(1,"2");    
     }
     if((card=rdairplay_conf->card(7))<0) {
       panel_panel->setCard(2,panel_panel->card(1));
       panel_panel->setPort(2,panel_panel->port(1));
+      panel_panel->setOutputText(2,panel_panel->outputText(1));    
     }
     else {
       panel_panel->setCard(2,card);
       panel_panel->setPort(2,rdairplay_conf->port(7));
+      panel_panel->setOutputText(2,"3");    
     }
     if((card=rdairplay_conf->card(8))<0) {
       panel_panel->setCard(3,panel_panel->card(2));
       panel_panel->setPort(3,panel_panel->port(2));
+      panel_panel->setOutputText(3,panel_panel->outputText(2));    
     }
     else {
       panel_panel->setCard(3,card);
       panel_panel->setPort(3,rdairplay_conf->port(8));
+      panel_panel->setOutputText(3,"4");    
     }
     if((card=rdairplay_conf->card(9))<0) {
       panel_panel->setCard(4,panel_panel->card(3));
       panel_panel->setPort(4,panel_panel->port(3));
+      panel_panel->setOutputText(4,panel_panel->outputText(3));    
     }
     else {
       panel_panel->setCard(4,card);
       panel_panel->setPort(4,rdairplay_conf->port(9));
+      panel_panel->setOutputText(4,"5");    
     }
 
     //
@@ -293,6 +303,10 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
     connect(rdripc,SIGNAL(userChanged()),panel_panel,SLOT(changeUser()));
     connect(panel_master_timer,SIGNAL(timeout()),
 	    panel_panel,SLOT(tickClock()));
+    connect(panel_panel,SIGNAL(selectClicked(unsigned,int,int)),
+	    this,SLOT(selectClickedData(unsigned,int,int)));
+    connect(panel_panel,SIGNAL(selectMenuClicked(unsigned,int,int,RDAirPlayConf::ActionMode)),
+	    this,SLOT(selectMenuClickedData(unsigned,int,int,RDAirPlayConf::ActionMode)));
   }
 
   //
@@ -321,7 +335,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 
 QSize MainWidget::sizeHint() const
 {
-  return QSize(935,738);
+  return QSize(1024,738);
 }
 
 
@@ -384,6 +398,91 @@ void MainWidget::closeEvent(QCloseEvent *e)
 
 void MainWidget::RunLocalMacros(RDMacro *rml)
 {
+}
+
+
+void MainWidget::selectMenuClickedData(unsigned cartnum,int row,int col,RDAirPlayConf::ActionMode mode)
+{
+  if(mode==RDAirPlayConf::CopyFrom) {
+    SetActionMode(RDAirPlayConf::CopyFrom);
+  }
+  if(mode==RDAirPlayConf::AddTo) {
+    panel_add_cart=(int)cartnum;
+    if(panel_cart_dialog->exec(&panel_add_cart,RDCart::All,0,0)==0) {
+      SetActionMode(RDAirPlayConf::AddTo);
+    }
+    else {
+      SetActionMode(RDAirPlayConf::Normal);
+    }
+  }
+  selectClickedData(cartnum,row,col);
+}
+
+
+void MainWidget::selectClickedData(unsigned cartnum,int row,int col)
+{
+  switch(panel_action_mode) {
+      case RDAirPlayConf::CopyFrom:
+	panel_add_cart=cartnum;
+	SetActionMode(RDAirPlayConf::CopyTo);
+	break;
+
+      case RDAirPlayConf::CopyTo:
+	if(panel_panel!=NULL) {
+	  panel_panel->setButton(panel_panel->currentType(),
+			       panel_panel->currentNumber(),row,col,panel_add_cart);
+	}
+	SetActionMode(RDAirPlayConf::Normal);
+	break;
+
+      case RDAirPlayConf::AddTo:
+	if(panel_panel!=NULL) {
+	  panel_panel->setButton(panel_panel->currentType(),
+			       panel_panel->currentNumber(),row,col,panel_add_cart);
+	}
+	SetActionMode(RDAirPlayConf::Normal);
+	break;
+
+      default:
+	break;
+  }
+}
+
+
+void MainWidget::SetActionMode(RDAirPlayConf::ActionMode mode)
+{
+  if(panel_action_mode==mode) {
+    return;
+  }
+  panel_action_mode=mode;
+  switch(mode) {
+      case RDAirPlayConf::AddTo:
+	if(panel_panel!=NULL) {
+	  panel_panel->setActionMode(RDAirPlayConf::AddTo);
+	}
+	break;
+
+      case RDAirPlayConf::CopyFrom:
+	if(panel_panel!=NULL) {
+	  panel_panel->setActionMode(RDAirPlayConf::CopyFrom);
+	}
+	break;
+
+      case RDAirPlayConf::CopyTo:
+	if(panel_panel!=NULL) {
+	  panel_panel->setActionMode(RDAirPlayConf::CopyTo);
+	}
+	break;
+
+      case RDAirPlayConf::Normal:
+	if(panel_panel!=NULL) {
+	  panel_panel->setActionMode(RDAirPlayConf::Normal);
+	}
+	break;
+
+      default:
+	break;
+  }
 }
 
 

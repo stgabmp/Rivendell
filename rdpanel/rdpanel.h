@@ -42,7 +42,7 @@
 #define MASTER_TIMER_INTERVAL 100
 #define METER_INTERVAL 50
 #define RDPANEL_PANEL_BUTTON_ROWS 7
-#define RDPANEL_PANEL_BUTTON_COLUMNS 9
+#define RDPANEL_PANEL_BUTTON_COLUMNS 6
 #define RDPANEL_USAGE "\n"
 
 class MainWidget : public QWidget
@@ -58,13 +58,18 @@ class MainWidget : public QWidget
   void masterTimerData();
   void meterData();
   void rmlReceivedData(RDMacro *rml);
+  void selectClickedData(unsigned cartnum,int row,int col);
+  void selectMenuClickedData(unsigned cartnum,int row,int col,RDAirPlayConf::ActionMode);
 
  protected:
   void closeEvent(QCloseEvent *e);
 
  private:
+  void SetActionMode(RDAirPlayConf::ActionMode mode);
   void RunLocalMacros(RDMacro *rml);
   void SetCaption();
+  RDAirPlayConf::ActionMode panel_action_mode;
+  int panel_add_cart;
   RDConfig *panel_config;
   QSqlDatabase *panel_db;
   QTimer *panel_master_timer;

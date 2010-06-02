@@ -36,9 +36,10 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
 			   const QString &label_template,bool extended,
 			   RDEventPlayer *player,RDRipc *ripc,RDCae *cae,
 			   RDStation *station,RDCartDialog *cart_dialog,
-			   QWidget *parent,const char *name)
+			   QWidget *parent,const char *name,int button_x_size)
   : QWidget(parent,name)
 {
+  panel_button_x_size=button_x_size;
   panel_playmode_box=NULL;
   panel_button_columns=cols;
   panel_button_rows=rows;
@@ -83,6 +84,10 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
     panel_timescaling_supported[i]=false;
   }
   panel_onair_flag=false;
+  panel_sizehint_width=panel_button_columns*(panel_button_x_size+15);
+  panel_sizehint_height=panel_button_rows*(PANEL_BUTTON_SIZE_Y+15)+50;
+
+  panel_area=new QFrame(this);
 
   //
   // Create Fonts
@@ -103,10 +108,6 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
   //
   panel_selector_box=new RDComboBox(this,"panel_selector_box");
   panel_selector_box->setFont(button_font);
-  panel_selector_box->
-    setGeometry((15+PANEL_BUTTON_SIZE_X)*(panel_button_columns-5),
-		(15+PANEL_BUTTON_SIZE_Y)*panel_button_rows,
-		2*PANEL_BUTTON_SIZE_X+15,50);
   connect(panel_selector_box,SIGNAL(activated(int)),
 	  this,SLOT(panelActivatedData(int)));
   connect(panel_selector_box,SIGNAL(setupClicked()),
@@ -133,10 +134,6 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
   //
   panel_playmode_box=new QComboBox(this,"panel_playmode_box");
   panel_playmode_box->setFont(button_font);
-  panel_playmode_box->
-    setGeometry((15+PANEL_BUTTON_SIZE_X)*(panel_button_columns-3)-5,
-		(15+PANEL_BUTTON_SIZE_Y)*panel_button_rows,
-		PANEL_BUTTON_SIZE_X+10,50);
   connect(panel_playmode_box,SIGNAL(activated(int)),
 	  this,SLOT(playmodeActivatedData(int)));
   panel_playmode_box->insertItem(tr("Play All"));
@@ -146,10 +143,6 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
   // Reset Button
   //
   panel_reset_button=new RDPushButton(this,"reset_button");
-  panel_reset_button->
-    setGeometry((15+PANEL_BUTTON_SIZE_X)*(panel_button_columns-2),
-		(15+PANEL_BUTTON_SIZE_Y)*panel_button_rows,
-		PANEL_BUTTON_SIZE_X,50);
   panel_reset_button->setFont(button_font);
   panel_reset_button->setText(tr("Reset"));
   panel_reset_button->setFlashColor(QColor(RDPANEL_RESET_FLASH_COLOR));
@@ -160,10 +153,6 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
   // All Button
   //
   panel_all_button=new RDPushButton(this,"all_button");
-  panel_all_button->
-    setGeometry((15+PANEL_BUTTON_SIZE_X)*(panel_button_columns-1),
-		(15+PANEL_BUTTON_SIZE_Y)*panel_button_rows,
-		PANEL_BUTTON_SIZE_X,50);
   panel_all_button->setFont(button_font);
   panel_all_button->setText(tr("All"));
   panel_all_button->setFlashColor(QColor(RDPANEL_RESET_FLASH_COLOR));
@@ -175,10 +164,6 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
   // Setup Button
   //
   panel_setup_button=new RDPushButton(this,"setup_button");
-  panel_setup_button->
-    setGeometry((15+PANEL_BUTTON_SIZE_X)*(panel_button_columns-1),
-		(15+PANEL_BUTTON_SIZE_Y)*panel_button_rows,
-		PANEL_BUTTON_SIZE_X,50);
   panel_setup_button->setFont(button_font);
   panel_setup_button->setText(tr("Setup"));
   panel_setup_button->setFlashColor(QColor(RDPANEL_SETUP_FLASH_COLOR));
@@ -236,12 +221,17 @@ RDSoundPanel::RDSoundPanel(int cols,int rows,int station_panels,
   }
 }
 
-
 QSize RDSoundPanel::sizeHint() const
 {
-  return QSize(panel_button_columns*(PANEL_BUTTON_SIZE_X+15),
-	       panel_button_rows*(PANEL_BUTTON_SIZE_Y+15)+50);
+  return QSize(panel_sizehint_width,panel_sizehint_height);
 }
+
+void RDSoundPanel::setSizeHint(int width,int height)
+{
+  panel_sizehint_width=width;
+  panel_sizehint_height=height;
+}
+
 
 
 QSizePolicy RDSoundPanel::sizePolicy() const
@@ -397,7 +387,7 @@ void RDSoundPanel::duckVolume(RDAirPlayConf::PanelType type,int panel,int row,in
         if(deck!=NULL) {
           if(edit_mport==-1 || 
              edit_mport==panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->
-                     outputText().toInt()) {
+                     output()+1) {
 	    deck->duckVolume(level,fade);
           }
         }
@@ -596,12 +586,14 @@ void RDSoundPanel::setupClickedData()
     panel_setup_button->setFlashingEnabled(false);
     panel_reset_button->setEnabled(true);
     panel_playmode_box->setEnabled(true);
+    emit releaseKey();
   }
   else {
     panel_setup_mode=true;
     panel_setup_button->setFlashingEnabled(true);
     panel_reset_button->setDisabled(true);
     panel_playmode_box->setDisabled(true);
+    emit getKey();
   }
   panel_selector_box->setSetupMode(panel_setup_mode);
 }
@@ -820,7 +812,9 @@ void RDSoundPanel::PlayButton(RDAirPlayConf::PanelType type,int panel,
     panel_buttons[PanelOffset(type,panel)].panelButton(edit_row,edit_col);
   RDPlayDeck *deck=button->playDeck();
   if(deck!=NULL) {
-    deck->play(deck->currentPosition());
+    if(deck->state()!=RDPlayDeck::Stopping) {
+      deck->play(deck->currentPosition());
+    } 
     if(button->hookMode()) {
       button->setStartTime(QTime::currentTime().
 			   addMSecs(panel_station->timeOffset()).
@@ -986,7 +980,7 @@ void RDSoundPanel::PauseButton(RDAirPlayConf::PanelType type,int panel,
         panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->playDeck();
       if(deck!=NULL && (row==j || row==-1) && (col==i || col==-1)) {
         if(mport==-1 || 
-           mport==panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->outputText().toInt()) {
+           mport==panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->output()+1) {
           deck->pause();
 
           panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->
@@ -1002,6 +996,10 @@ void RDSoundPanel::StopButton(RDAirPlayConf::PanelType type,int panel,
 			    int row,int col,int mport,
                             bool pause_when_finished,int fade_out)
 {
+  int edit_fade_out=fade_out;
+  if(edit_fade_out<=0) {
+    edit_fade_out=1000;
+  }
   int edit_mport=mport;
   if (edit_mport==0) {
     edit_mport=-1;
@@ -1014,7 +1012,7 @@ void RDSoundPanel::StopButton(RDAirPlayConf::PanelType type,int panel,
         if(deck!=NULL) {
           if(edit_mport==-1 || 
              edit_mport==panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->
-                     outputText().toInt()) {
+                     output()+1) {
             if(panel_pause_enabled) {
               panel_buttons[PanelOffset(type,panel)].panelButton(j,i)->
                     setPauseWhenFinished(pause_when_finished);
@@ -1025,7 +1023,7 @@ void RDSoundPanel::StopButton(RDAirPlayConf::PanelType type,int panel,
               }
             switch(deck->state()) {
 	        case RDPlayDeck::Playing:
-	          deck->stop(fade_out,RD_FADE_DEPTH);
+	          deck->stop(edit_fade_out,RD_FADE_DEPTH,true);
 	          break;
 
   	        case RDPlayDeck::Paused:
@@ -1092,7 +1090,7 @@ void RDSoundPanel::LoadPanels()
   for(int i=0;i<panel_station_panels;i++) {
     panel_buttons.push_back(RDButtonPanel(panel_button_columns,
 					  panel_button_rows,
-					  panel_station,panel_flash,this));
+					  panel_station,panel_flash,this,panel_button_x_size,panel_area));
     for(int j=0;j<panel_button_rows;j++) {
       for(int k=0;k<panel_button_columns;k++) {
 	connect(panel_buttons.back().panelButton(j,k),SIGNAL(clicked()),
@@ -1106,7 +1104,7 @@ void RDSoundPanel::LoadPanels()
   for(int i=0;i<panel_user_panels;i++) {
     panel_buttons.push_back(RDButtonPanel(panel_button_columns,
 					  panel_button_rows,
-					  panel_station,panel_flash,this));
+					  panel_station,panel_flash,this,panel_button_x_size,panel_area));
     for(int j=0;j<panel_button_rows;j++) {
       for(int k=0;k<panel_button_columns;k++) {
 	connect(panel_buttons.back().panelButton(j,k),SIGNAL(clicked()),
@@ -1163,48 +1161,50 @@ void RDSoundPanel::LoadPanel(RDAirPlayConf::PanelType type,int panel)
 				(const char *)panel_tablename);
   RDSqlQuery *q=new RDSqlQuery(sql);
   while(q->next()) {
-    if(panel_buttons[offset].panelButton(q->value(0).toInt(),
+    if(q->value(0).toInt()<panel_button_rows && q->value(1).toInt()<panel_button_columns) {
+      if(panel_buttons[offset].panelButton(q->value(0).toInt(),
 	      q->value(1).toInt())->playDeck()==NULL) {
-      panel_buttons[offset].
-	panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	setText(q->value(2).toString());
-      panel_buttons[offset].
-	panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	setCart(q->value(3).toInt());
-      panel_buttons[offset].
-	panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	setLength(false,q->value(5).toInt());
-      panel_buttons[offset].
-	panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	setLength(true,q->value(6).toInt());
-      if((panel_playmode_box!=NULL)&&(panel_playmode_box->currentItem()==1)&&
-	 (q->value(6).toUInt()>0)) {
-	panel_buttons[offset].
+        panel_buttons[offset].
 	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	  setActiveLength(q->value(6).toInt());
+	  setText(q->value(2).toString());
+        panel_buttons[offset].
+	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	  setCart(q->value(3).toInt());
+        panel_buttons[offset].
+	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	  setLength(false,q->value(5).toInt());
+        panel_buttons[offset].
+	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	  setLength(true,q->value(6).toInt());
+        if((panel_playmode_box!=NULL)&&(panel_playmode_box->currentItem()==1)&&
+	   (q->value(6).toUInt()>0)) {
+	  panel_buttons[offset].
+	    panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	    setActiveLength(q->value(6).toInt());
+        }
+        else {
+	  panel_buttons[offset].
+	    panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	    setActiveLength(q->value(5).toInt());
+        }
+        if(q->value(4).toString().isEmpty()) {
+	  panel_buttons[offset].
+	    panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	    setColor(palette().active().background());
+	  panel_buttons[offset].
+	    panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	    setDefaultColor(palette().active().background());
+        }
+        else {
+	  panel_buttons[offset].
+	    panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	    setColor(QColor(q->value(4).toString()));
+	  panel_buttons[offset].
+	    panelButton(q->value(0).toInt(),q->value(1).toInt())->
+	    setDefaultColor(QColor(q->value(4).toString()));
+        }
       }
-      else {
-	panel_buttons[offset].
-	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	  setActiveLength(q->value(5).toInt());
-      }
-      if(q->value(4).toString().isEmpty()) {
-	panel_buttons[offset].
-	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	  setColor(palette().active().background());
-	panel_buttons[offset].
-	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	  setDefaultColor(palette().active().background());
-      }
-      else {
-	panel_buttons[offset].
-	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	  setColor(QColor(q->value(4).toString()));
-	panel_buttons[offset].
-	  panelButton(q->value(0).toInt(),q->value(1).toInt())->
-	  setDefaultColor(QColor(q->value(4).toString()));
-      }
-    }
+    } 
   }
   delete q;
 }
@@ -1585,4 +1585,27 @@ QString RDSoundPanel::PanelOwner(RDAirPlayConf::PanelType type)
 	}
   }
   return QString();
+}
+
+
+void RDSoundPanel::addClickedData(unsigned cartnum,int row,int col)
+{
+emit selectMenuClicked(cartnum,row,col,RDAirPlayConf::AddTo);
+}
+
+
+void RDSoundPanel::copyClickedData(unsigned cartnum,int row,int col)
+{
+emit selectMenuClicked(cartnum,row,col,RDAirPlayConf::CopyFrom);
+}
+
+
+void RDSoundPanel::resizeEvent(QResizeEvent *e)
+{
+  panel_area->setGeometry(3,3,size().width(),size().height()-63);
+  panel_selector_box->setGeometry(3,size().height()-56,191,50);
+  panel_playmode_box->setGeometry(204,size().height()-56,98,50);
+  panel_reset_button->setGeometry(310,size().height()-56,88,50);
+  panel_all_button->setGeometry(413,size().height()-56,88,50);
+  panel_setup_button->setGeometry(413,size().height()-56,88,50);
 }

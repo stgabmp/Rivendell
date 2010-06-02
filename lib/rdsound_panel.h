@@ -60,8 +60,9 @@ class RDSoundPanel : public QWidget
 	       const QString &label_template,bool extended,
 	       RDEventPlayer *player,RDRipc *ripc,RDCae *cae,
 	       RDStation *station,RDCartDialog *cart_dialog,
-	       QWidget *parent=0,const char *name=0);
+	       QWidget *parent=0,const char *name=0,int button_x_size=PANEL_BUTTON_SIZE_X);
   QSize sizeHint() const;
+  void setSizeHint(int width,int height);
   QSizePolicy sizePolicy() const;
   int card(int outnum) const;
   void setCard(int outnum,int card);
@@ -79,7 +80,7 @@ class RDSoundPanel : public QWidget
 	    RDLogLine::StartSource src,int mport=-1,bool pause_when_finished=false);
   bool pause(RDAirPlayConf::PanelType type,int panel,int row,int col,int mport=-1);
   void stop(RDAirPlayConf::PanelType type,int panel,int row,int col,
-  int mport=-1,bool pause_when_finished=false,int fade_out=0);
+            int mport=-1,bool pause_when_finished=false,int fade_out=0);
   void duckVolume(RDAirPlayConf::PanelType type,int panel,int row,int col,
 		  int level,int fade,int mport=-1);
   RDAirPlayConf::ActionMode actionMode() const;
@@ -92,11 +93,17 @@ class RDSoundPanel : public QWidget
  public slots:
   void changeUser();
   void tickClock();
+  void copyClickedData(unsigned cartnum,int row,int col);
+  void addClickedData(unsigned cartnum,int row,int col);
 
  signals:
   void tick();
   void buttonFlash(bool state);
   void selectClicked(unsigned cartnum,int row,int col);
+  void selectMenuClicked(unsigned cartnum,int row,int col,RDAirPlayConf::ActionMode mode);
+  void getKey();
+  void releaseKey();
+  
 
  private slots:
   void panelActivatedData(int n);
@@ -137,8 +144,11 @@ class RDSoundPanel : public QWidget
   void Stopped(int id);
   void ClearChannel(int id);
   void ClearReset();
+  int panel_button_x_size;
   QString PanelTag(int index);
   QString PanelOwner(RDAirPlayConf::PanelType type);
+  void resizeEvent(QResizeEvent *e);
+  QFrame *panel_area;
   std::vector<RDButtonPanel> panel_buttons;
   RDCae *panel_cae;
   RDUser *panel_user;
@@ -184,6 +194,8 @@ class RDSoundPanel : public QWidget
   int panel_button_rows;
   RDCartDialog *panel_cart_dialog;
   bool panel_onair_flag;
+  int panel_sizehint_width;
+  int panel_sizehint_height;
 };
 
 #endif  // RDSOUND_PANEL_H

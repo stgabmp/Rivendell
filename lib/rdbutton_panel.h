@@ -42,11 +42,11 @@
 #define PANEL_BUTTON_SIZE_Y 80
 
 
-class RDButtonPanel
+class RDButtonPanel 
 {
- public:
+  public:
   RDButtonPanel(int cols,int rows,RDStation *station,bool flash,
-		QWidget *parent);
+		QWidget *parent,int button_x_size=PANEL_BUTTON_SIZE_X,QWidget *area=NULL);
   QSize sizeHint() const;
   QSizePolicy sizePolicy() const;
   RDPanelButton *panelButton(int row,int col) const;
@@ -60,6 +60,7 @@ class RDButtonPanel
   RDStation *panel_station;
   int panel_button_columns;
   int panel_button_rows;
+  QWidget *panel_area;
 };
 
 #endif

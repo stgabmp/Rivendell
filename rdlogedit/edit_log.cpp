@@ -451,12 +451,29 @@ EditLog::EditLog(QString logname,vector<RDLogLine> *clipboard,
   connect(edit_saveas_button,SIGNAL(clicked()),this,SLOT(saveasData()));
 
   //
+  //  Carts Library Button
+  //
+  edit_lib_button=new QPushButton(this,"edit_lib_button");
+  edit_lib_button->setFont(button_font);
+  edit_lib_button->setText(tr("Carts\nLibrary"));
+  connect(edit_lib_button,SIGNAL(clicked()),this,SLOT(libData()));
+
+  //
   //  Reports Button
   //
   edit_reports_button=new QPushButton(this,"edit_reports_button");
   edit_reports_button->setFont(button_font);
   edit_reports_button->setText(tr("&Reports"));
   connect(edit_reports_button,SIGNAL(clicked()),this,SLOT(reportsData()));
+
+  edit_cart_dialog=new RDCartDialog(&edit_filter,&edit_group,
+				   rdlogedit_conf->outputCard(),
+				   rdlogedit_conf->outputPort(),
+				   rdlogedit_conf->startCart(),
+				   rdlogedit_conf->endCart(),
+				   rdcae,rdripc,rdstation_conf,"",
+				   this,"log_cart_dialog");
+  connect(edit_cart_dialog,SIGNAL(addClicked()),this,SLOT(addCartData()));
 
   //
   // Cart Player
@@ -603,7 +620,7 @@ EditLog::EditLog(QString logname,vector<RDLogLine> *clipboard,
 
 
 EditLog::~EditLog()
-{
+{ 
 }
 
 
@@ -676,7 +693,7 @@ void EditLog::dateValueChangedData(const QDate &)
 
 
 void EditLog::insertCartButtonData()
-{
+{ 
   int line;
   int id;
 
@@ -708,6 +725,32 @@ void EditLog::insertCartButtonData()
     return;
   }
   delete edit;
+  RefreshList();
+  SelectRecord(id);
+  UpdateSelection();
+}
+
+
+void EditLog::addCartData()
+{
+  int line;
+  int id;
+
+  QListViewItem *item=SingleSelection();
+  if(item==NULL) {
+    return;
+  }
+  if((line=item->text(13).toInt())<0) {
+    line=0;
+  }
+  id=item->text(12).toInt();
+  edit_log_event->insert(line,1);
+  edit_log_event->logLine(line)->setTransType(edit_default_trans);
+  edit_log_event->logLine(line)->setFadeupGain(-3000);
+  edit_log_event->logLine(line)->setFadedownGain(-3000);
+  edit_log_event->logLine(line)->setCartNumber(edit_cartnum);
+  edit_log_event->refresh(line);
+  edit_changed=true;
   RefreshList();
   SelectRecord(id);
   UpdateSelection();
@@ -1104,6 +1147,13 @@ ORIGIN_DATETIME=NOW(),LINK_DATETIME=NOW(),SERVICE=\"%s\"",
 }
 
 
+void EditLog::libData()
+{
+  QString service=edit_service_box->currentText();
+  edit_cart_dialog->exec(&edit_cartnum,RDCart::All,&service,1,false);
+  return;
+}
+
 void EditLog::reportsData()
 {
   QDate start_date;
@@ -1228,7 +1278,8 @@ void EditLog::resizeEvent(QResizeEvent *e)
     setGeometry(size().width()-100,size().height()-125,80,50);
   edit_save_button->setGeometry(10,size().height()-60,80,50);
   edit_saveas_button->setGeometry(100,size().height()-60,80,50);
-  edit_reports_button->setGeometry(250,size().height()-60,80,50);
+  edit_lib_button->setGeometry(200,size().height()-60,80,50);
+  edit_reports_button->setGeometry(300,size().height()-60,80,50);
 #ifndef WIN32
   edit_player->playButton()->setGeometry(400,size().height()-60,80,50);
   edit_player->stopButton()->setGeometry(490,size().height()-60,80,50);

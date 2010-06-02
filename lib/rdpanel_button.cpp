@@ -28,7 +28,7 @@
 
 
 RDPanelButton::RDPanelButton(RDStation *station,bool flash,
-			     QWidget *parent,const char *name)
+			     QWidget *parent,const char *name,int row,int col)
   : QPushButton(parent,name)
 {
   button_station=station;
@@ -36,7 +36,22 @@ RDPanelButton::RDPanelButton(RDStation *station,bool flash,
   button_default_palette=palette();
   button_flash=flash;
   button_hook_mode=false;
+  button_row=row;
+  button_col=col;
   clear();
+  //
+  // Right-Click Menu
+  //
+  button_menu=new QPopupMenu(this,"button_menu");
+  connect(button_menu,SIGNAL(aboutToShow()),this,SLOT(updateMenuData()));
+  button_menu->
+    insertItem(tr("Add"),this,SLOT(addData()),0,0);
+  button_menu->
+    insertItem(tr("Copy"),this,SLOT(copyData()),0,1);
+  button_menu->
+    insertItem(tr("Clear"),this,SLOT(deleteData()),0,2);
+  button_menu->
+    insertItem(tr("Cancel"),this,SLOT(closeData()),0,3);
 }
 
 
@@ -469,4 +484,76 @@ QString RDPanelButton::GetNextLine(QString *str,const QFontMetrics &m,int len)
   ret=*str;
   *str="";
   return ret;
+}
+
+
+void RDPanelButton::updateMenuData()
+{
+  if(button_cart==0) {
+    button_menu->setItemEnabled(1,false);
+    button_menu->setItemEnabled(2,false);
+  }
+  else {
+    button_menu->setItemEnabled(1,true);
+    if(button_play_deck==NULL) {
+      button_menu->setItemEnabled(2,true);
+    }
+    else {
+      if(button_play_deck->state()==RDPlayDeck::Stopped) {
+        button_menu->setItemEnabled(2,true);
+      }
+      else {
+        button_menu->setItemEnabled(2,false);
+      }
+    }
+  }
+  if(button_play_deck==NULL) {
+    button_menu->setItemEnabled(0,true);
+  }
+  else {
+    if(button_play_deck->state()==RDPlayDeck::Stopped) {
+      button_menu->setItemEnabled(0,true);
+    }
+    else {
+      button_menu->setItemEnabled(0,false);
+    }
+  }
+}
+
+
+void RDPanelButton::addData()
+{
+emit addClicked(button_cart,button_row,button_col);
+}
+
+
+void RDPanelButton::copyData()
+{
+emit copyClicked(button_cart,button_row,button_col);
+}
+
+void RDPanelButton::deleteData()
+{
+reset();
+clear();
+}
+
+void RDPanelButton::closeData()
+{
+}
+
+void RDPanelButton::mousePressEvent(QMouseEvent *e)
+{
+  switch(e->button()) {
+      case QMouseEvent::RightButton:
+	button_menu->setGeometry(e->globalX(),e->globalY()+20,
+				  button_menu->sizeHint().width(),
+				  button_menu->sizeHint().height());
+	button_menu->exec();
+	break;
+
+      default:
+        QPushButton::mousePressEvent(e);
+	break;
+  }
 }

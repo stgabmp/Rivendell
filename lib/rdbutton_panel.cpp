@@ -27,21 +27,33 @@
 
 
 RDButtonPanel::RDButtonPanel(int cols,int rows,RDStation *station,bool flash,
-			     QWidget *parent)
+			     QWidget *parent,int button_x_size,QWidget *area) 
 {
+  if(area==NULL) {
+    panel_area=parent;
+  }
+  else {
+    panel_area=area;
+  }
+   
   panel_button_columns=cols;
   panel_button_rows=rows;
   panel_station=station;
   for(int i=0;i<panel_button_rows;i++) {
     for(int j=0;j<panel_button_columns;j++) {
-      panel_button[i][j]=new RDPanelButton(panel_station,flash,parent);
-      panel_button[i][j]->setGeometry((15+PANEL_BUTTON_SIZE_X)*j,
+      panel_button[i][j]=new RDPanelButton(panel_station,flash,panel_area,0,i,j);
+      panel_button[i][j]->setGeometry((15+button_x_size)*j,
 				      (15+PANEL_BUTTON_SIZE_Y)*i,
-				      PANEL_BUTTON_SIZE_X,
+				      button_x_size,
 				      PANEL_BUTTON_SIZE_Y);
       panel_button[i][j]->hide();
       parent->connect(parent,SIGNAL(buttonFlash(bool)),
 		      panel_button[i][j],SLOT(flashButton(bool)));
+      parent->connect(panel_button[i][j],SIGNAL(addClicked(unsigned,int,int)),
+	  parent,SLOT(addClickedData(unsigned,int,int)));
+      parent->connect(panel_button[i][j],SIGNAL(copyClicked(unsigned,int,int)),
+	  parent,SLOT(copyClickedData(unsigned,int,int)));
+
     }
   }
   clear();

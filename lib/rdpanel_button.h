@@ -33,6 +33,7 @@
 #include <rdairplay_conf.h>
 #include <rdplay_deck.h>
 #include <rdlog_line.h>
+#include <qpopupmenu.h>
 
 #define RDPANEL_BUTTON_MARGIN 5
 
@@ -40,7 +41,7 @@ class RDPanelButton : public QPushButton
 {
  Q_OBJECT
  public:
-  RDPanelButton(RDStation *station,bool flash,QWidget *parent=0,const char *name=0);
+  RDPanelButton(RDStation *station,bool flash,QWidget *parent=0,const char *name=0,int row=0,int col=0);
   void clear();
   QString text() const;
   void setText(const QString &text);
@@ -77,6 +78,10 @@ class RDPanelButton : public QPushButton
   void setDuckVolume(int lvel);
   void WriteKeycap(int secs=-1);
 
+ signals:
+   void addClicked(unsigned cartnum,int row,int col); 
+   void copyClicked(unsigned cartnum,int row,int col); 
+
  public slots:
   void tickClock();
   void flashButton(bool state);
@@ -84,8 +89,18 @@ class RDPanelButton : public QPushButton
  private slots:
   void keyPressEvent(QKeyEvent *e);
   void keyReleaseEvent(QKeyEvent *e);
+  void updateMenuData();
+  void addData();
+  void copyData();
+  void deleteData();
+  void closeData();
+
+ protected:
+  void mousePressEvent(QMouseEvent *e);
 
  private:
+  int button_row;
+  int button_col;
   QString WrapText(QString text,int *lines);
   QString GetNextLine(QString *str,const QFontMetrics &m,int len);
   QPalette button_default_palette;
@@ -113,5 +128,6 @@ class RDPanelButton : public QPushButton
   bool button_pause_when_finished;
   int button_duck_volume;
   RDLogLine::StartSource button_start_source;
+  QPopupMenu *button_menu;
 };
 #endif

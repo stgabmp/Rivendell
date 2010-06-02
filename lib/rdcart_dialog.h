@@ -39,21 +39,26 @@
 
 #define RDCART_DIALOG_STEP_SIZE 1000
 
-class RDCartDialog : public QDialog
+class RDCartSelector : public QWidget
 {
  Q_OBJECT
  public:
- RDCartDialog(QString *filter,QString *group,
+ RDCartSelector(QString *filter,QString *group,
 	      int audition_card,int audition_port,
 	      unsigned start_cart,unsigned end_cart,
 	      RDCae *cae,RDRipc *ripc,RDStation *station,
 	      const QString &edit_cmd,QWidget *parent=0,const char *name=0);
- ~RDCartDialog();
+ ~RDCartSelector();
  QSize sizeHint() const;
  QSizePolicy sizePolicy() const;
+ QLineEdit *cart_filter_edit;
 
  public slots:
- int exec(int *cartnum,RDCart::Type type,QString *svcname,int svc_quan);
+ int exec(int *cartnum,RDCart::Type type,QString *svcname,int svc_quan,bool modal=true);
+
+ signals: 
+  void addClicked(); 
+  void closeClicked(); 
 
  private slots:
   void filterChangedData(const QString &);
@@ -75,10 +80,10 @@ class RDCartDialog : public QDialog
   void BuildGroupList();
   QString GetSearchFilter(QString filter,QString group);
   int *cart_cartnum;
+  bool cart_modal;
   QLabel *cart_cart_label;
   RDListView *cart_cart_list;
   QLabel *cart_filter_label;
-  QLineEdit *cart_filter_edit;
   QPushButton *cart_ok_button;
   QPushButton *cart_cancel_button;
   QPushButton *cart_search_button;
@@ -102,5 +107,40 @@ class RDCartDialog : public QDialog
 #endif  // WIN32
 };
 
+
+class RDCartDialog : public QDialog
+{
+ Q_OBJECT
+ public:
+  RDCartDialog(QString *filter,QString *group,
+	      int audition_card,int audition_port,
+	      unsigned start_cart,unsigned end_cart,
+	      RDCae *cae,RDRipc *ripc,RDStation *station,
+	      const QString &edit_cmd,QWidget *parent=0,const char *name=0);
+ QSize sizeHint() const;
+ QSizePolicy sizePolicy() const;
+
+ signals: 
+  void addClicked(); 
+  void getKey();
+  void releaseKey();
+
+ public slots:
+  int exec(int *cartnum,RDCart::Type type,QString *svcname,int svc_quan,bool modal=true);
+
+ private slots:
+  void okData();
+  void cancelData();
+
+ protected:
+  void resizeEvent(QResizeEvent *e);
+  void focusInEvent(QFocusEvent *e);
+  void focusOutEvent(QFocusEvent *e);
+  
+ private:
+  RDCartSelector *cart_selector;
+  bool cart_modal;
+  int *cart_cartnum;
+}; 
 
 #endif

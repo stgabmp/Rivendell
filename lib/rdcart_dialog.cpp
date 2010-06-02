@@ -40,19 +40,19 @@
 #include "../icons/rml5.xpm"
 
 
-RDCartDialog::RDCartDialog(QString *filter,QString *group,
+RDCartSelector::RDCartSelector(QString *filter,QString *group,
 			   int audition_card,int audition_port,
 			   unsigned start_cart,unsigned end_cart,RDCae *cae,
 			   RDRipc *ripc,RDStation *station,
 			   const QString &edit_cmd,
 			   QWidget *parent,const char *name)
-  : QDialog(parent,name,true)
+  : QWidget(parent,name)
 {
   //
   // Fix the Window Size
   //
   setMinimumWidth(sizeHint().width());
-  setMinimumHeight(sizeHint().height());
+  setMinimumHeight(sizeHint().height()*0.8);
 
   cart_cartnum=NULL;
   cart_type=RDCart::All;
@@ -230,7 +230,7 @@ RDCartDialog::RDCartDialog(QString *filter,QString *group,
 }
 
 
-RDCartDialog::~RDCartDialog()
+RDCartSelector::~RDCartSelector()
 {
   if(local_filter) {
     delete cart_filter;
@@ -245,19 +245,30 @@ RDCartDialog::~RDCartDialog()
 }
 
 
-QSize RDCartDialog::sizeHint() const
+QSize RDCartSelector::sizeHint() const
 {
   return QSize(550,370);
 }
 
 
-int RDCartDialog::exec(int *cartnum,RDCart::Type type,QString *svcname,
-		       int svc_quan)
+int RDCartSelector::exec(int *cartnum,RDCart::Type type,QString *svcname,
+		       int svc_quan,bool modal)
 {
+  cart_modal=modal;
   cart_cartnum=cartnum;
   cart_type=type;
   cart_service=svcname;
   cart_service_quan=svc_quan;
+
+  if(cart_modal) {
+    cart_ok_button->setText(tr("Ok"));
+    cart_cancel_button->setText(tr("Cancel"));
+  }
+  else {
+    cart_ok_button->setText(tr("Add"));
+    cart_cancel_button->setText(tr("Close"));
+  }
+
   switch(cart_type) {
     case RDCart::All:
     case RDCart::Audio:
@@ -303,24 +314,28 @@ int RDCartDialog::exec(int *cartnum,RDCart::Type type,QString *svcname,
   RDListViewItem *item=(RDListViewItem *)cart_cart_list->firstChild();
   while(item!=NULL) {
     if(item->text(1).toInt()==*cartnum) {
-      cart_cart_list->setSelected(item,true);
+     cart_cart_list->setSelected(item,true);
       cart_cart_list->ensureItemVisible(item);
       clickedData(item);
-      return QDialog::exec();
+      if(!cart_modal) {
+        return -1;
+      }
     }
     item=(RDListViewItem *)item->nextSibling();
   }
-  return QDialog::exec();
+  if(!cart_modal) {
+    return -1;
+  }
 }
 
 
-QSizePolicy RDCartDialog::sizePolicy() const
+QSizePolicy RDCartSelector::sizePolicy() const
 {
-  return QSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+  return QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum);
 }
 
 
-void RDCartDialog::filterChangedData(const QString &str)
+void RDCartSelector::filterChangedData(const QString &str)
 {
   cart_search_button->setEnabled(true);
   switch(cart_filter_mode) {
@@ -334,7 +349,7 @@ void RDCartDialog::filterChangedData(const QString &str)
 }
 
 
-void RDCartDialog::filterSearchedData()
+void RDCartSelector::filterSearchedData()
 {
   if(cart_filter_edit->text().isEmpty()) {
     cart_clear_button->setDisabled(true);
@@ -346,14 +361,14 @@ void RDCartDialog::filterSearchedData()
 }
 
 
-void RDCartDialog::filterClearedData()
+void RDCartSelector::filterClearedData()
 {
   cart_filter_edit->clear();
   filterChangedData("");
 }
 
 
-void RDCartDialog::groupActivatedData(const QString &group)
+void RDCartSelector::groupActivatedData(const QString &group)
 {
   filterChangedData("");
   if(cart_group!=NULL) {
@@ -362,7 +377,7 @@ void RDCartDialog::groupActivatedData(const QString &group)
 }
 
 
-void RDCartDialog::clickedData(QListViewItem *item)
+void RDCartSelector::clickedData(QListViewItem *item)
 {
   RDListViewItem *i=(RDListViewItem *)item;
   if (i==NULL) {
@@ -381,13 +396,13 @@ void RDCartDialog::clickedData(QListViewItem *item)
 }
 
 
-void RDCartDialog::doubleClickedData(QListViewItem *,const QPoint &,int)
+void RDCartSelector::doubleClickedData(QListViewItem *,const QPoint &,int)
 {
   okData();
 }
 
 
-void RDCartDialog::editorData()
+void RDCartSelector::editorData()
 {
 #ifndef WIN32
   RDListViewItem *item=(RDListViewItem *)cart_cart_list->currentItem();
@@ -436,9 +451,9 @@ void RDCartDialog::editorData()
 }
 
 
-void RDCartDialog::okData()
+void RDCartSelector::okData()
 {
-  RDListViewItem *item=(RDListViewItem *)cart_cart_list->currentItem();
+  RDListViewItem *item=(RDListViewItem *)cart_cart_list->selectedItem();
   if(item==NULL) {
     return;
   }
@@ -448,26 +463,23 @@ void RDCartDialog::okData()
     cart_player->stop();
   }
 #endif  // WIN32
-  if(!local_filter) {
-    *cart_filter=cart_filter_edit->text();
-  }
   *cart_cartnum=item->text(1).toInt();
-  done(0);
+  emit addClicked();
 }
 
 
-void RDCartDialog::cancelData()
+void RDCartSelector::cancelData()
 {
 #ifndef WIN32
   if(cart_player!=NULL) {
     cart_player->stop();
   }
 #endif  // WIN32
-  done(-1);
+  emit closeClicked();
 }
 
 
-void RDCartDialog::resizeEvent(QResizeEvent *e)
+void RDCartSelector::resizeEvent(QResizeEvent *e)
 {
   cart_filter_label->setGeometry(10,10,85,20);
 
@@ -498,7 +510,7 @@ void RDCartDialog::resizeEvent(QResizeEvent *e)
 }
 
 
-void RDCartDialog::closeEvent(QCloseEvent *e)
+void RDCartSelector::closeEvent(QCloseEvent *e)
 {
 #ifndef WIN32
   if(cart_player!=NULL) {
@@ -509,7 +521,7 @@ void RDCartDialog::closeEvent(QCloseEvent *e)
 }
 
 
-void RDCartDialog::RefreshCarts()
+void RDCartSelector::RefreshCarts()
 {
   QString sql;
   RDSqlQuery *q;
@@ -595,7 +607,7 @@ void RDCartDialog::RefreshCarts()
 }
 
 
-void RDCartDialog::BuildGroupList()
+void RDCartSelector::BuildGroupList()
 {
   QString sql;
   RDSqlQuery *q;
@@ -634,7 +646,7 @@ void RDCartDialog::BuildGroupList()
 }
 
 
-QString RDCartDialog::GetSearchFilter(QString filter,QString group)
+QString RDCartSelector::GetSearchFilter(QString filter,QString group)
 {
   QString sql;
   RDSqlQuery *q;
@@ -658,4 +670,95 @@ QString RDCartDialog::GetSearchFilter(QString filter,QString group)
   delete q;
   return search;
 }
+
+
+RDCartDialog::RDCartDialog(QString *filter,QString *group,
+			   int audition_card,int audition_port,
+			   unsigned start_cart,unsigned end_cart,RDCae *cae,
+			   RDRipc *ripc,RDStation *station,
+			   const QString &edit_cmd,
+			   QWidget *parent,const char *name) 
+  : QDialog(parent,name,false)
+{
+  cart_selector=new RDCartSelector(filter,group,audition_card,audition_port,
+			   start_cart,end_cart,cae,
+			   ripc,station,edit_cmd,this,"");
+  connect(cart_selector,SIGNAL(addClicked()),this,SLOT(okData()));
+  connect(cart_selector,SIGNAL(closeClicked()),this,SLOT(cancelData()));
+  setMinimumWidth(cart_selector->sizeHint().width());
+  setMinimumHeight(cart_selector->sizeHint().height());
+  setFocusPolicy(QWidget::StrongFocus);
+}
+
+
+int RDCartDialog::exec(int *cartnum,RDCart::Type type,QString *svcname,
+		       int svc_quan,bool modal)
+{
+  cart_modal=modal;
+  cart_cartnum=cartnum;
+  cart_selector->exec(cart_cartnum,type,svcname,svc_quan,modal);
+  if(cart_modal) {
+    return QDialog::exec();
+  }
+  else {
+    QDialog::show();
+    return -1;
+  }
+}
+
+
+void RDCartDialog::okData()
+{
+  if(cart_modal) {
+    QDialog::done(0);
+  }
+  else {
+    emit addClicked();
+  }
+}
+
+
+void RDCartDialog::cancelData()
+{
+  if(cart_modal) {
+    cart_selector->close();
+    done(-1);
+  }
+  else {
+    QDialog::hide();
+  }
+}
+
+
+QSize RDCartDialog::sizeHint() const
+{
+  return cart_selector->sizeHint();
+}
+
+
+QSizePolicy RDCartDialog::sizePolicy() const
+{
+  return QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum);
+}
+
+
+void RDCartDialog::resizeEvent(QResizeEvent *e)
+{
+  QDialog::resizeEvent(e);
+  cart_selector->resize(size());
+}
+
+
+void RDCartDialog::focusInEvent(QFocusEvent *e)
+{
+  emit getKey();
+}
+
+
+void RDCartDialog::focusOutEvent(QFocusEvent *e)
+{
+  emit releaseKey();
+}
+
+
 
