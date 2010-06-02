@@ -502,11 +502,11 @@ void RDPlayDeck::stop()
 }
 
 
-void RDPlayDeck::stop(int interval,int gain)
+void RDPlayDeck::stop(int interval,int gain,bool force_fade)
 {
   int level;
   
-  if(gain>play_point_gain) {
+  if(gain>play_point_gain||force_fade) {
     play_point_gain=gain;
   }
   
