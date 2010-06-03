@@ -103,12 +103,15 @@ class ListLog : public QWidget
   void SetColor();
   void SetPlaybuttonMode(ListLog::PlayButtonMode mode);
   QString TimeString(const QTime &time) const;
+  void resizeEvent(QResizeEvent *e);
   RDListView *list_log_list;
   LogPlay *list_log;
   RDAirPlayConf::ActionMode list_action_mode;
   ListLog::PlayButtonMode list_playbutton_mode;
   EditEvent *list_event_edit;
   QLineEdit *list_endtime_edit;
+  QLabel *list_counter_label;
+  QLabel *list_end_label;
   QLabel *list_stoptime_label;
   QLineEdit *list_stoptime_edit;
   QPushButton *list_take_button;

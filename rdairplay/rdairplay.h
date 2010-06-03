@@ -75,8 +75,8 @@
 #define AIR_TOTAL_BUTTONS 7
 #define AIR_LOG_PORTS 2
 #define AIR_PANEL_PORTS 1
-#define AIR_PANEL_BUTTON_ROWS 5
-#define AIR_PANEL_BUTTON_COLUMNS 3
+#define AIR_PANEL_BUTTON_ROWS 7
+#define AIR_PANEL_BUTTON_COLUMNS 4
 #define AIR_TOTAL_PORTS 3
 #define METER_INTERVAL 20
 #define MASTER_TIMER_INTERVAL 100
@@ -131,6 +131,7 @@ class MainWidget : public QWidget
   void SetActionMode(StartButton::Mode mode);
   bool FirstPort(int index);
   bool GetPanel(QString str,RDAirPlayConf::PanelType *type,int *panel);
+  void resizeEvent(QResizeEvent *e);
   QFont MessageFont(QString str);
   LogPlay *air_log[RDAIRPLAY_LOG_QUANTITY];
   RDSoundPanel *air_panel;

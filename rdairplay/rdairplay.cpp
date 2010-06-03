@@ -172,9 +172,9 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   //
 #ifndef RESIZABLE
   setMinimumWidth(sizeHint().width());
-  setMaximumWidth(sizeHint().width());
+//  setMaximumWidth(sizeHint().width());
   setMinimumHeight(sizeHint().height());
-  setMaximumHeight(sizeHint().height());
+//  setMaximumHeight(sizeHint().height());
 #endif  // RESIZABLE
 
   //
@@ -489,39 +489,35 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   // Add Button
   //
   air_add_button=new RDPushButton(this,"air_add_button");
-  air_add_button->setGeometry(10,sizeHint().height()-65,80,60);
   air_add_button->setFont(button_font);
   air_add_button->setText(tr("ADD"));
- air_add_button->setFocusPolicy(QWidget::NoFocus);
+  air_add_button->setFocusPolicy(QWidget::NoFocus);
   connect(air_add_button,SIGNAL(clicked()),this,SLOT(addButtonData()));
 
   //
   // Delete Button
   //
   air_delete_button=new RDPushButton(this,"air_delete_button");
-  air_delete_button->setGeometry(100,sizeHint().height()-65,80,60);
   air_delete_button->setFont(button_font);
   air_delete_button->setText(tr("DEL"));
   air_delete_button->setFlashColor(AIR_FLASH_COLOR);
- air_delete_button->setFocusPolicy(QWidget::NoFocus);
+  air_delete_button->setFocusPolicy(QWidget::NoFocus);
   connect(air_delete_button,SIGNAL(clicked()),this,SLOT(deleteButtonData()));
 
   //
   // Move Button
   //
   air_move_button=new RDPushButton(this,"air_move_button");
-  air_move_button->setGeometry(190,sizeHint().height()-65,80,60);
   air_move_button->setFont(button_font);
   air_move_button->setText(tr("MOVE"));
   air_move_button->setFlashColor(AIR_FLASH_COLOR);
- air_move_button->setFocusPolicy(QWidget::NoFocus);
+  air_move_button->setFocusPolicy(QWidget::NoFocus);
   connect(air_move_button,SIGNAL(clicked()),this,SLOT(moveButtonData()));
 
   //
   // Copy Button
   //
   air_copy_button=new RDPushButton(this,"air_copy_button");
-  air_copy_button->setGeometry(280,sizeHint().height()-65,80,60);
   air_copy_button->setFont(button_font);
   air_copy_button->setText(tr("COPY"));
   air_copy_button->setFlashColor(AIR_FLASH_COLOR);
@@ -532,7 +528,6 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   // Refresh Indicator
   //
   air_refresh_label=new RDLabel(this,"air_refresh_label");
-  air_refresh_label->setGeometry(390,sizeHint().height()-65,120,60);
   air_refresh_label->setFont(button_font);
   QPalette p=palette();
   p.setColor(QColorGroup::Foreground,red);
@@ -570,8 +565,6 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 		       rdevent_player,rdripc,rdcae,rdstation_conf,
 		       rdcart_dialog,this,"air_panel",button_x_size);
     air_panel->setLogfile(air_config->airplayLogname());
-    air_panel->setGeometry(510,140,air_panel->sizeHint().width(),
-			 air_panel->sizeHint().height());
     if(mainmap!=NULL) {
       pm=new QPixmap(1024,738);
       pd=new QPainter(pm);
@@ -679,8 +672,6 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   for(int i=0;i<RDAIRPLAY_LOG_QUANTITY;i++) {
     air_log_list[i]=new ListLog(air_log[i],i,air_pause_enabled,
 				this,"air_log_list");
-    air_log_list[i]->setGeometry(510,140,air_log_list[i]->sizeHint().width(),
-			      air_log_list[i]->sizeHint().height());
     air_log_list[i]->hide();
     connect(air_log_list[i],SIGNAL(selectClicked(int,int,RDLogLine::Status)),
 	    this,SLOT(selectClickedData(int,int,RDLogLine::Status)));
@@ -695,7 +686,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
     air_log_button[i]=new QPushButton(this);
     air_log_button[i]->setGeometry(610+i*137,sizeHint().height()-65,127,60);
     air_log_button[i]->setFont(button_font);
- air_log_button[i]->setFocusPolicy(QWidget::NoFocus);
+    air_log_button[i]->setFocusPolicy(QWidget::NoFocus);
     mapper->setMapping(air_log_button[i],i);
     connect(air_log_button[i],SIGNAL(clicked()),mapper,SLOT(map()));
   }
@@ -713,7 +704,6 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   // SoundPanel Button
   //
   air_panel_button=new QPushButton(this,"air_panel_button");
-  air_panel_button->setGeometry(520,sizeHint().height()-65,80,60);
   air_panel_button->setFont(button_font);
   air_panel_button->setText(tr("Sound\nPanel"));
   air_panel_button->setPalette(active_color);
@@ -734,8 +724,6 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   //
   air_button_list=new ButtonLog(air_log[0],0,air_pause_enabled,
 				this,"air_button_list");
-  air_button_list->setGeometry(10,140,air_button_list->sizeHint().width(),
-			       air_button_list->sizeHint().height());
   if(mainmap!=NULL) {
     pm=new QPixmap(1024,738);
     pd=new QPainter(pm);
@@ -1918,6 +1906,25 @@ void MainWidget::SetActionMode(StartButton::Mode mode)
 void MainWidget::addCartData()
 {
   SetActionMode(StartButton::AddTo);
+}
+
+
+void MainWidget::resizeEvent(QResizeEvent *e)
+{
+  air_add_button->setGeometry(10,size().height()-65,80,60);
+  air_delete_button->setGeometry(100,size().height()-65,80,60);
+  air_move_button->setGeometry(190,size().height()-65,80,60);
+  air_copy_button->setGeometry(280,size().height()-65,80,60);
+  air_refresh_label->setGeometry(390,size().height()-65,120,60);
+  for(int i=0;i<RDAIRPLAY_LOG_QUANTITY;i++) {
+    air_log_button[i]->setGeometry(610+i*137,size().height()-65,127,60);
+    air_log_list[i]->setGeometry(510,140,size().width()-520,size().height()-210);
+
+  }
+  air_panel_button->setGeometry(520,size().height()-65,80,60);
+  air_panel->setGeometry(510,140,size().width()-520,size().height()-210);
+  air_button_list->setGeometry(10,140,air_button_list->sizeHint().width(),
+                             size().height()-210);
 }
 
 

@@ -44,7 +44,7 @@
 //
 // Widget Settings
 //
-#define BUTTON_PLAY_BUTTONS 3
+#define BUTTON_PLAY_BUTTONS 7
 #define BUTTON_TOTAL_BUTTONS 7
 
 
