@@ -4,7 +4,7 @@
 //
 //   (C) Copyright 2002-2004 Fred Gleason <fredg@paravelsystems.com>
 //
-//      $Id: rdcatchd.h,v 1.51.2.1.2.1 2010/05/11 13:06:20 cvs Exp $
+//      $Id: rdcatchd.h,v 1.51.2.1 2009/03/31 11:21:01 cvs Exp $
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License version 2 as
@@ -26,7 +26,7 @@
 
 //#define RDCATCHD_TEMP_DIR "/tmp"
 #define XLOAD_UPDATE_INTERVAL 1000
-#define RDCATCHD_USAGE "[-d][--event-id=<id>]\n\nOptions:\n\n-d\n     Set 'debug' mode, causing rdcatchd(8) to stay in the foreground\n     and print debugging info on standard output.\n\n--event-id=<id>\n     Execute event <id> and then exit.\n\n" 
+#define RDCATCHD_USAGE "[-d]\n\nSupplying the '-d' flag will set 'debug' mode, causing rdcatchd(8) to stay\nin the foreground and print debugging info on standard output.\n" 
 
 #include <vector>
 #include <list>
@@ -52,8 +52,6 @@
 #include <rdconfig.h>
 #include <rdcatch_conf.h>
 #include <rdconfig.h>
-#include <rdcmd_switch.h>
-#include <rdcatch_connect.h>
 
 #include <catch_event.h>
 
@@ -86,9 +84,6 @@ class MainObject : public QObject
   void newConnection(int fd);
 
  private slots:
-  //
-  // rdcatchd.cpp
-  //
   void rmlReceivedData(RDMacro *rml);
   void gpiStateChangedData(int matrix,int line,bool state);
   void startTimerData(int id);
@@ -114,28 +109,7 @@ class MainObject : public QObject
   void startupCartData();
   void log(RDConfig::LogPriority prio,const QString &line);
 
-  //
-  // batch.cpp
-  //
-  void catchConnectedData(int serial,bool state);
-
  private:
-  //
-  // batch.cpp
-  //
-  void RunBatch(RDCmdSwitch *cmd);
-  void RunImport(CatchEvent *evt);
-  void RunDownload(CatchEvent *evt);
-  void RunUpload(CatchEvent *evt);
-  CatchEvent *batch_event;
-  bool Export(CatchEvent *evt);
-  QString GetExportCmd(CatchEvent *evt,QString *tempname);
-  bool Import(CatchEvent *evt);
-  QString GetImportCmd(CatchEvent *evt,QString *tempname);
-
-  //
-  // rdcatchd.cpp
-  //
   bool StartRecording(int event);
   void StartPlayout(int event);
   void StartMacroEvent(int event);
@@ -152,8 +126,7 @@ class MainObject : public QObject
   void BroadcastCommand(const char *,int except_ch=-1);
   void EchoArgs(int,const char);
   void LoadEngine(bool adv_day=false);
-  QString LoadEventSql();
-  void LoadEvent(RDSqlQuery *q,CatchEvent *e,bool add);
+  void LoadEvent(RDSqlQuery *q,CatchEvent *e);
   void LoadDeckList();
   int GetRecordDeck(int card,int stream);
   int GetPlayoutDeck(int handle);
@@ -164,13 +137,16 @@ class MainObject : public QObject
   int GetEvent(int id);
   void PurgeEvent(int event);
   void LoadHeartbeat();
+  bool Export(int event);
+  QString GetExportCmd(int event,QString *tempname);
+  bool Import(int event);
+  QString GetImportCmd(int event,QString *tempname);
   void CheckInRecording(QString cutname,unsigned threshold,int normalize_level=0);
-  void CheckInPodcast(CatchEvent *e) const;
+  void CheckInPodcast(CatchEvent *e);
   RDRecording::ExitCode ReadExitCode(int event);
   void WriteExitCode(int event,RDRecording::ExitCode code);
   void WriteExitCodeById(int id,RDRecording::ExitCode code);
   QString BuildTempName(int event,QString str);
-  QString BuildTempName(CatchEvent *evt,QString str);
   QString GetFileExtension(QString filename);
   void SendExitErrorMessage(CatchEvent *event,const QString &err_desc,
 			    QString rml);
@@ -182,8 +158,7 @@ class MainObject : public QObject
   unsigned GetNextDynamicId();
   void RunRmlRecordingCache(int chan);
   void StartRmlRecording(int chan,int cartnum,int cutnum,int maxlen);
-  void StartBatch(int id);
-  QString GetTempRecordingName(int id) const;
+  bool catch_forked;
   QSqlDatabase *catch_db;
   RDStation *catch_rdstation;
   RDRipc *catch_ripc;
@@ -194,7 +169,6 @@ class MainObject : public QObject
   RDCae *catch_cae;
   Q_INT16 tcp_port;
   QServerSocket *server;
-  RDCatchConnect *catch_connect;
   RDSocket *socket[RDCATCHD_MAX_CONNECTIONS];
   char args[RDCATCHD_MAX_CONNECTIONS][RDCATCHD_MAX_ARGS][RDCATCHD_MAX_LENGTH];
   int istate[RDCATCHD_MAX_CONNECTIONS];

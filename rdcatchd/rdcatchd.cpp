@@ -4,7 +4,7 @@
 //
 //   (C) Copyright 2002-2007 Fred Gleason <fredg@paravelsystems.com>
 //
-//      $Id: rdcatchd.cpp,v 1.130.2.8.2.3 2010/05/19 16:43:53 cvs Exp $
+//      $Id: rdcatchd.cpp,v 1.130.2.8 2009/09/04 01:29:49 cvs Exp $
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License version 2 as
@@ -31,8 +31,6 @@
 #include <grp.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
-#include <errno.h>
 
 #include <vector>
 
@@ -54,11 +52,11 @@
 #include <rdcheck_daemons.h>
 #include <rddebug.h>
 #include <rddatedecode.h>
+#include <rdcmd_switch.h>
 #include <rdescape_string.h>
 #include <rdpodcast.h>
 #include <rdsettings.h>
 #include <rdlibrary_conf.h>
-#include <rdpaths.h>
 
 RDConfig *catch_config;
 
@@ -125,22 +123,11 @@ MainObject::MainObject(QObject *parent,const char *name)
   RDSqlQuery *q;
 
   //
-  // Load the config
-  //
-  catch_config=new RDConfig();
-  catch_config->load();
-
-  //
   // Read Command Options
   //
   RDCmdSwitch *cmd=
     new RDCmdSwitch(qApp->argc(),qApp->argv(),"rdcatchd",RDCATCHD_USAGE);
-  for(unsigned i=0;i<cmd->keys();i++) {
-    if(cmd->key(i)=="--event-id") {
-      RunBatch(cmd);
-      return;
-    }
-  }
+  delete cmd;
 
   //
   // Make sure we're the only instance running
@@ -151,8 +138,15 @@ MainObject::MainObject(QObject *parent,const char *name)
   }
 
   //
+  // Load the config
+  //
+  catch_config=new RDConfig();
+  catch_config->load();
+
+  //
   // Initialize Data Structures
   //
+  catch_forked=false;
   debug=false;
   for(int i=0;i<RDCATCHD_MAX_CONNECTIONS;i++) {
     socket[i]=NULL;
@@ -534,6 +528,13 @@ void MainObject::offsetTimerData(int id)
 void MainObject::engineData(int id)
 {
   // LogLine(QString().sprintf("engineData(%d)",id));
+
+  if(catch_forked) {
+    LogLine(RDConfig::LogDebug,
+	    " *** triggered from forked thread -- ignored ***");
+    return;
+  }
+
   QString sql;
   RDSqlQuery *q;
   RDStation *rdstation;
@@ -769,12 +770,6 @@ void MainObject::engineData(int id)
 	  catch_default_layer=q->value(3).toInt();
 	  catch_default_bitrate=q->value(4).toInt();
 	  catch_ripper_level=q->value(5).toInt();
-
-          catch_events[event].setFormat((RDCae::AudioCoding)q->value(0).toInt());
-          catch_events[event].setSampleRate(q->value(2).toInt());
-          catch_events[event].setChannels(q->value(1).toInt());
-          catch_events[event].setBitrate(q->value(4).toInt()*q->value(1).toInt());
-          catch_events[event].setNormalizeLevel(q->value(5).toInt());
 	}
 	else {
 	  LogLine(RDConfig::LogWarning,
@@ -803,12 +798,10 @@ void MainObject::engineData(int id)
 			   catch_conf->errorRml());
 	  return;
 	}
-	/*
 	catch_events[event].
 	  setResolvedUrl(RDDateTimeDecode(catch_events[event].url(),
 	       QDateTime(date.addDays(catch_events[event].eventdateOffset()),
 	       current_time)));
-	*/
 	StartUploadEvent(event);
 	break;
   }
@@ -927,7 +920,15 @@ void MainObject::recordUnloadedData(int card,int stream)
     }  
   }
   else {
-    StartBatch(catch_events[event].id());
+    if(fork()==0) {
+      catch_forked=true;
+      if(!Import(event)) {
+	SendExitErrorMessage(&catch_events[event],tr("unknown file type"),
+			     catch_conf->errorRml());
+	return;
+      }
+      exit(0);
+    }
   }
   delete cut;
   if(catch_record_aborting[deck-1]) {
@@ -1088,6 +1089,12 @@ void MainObject::eventFinishedData(int id)
 					 catch_macro_event_id[id]));
       if(catch_events[event].oneShot()) {
 	PurgeEvent(event);
+      }
+    }
+    else {
+      if(catch_forked) {
+	qApp->processEvents();  // Wait for the RML to finish
+	exit(0);
       }
     }
     catch_macro_event_id[id]=-1;
@@ -1268,7 +1275,10 @@ bool MainObject::StartRecording(int event)
   else {
     cut_name=QString().sprintf("rdcatchd-record-%d",catch_events[event].id());
     catch_events[event].
-      setTempName(GetTempRecordingName(catch_events[event].id()));
+      setTempName(QString().sprintf("%s/rdcatchd-record-%d.%s",
+				    RDConfiguration()->audioRoot().ascii(),
+				    catch_events[event].id(),
+				    RDConfiguration()->audioExtension().ascii()));
     catch_events[event].setDeleteTempFile(true);
     format=RDCae::Pcm16;
   }    
@@ -1472,28 +1482,327 @@ void MainObject::StartSwitchEvent(int event)
 
 void MainObject::StartDownloadEvent(int event)
 {
+  QString xload_cmd;
+  QString import_cmd;
+  RDUrl url(catch_events[event].resolvedUrl());
+  QString protocol=url.protocol();
+  QString temp_importname;
+
   WriteExitCode(event,RDRecording::Downloading);
   catch_active_xloads.push_back(event);
   if(!catch_xload_timer->isActive()) {
     catch_xload_timer->start(XLOAD_UPDATE_INTERVAL);
-  }
+  } 
   BroadcastCommand(QString().sprintf("RE 0 %d %d!",
 				     RDDeck::Recording,
 				     catch_events[event].id()));
-  StartBatch(catch_events[event].id());
+  if((fork())==0) {
+    catch_forked=true;
+
+    //
+    // Build Command Lines
+    //
+    if(protocol=="file") {
+      catch_events[event].setTempName(url.path());
+      catch_events[event].setDeleteTempFile(false);
+    }
+    if((protocol=="http")||(protocol=="https")) {
+      catch_events[event].setTempName(BuildTempName(event,"download"));
+      catch_events[event].setDeleteTempFile(true);
+      xload_cmd="wget -q ";
+      if(!catch_events[event].urlUsername().isEmpty()) {
+	xload_cmd+=QString().sprintf("--http-user %s ",
+				     (const char *)
+				     catch_events[event].urlUsername().utf8());
+	if(!catch_events[event].urlPassword().isEmpty()) {
+	  xload_cmd+=QString().sprintf("--http-passwd \"%s\" ",
+				       (const char *)
+				       catch_events[event].urlPassword().utf8());
+	}
+      }
+      xload_cmd+=QString().
+	    sprintf("-O %s \"%s\"",(const char *)catch_events[event].tempName().utf8(),
+		(const char *)catch_events[event].resolvedUrl());
+    }
+    if(protocol=="ftp") {
+      catch_events[event].setTempName(BuildTempName(event,"download"));
+      catch_events[event].setDeleteTempFile(true);
+      QString urlpath=url.path().right(url.path().length()-1);
+      urlpath.replace(" ","\\ ");
+      QString urlbase=RDGetBasePart(catch_events[event].tempName());
+      urlbase.replace(" ","\\ ");
+      xload_cmd=QString().sprintf("lftp -e \"get -O %s %s -o %s;bye\"",
+		  (const char *)RDGetPathPart(catch_events[event].tempName().utf8()),
+				  (const char *)urlpath.utf8(),
+				  (const char *)urlbase.utf8());
+      if(!catch_events[event].urlUsername().isEmpty()) {
+	xload_cmd+=QString().sprintf(" -u \"%s",
+			  (const char *)catch_events[event].urlUsername());
+	if(catch_events[event].urlPassword().isEmpty()) {
+	  xload_cmd+="\"";
+	}
+	else {
+	  xload_cmd+=QString().sprintf(",%s\"",
+			  (const char *)catch_events[event].urlPassword());
+	}
+      }
+      xload_cmd+=QString().sprintf(" %s",(const char *)url.host());
+    }
+    if(protocol=="smb") {
+      if(!url.validSmbShare()) {
+	WriteExitCode(event,RDRecording::ServerError);
+	LogLine(RDConfig::LogWarning,QString().
+		sprintf("url \"%s\" is invalid, download aborted, id=%d",
+			(const char *)catch_events[event].resolvedUrl(),
+			catch_events[event].id()));
+	exit(0);
+      }
+      catch_events[event].setTempName(BuildTempName(event,"download"));
+      catch_events[event].setDeleteTempFile(true);
+      xload_cmd=QString().sprintf("smbclient \"%s\" ",
+				  (const char *)url.smbShare().utf8());
+      if(!catch_events[event].urlPassword().isEmpty()) {
+	xload_cmd+=QString().sprintf("\"%s\" ",(const char *)
+				     catch_events[event].urlPassword().utf8());
+      }
+      if(!catch_events[event].urlUsername().isEmpty()) {
+	xload_cmd+=QString().sprintf("-U %s ",(const char *)
+				     catch_events[event].urlUsername().utf8());
+      }
+      xload_cmd+=QString().
+	sprintf("-c \"get %s %s\"",(const char *)url.smbPath(),
+		(const char *)catch_events[event].tempName());
+    }
+    // LogLine(QString().sprintf("Xload Cmd: %s",(const char *)xload_cmd));
+
+    //
+    // Execute Download
+    //
+    if(!xload_cmd.isEmpty()) {
+      LogLine(RDConfig::LogInfo,QString().
+	      sprintf("started download of %s to %s, id=%d, cmdline=\"%s\"",
+		      (const char *)catch_events[event].resolvedUrl(),
+		      (const char *)catch_events[event].tempName().utf8(),
+		      catch_events[event].id(),
+		      (const char *)xload_cmd));
+      if(system((const char *)xload_cmd.utf8())!=0) {
+	WriteExitCode(event,RDRecording::ServerError);
+	printf("download of %s returned an error, id=%d, xload_cmd: %s\n",
+			    (const char *)catch_events[event].resolvedUrl(),
+			    catch_events[event].id(),
+				  (const char *)xload_cmd);
+	SendExitErrorMessage(&catch_events[event],
+			     tr("server error or invalid URL"),
+			     catch_conf->errorRml());
+	return;
+      }
+      LogLine(RDConfig::LogInfo,QString().
+	      sprintf("finished download of %s to %s, id=%d",
+			      (const char *)catch_events[event].resolvedUrl(),
+			      (const char *)catch_events[event].tempName(),
+			      catch_events[event].id()));
+    }
+
+    //
+    // Execute Import
+    //
+    if(!Import(event)) {
+      SendExitErrorMessage(&catch_events[event],tr("unknown file type"),
+			   catch_conf->errorRml());
+      return;
+    }
+    exit(0);
+  }
 }
 
 
 void MainObject::StartUploadEvent(int event)
 {
+  QString xload_cmd;
+  QString export_cmd;
+  RDUrl url(catch_events[event].resolvedUrl());
+  QString protocol=url.protocol();
+  QString temp_exportname;
+  QString urlpath;
+  QString dirpath;
+
   WriteExitCode(event,RDRecording::Uploading);
   catch_active_xloads.push_back(event);
   if(!catch_xload_timer->isActive()) {
     catch_xload_timer->start(XLOAD_UPDATE_INTERVAL);
-  }
-  BroadcastCommand(QString().sprintf("RE 0 %d %d!",RDDeck::Recording,
+  } 
+  BroadcastCommand(QString().sprintf("RE 0 %d %d!",
+				     RDDeck::Recording,
 				     catch_events[event].id()));
-  StartBatch(catch_events[event].id());
+  if((fork())==0) {
+    catch_forked=true;
+
+    //
+    // Build Command Lines
+    //
+    if(protocol=="file") {
+      catch_events[event].setTempName(url.path());
+      catch_events[event].setDeleteTempFile(false);
+    }
+    if(protocol=="ftp") {
+      catch_events[event].setTempName(BuildTempName(event,"upload"));
+      catch_events[event].setDeleteTempFile(true);
+      QString dir=RDGetPathPart(url.path());
+      if(dir=="/") {
+	dir="//";
+      }
+      urlpath=RDGetBasePart(url.path());
+      urlpath.replace(" ","\\ ");
+      if(dir.right(dir.length()-1)=="/") {
+	xload_cmd=QString().sprintf("lftp -e \"put %s -o %s;bye\"",
+			     (const char *)catch_events[event].tempName().utf8(),
+			     (const char *)urlpath.utf8());
+      }
+      else {
+	dirpath=dir.right(dir.length()-1);
+	dirpath.replace(" ","\\ ");
+	xload_cmd=QString().sprintf("lftp -e \"put -O %s %s -o %s;bye\"",
+			     (const char *)dirpath.utf8(),
+			     (const char *)catch_events[event].tempName().utf8(),
+			     (const char *)urlpath.utf8());
+      }
+      if(!catch_events[event].urlUsername().isEmpty()) {
+	xload_cmd+=QString().sprintf(" -u \"%s",
+			  (const char *)catch_events[event].urlUsername().utf8());
+	if(catch_events[event].urlPassword().isEmpty()) {
+	  xload_cmd+="\"";
+	}
+	else {
+	  xload_cmd+=QString().sprintf(",%s\"",
+			  (const char *)catch_events[event].urlPassword().utf8());
+	}
+      }
+      xload_cmd+=QString().sprintf(" %s",(const char *)url.host().utf8());
+    }
+    if(protocol=="smb") {
+      if(!url.validSmbShare()) {
+	WriteExitCode(event,RDRecording::ServerError);
+	LogLine(RDConfig::LogWarning,QString().
+		sprintf("url \"%s\" is invalid, upload aborted, id=%d",
+			(const char *)catch_events[event].resolvedUrl(),
+			catch_events[event].id()));
+	SendExitErrorMessage(&catch_events[event],tr("invalid URL"),
+			     catch_conf->errorRml());
+	return;
+      }
+      urlpath=url.smbPath();
+      urlpath.replace(" ","\\ ");
+      catch_events[event].setTempName(BuildTempName(event,"upload"));
+      catch_events[event].setDeleteTempFile(true);
+      QString path=RDGetPathPart(url.path());
+      xload_cmd=QString().sprintf("smbclient \"%s\" ",
+				  (const char *)url.smbShare().utf8());
+      if(!catch_events[event].urlPassword().isEmpty()) {
+	xload_cmd+=QString().sprintf("\"%s\" ",(const char *)
+				     catch_events[event].urlPassword().utf8());
+      }
+      if(!catch_events[event].urlUsername().isEmpty()) {
+	xload_cmd+=QString().sprintf("-U %s ",(const char *)
+				     catch_events[event].urlUsername().utf8());
+      }
+      xload_cmd+=QString().
+	sprintf("-c \"put %s %s\"",(const char *)catch_events[event].
+		tempName().utf8(),(const char *)urlpath.utf8());
+    }
+
+    //
+    // Execute Export
+    //
+    LogLine(RDConfig::LogInfo,QString().
+	    sprintf("started export of cut %s to %s, id=%d",
+			      (const char *)catch_events[event].cutName(),
+			      (const char *)catch_events[event].tempName(),
+			      catch_events[event].id()));
+    if(!Export(event)) {
+      LogLine(RDConfig::LogWarning,QString().
+	      sprintf("export of cut %s returned an error, id=%d",
+		      (const char *)catch_events[event].cutName(),
+		      catch_events[event].id()));
+      SendExitErrorMessage(&catch_events[event],
+			   tr("audio export error"),catch_conf->errorRml());
+      return;
+    }
+    LogLine(RDConfig::LogInfo,QString().
+	    sprintf("finished export of cut %s to %s, id=%d",
+		    (const char *)catch_events[event].cutName(),
+		    (const char *)catch_events[event].tempName(),
+		    catch_events[event].id()));
+    //
+    // Load Podcast Parameters
+    //
+    if(catch_events[event].feedId()>0) {
+      QFile *file=new QFile(catch_events[event].tempName());
+      catch_events[event].setPodcastLength(file->size());
+      delete file;
+      RDWaveFile *wave=new RDWaveFile(catch_events[event].tempName());
+      if(wave->openWave()) {
+	catch_events[event].setPodcastTime(wave->getExtTimeLength());
+      }
+      delete wave;
+    }
+
+    //
+    // Execute Upload
+    //
+    if(!xload_cmd.isEmpty()) {
+      LogLine(RDConfig::LogInfo,QString().
+	      sprintf("started upload of %s to %s, id=%d, cmdline=\"%s\"",
+		      (const char *)catch_events[event].tempName().utf8(),
+		      (const char *)catch_events[event].
+		      resolvedUrl().utf8(),
+		      catch_events[event].id(),
+		      (const char *)xload_cmd));
+      if(system((const char *)xload_cmd.utf8())==256) {
+	unlink(catch_events[event].tempName());
+	LogLine(RDConfig::LogDebug,QString().sprintf("deleted file %s",
+			      (const char *)catch_events[event].tempName()));
+	WriteExitCode(event,RDRecording::ServerError);
+	LogLine(RDConfig::LogWarning,QString().
+		sprintf("upload of %s returned an error, id=%d",
+			(const char *)catch_events[event].tempName(),
+			catch_events[event].id()));
+	unlink(QString().sprintf("%s.%s",(const char *)temp_exportname,
+				 RDConfiguration()->audioExtension().ascii()));
+	unlink(temp_exportname+".dat");
+	SendExitErrorMessage(&catch_events[event],
+			     tr("server error or invalid URL"),
+			     catch_conf->errorRml());
+	return;
+      }
+      LogLine(RDConfig::LogInfo,QString().
+	      sprintf("finished upload of %s to %s, id=%d",
+				(const char *)catch_events[event].tempName(),
+				(const char *)catch_events[event].
+				resolvedUrl().utf8(),
+				catch_events[event].id()));
+    }
+    
+    //
+    // Clean Up
+    //
+    if(catch_events[event].feedId()>0) {
+      CheckInPodcast(&(catch_events[event]));
+    }
+    if(catch_events[event].deleteTempFile()) {
+      unlink(catch_events[event].tempName());
+      LogLine(RDConfig::LogDebug,QString().sprintf("deleted file %s",
+				(const char *)catch_events[event].tempName()));
+    }
+    else {
+      chown(catch_events[event].tempName(),catch_config->uid(),
+	    catch_config->gid());
+    }
+    WriteExitCode(event,RDRecording::Ok);
+//    BroadcastCommand(QString().sprintf("RE 0 %d %d!",
+//				       RDDeck::Idle,
+//				       catch_events[event].id()));
+    exit(0);
+  }
 }
 
 
@@ -1609,10 +1918,6 @@ void MainObject::ParseCommand(int ch)
 void MainObject::DispatchCommand(int ch)
 {
   int chan;
-  int id;
-  int event;
-  int code;
-  QString str;
 
   /*
   printf("RDCATCHD Received:");
@@ -1803,28 +2108,6 @@ void MainObject::DispatchCommand(int ch)
       }
     }
   }
-
-  if(!strcmp(args[ch][0],"SC")) {  // Set Exit Code
-    if(sscanf(args[ch][1],"%d",&id)!=1) {
-      return;
-    }
-    if(sscanf(args[ch][2],"%d",&code)!=1) {
-      return;
-    }
-    if((event=GetEvent(id))<0) {
-      return;
-    }
-    WriteExitCode(event,(RDRecording::ExitCode)code);
-    BroadcastCommand(QString().sprintf("RE 0 %d %d!",RDDeck::Idle,id));
-    if((RDRecording::ExitCode)code==RDRecording::Ok) {
-      BroadcastCommand(QString().sprintf("RE 0 %d %d!",RDDeck::Idle,id));
-    }
-    else {
-      BroadcastCommand(QString().sprintf("RE 0 %d %d!",RDDeck::Offline,id));
-      SendExitErrorMessage(&catch_events[event],tr("Generic error"),
-			   catch_conf->errorRml());
-    }
-  }
 }
 
 
@@ -1889,12 +2172,23 @@ void MainObject::LoadEngine(bool adv_day)
 
   catch_events.clear();
   LogLine(RDConfig::LogInfo,"rdcatchd engine load starts...");
-  sql=LoadEventSql()+QString().sprintf(" where STATION_NAME=\"%s\"",
-				       (const char *)catch_rdstation->name());
+  sql=QString().sprintf("select ID,IS_ACTIVE,TYPE,CHANNEL,CUT_NAME,\
+                         SUN,MON,TUE,WED,THU,FRI,SAT,START_TIME,LENGTH,\
+                         START_GPI,END_GPI,TRIM_THRESHOLD,STARTDATE_OFFSET,\
+                         ENDDATE_OFFSET,FORMAT,CHANNELS,SAMPRATE,BITRATE,\
+                         MACRO_CART,SWITCH_INPUT,SWITCH_OUTPUT,ONE_SHOT, \
+                         START_TYPE,START_LENGTH,START_MATRIX,START_LINE,\
+                         START_OFFSET,END_TYPE,END_TIME,END_LENGTH,\
+                         END_MATRIX,END_LINE,URL,URL_USERNAME,URL_PASSWORD,\
+                         QUALITY,NORMALIZE_LEVEL,ALLOW_MULT_RECS,\
+                         MAX_GPI_REC_LENGTH,DESCRIPTION,FEED_ID, \
+                         EVENTDATE_OFFSET \
+                         from RECORDINGS where STATION_NAME=\"%s\"",
+			(const char *)catch_rdstation->name());
   q=new RDSqlQuery(sql);
   while(q->next()) {
     catch_events.push_back(CatchEvent());
-    LoadEvent(q,&catch_events.back(),true);
+    LoadEvent(q,&catch_events.back());
   }
   LogLine(RDConfig::LogInfo,QString().sprintf("loaded %d events",(int)catch_events.size()));
   delete q;
@@ -1902,23 +2196,7 @@ void MainObject::LoadEngine(bool adv_day)
 }
 
 
-QString MainObject::LoadEventSql()
-{
-  return QString("select ID,IS_ACTIVE,TYPE,CHANNEL,CUT_NAME,\
-                  SUN,MON,TUE,WED,THU,FRI,SAT,START_TIME,LENGTH,\
-                  START_GPI,END_GPI,TRIM_THRESHOLD,STARTDATE_OFFSET,\
-                  ENDDATE_OFFSET,FORMAT,CHANNELS,SAMPRATE,BITRATE,\
-                  MACRO_CART,SWITCH_INPUT,SWITCH_OUTPUT,ONE_SHOT,\
-                  START_TYPE,START_LENGTH,START_MATRIX,START_LINE,\
-                  START_OFFSET,END_TYPE,END_TIME,END_LENGTH,\
-                  END_MATRIX,END_LINE,URL,URL_USERNAME,URL_PASSWORD,\
-                  QUALITY,NORMALIZE_LEVEL,ALLOW_MULT_RECS,\
-                  MAX_GPI_REC_LENGTH,DESCRIPTION,FEED_ID,\
-                  EVENTDATE_OFFSET from RECORDINGS");
-}
-
-
-void MainObject::LoadEvent(RDSqlQuery *q,CatchEvent *e,bool add)
+void MainObject::LoadEvent(RDSqlQuery *q,CatchEvent *e)
 {
   e->setId(q->value(0).toUInt());
   e->setIsActive(RDBool(q->value(1).toString()));
@@ -1969,19 +2247,17 @@ void MainObject::LoadEvent(RDSqlQuery *q,CatchEvent *e,bool add)
   e->setFeedId(q->value(45).toUInt());
   e->setEventdateOffset(q->value(46).toInt());
 
-  if(add) {
-    if(e->startType()==RDRecording::GpiStart) {
-      e->setGpiStartTimer(new QTimer(this));
-      catch_gpi_start_mapper->setMapping(e->gpiStartTimer(),e->id());
-      connect(e->gpiStartTimer(),SIGNAL(timeout()),
-	      catch_gpi_start_mapper,SLOT(map()));
-      e->setGpiOffsetTimer(new QTimer(this));
-      catch_gpi_offset_mapper->setMapping(e->gpiOffsetTimer(),e->id());
-      connect(e->gpiOffsetTimer(),SIGNAL(timeout()),
-	      catch_gpi_offset_mapper,SLOT(map()));
-    }
-    catch_engine->addEvent(e->id(),e->startTime());
+  if(e->startType()==RDRecording::GpiStart) {
+    e->setGpiStartTimer(new QTimer(this));
+    catch_gpi_start_mapper->setMapping(e->gpiStartTimer(),e->id());
+    connect(e->gpiStartTimer(),SIGNAL(timeout()),
+	    catch_gpi_start_mapper,SLOT(map()));
+    e->setGpiOffsetTimer(new QTimer(this));
+    catch_gpi_offset_mapper->setMapping(e->gpiOffsetTimer(),e->id());
+    connect(e->gpiOffsetTimer(),SIGNAL(timeout()),
+	    catch_gpi_offset_mapper,SLOT(map()));
   }
+  catch_engine->addEvent(e->id(),e->startTime());
 }
 
 
@@ -2098,13 +2374,23 @@ bool MainObject::AddEvent(int id)
   //
   // Load Schedule
   //
-  sql=LoadEventSql()+
-    QString().sprintf(" where (STATION_NAME=\"%s\")&&(ID=%d)",
-		      (const char *)catch_rdstation->name(),id);
+  sql=QString().sprintf("select ID,IS_ACTIVE,TYPE,CHANNEL,CUT_NAME,\
+                         SUN,MON,TUE,WED,THU,FRI,SAT,START_TIME,LENGTH,\
+                         START_GPI,END_GPI,TRIM_THRESHOLD,STARTDATE_OFFSET,\
+                         ENDDATE_OFFSET,FORMAT,CHANNELS,SAMPRATE,BITRATE,\
+                         MACRO_CART,SWITCH_INPUT,SWITCH_OUTPUT,ONE_SHOT,\
+                         START_TYPE,START_LENGTH,START_MATRIX,START_LINE,\
+                         START_OFFSET,END_TYPE,END_TIME,END_LENGTH,\
+                         END_MATRIX,END_LINE,URL,URL_USERNAME,URL_PASSWORD,\
+                         QUALITY,NORMALIZE_LEVEL,ALLOW_MULT_RECS,\
+                         MAX_GPI_REC_LENGTH,DESCRIPTION,FEED_ID,\
+                         EVENTDATE_OFFSET \
+                         from RECORDINGS where (STATION_NAME=\"%s\")&&(ID=%d)",
+			(const char *)catch_rdstation->name(),id);
   q=new RDSqlQuery(sql);
   if(q->first()) {
     catch_events.push_back(CatchEvent());
-    LoadEvent(q,&catch_events.back(),true);
+    LoadEvent(q,&catch_events.back());
     switch((RDRecording::Type)q->value(2).toInt()) {
 	case RDRecording::Recording:
 	  LogLine(RDConfig::LogNotice,QString().
@@ -2305,8 +2591,415 @@ void MainObject::LoadHeartbeat()
 }
 
 
+bool MainObject::Export(int event)
+{
+  QString temp_exportname;
+  QString export_cmd=GetExportCmd(event,&temp_exportname);
+  if(system((const char *)export_cmd.utf8())!=0) {
+    unlink(QString().sprintf("%s.%s",(const char *)temp_exportname,
+			     RDConfiguration()->audioExtension().ascii()));
+    unlink(temp_exportname+".dat");
+    return false;
+  }
+  unlink(QString().sprintf("%s.%s",(const char *)temp_exportname,
+			   RDConfiguration()->audioExtension().ascii()));
+  unlink(temp_exportname+".dat");
+  return true;
+}
+
+
+QString MainObject::GetExportCmd(int event,QString *tempname)
+{
+  int format_in=0;
+  RDSettings settings;
+  QString custom_cmd;
+
+  //
+  // Calculate Temporary Filenames
+  //
+  *tempname=QString().sprintf("%s/rdcatchd-export-%d",
+			      (const char *)catch_temp_dir,
+			      catch_events[event].id());
+
+  QString local_filename=RDCut::pathName(catch_events[event].cutName()); 
+  QFile file(local_filename);
+  if(!file.exists()) {
+    return QString();
+  }
+  RDWaveFile *wave=new RDWaveFile(local_filename);
+  if(!wave->openWave()) {
+    delete wave;
+    return QString();
+  }
+  int samplerate=wave->getSamplesPerSec();
+  switch(wave->getFormatTag()) {
+      case WAVE_FORMAT_PCM:
+	format_in=0;
+	catch_events[event].
+	  setTempLength(wave->getSampleLength()*
+			wave->getChannels()*(wave->getBitsPerSample()/8));
+	break;
+
+      case WAVE_FORMAT_MPEG:
+	format_in=wave->getHeadLayer();
+	catch_events[event].
+	  setTempLength(wave->getSampleLength()*wave->getChannels()*2);
+	break;
+
+      case WAVE_FORMAT_VORBIS:
+	format_in=5;
+	catch_events[event].
+	  setTempLength(wave->getSampleLength()*wave->getChannels()*2);
+	break;
+
+  }
+  wave->closeWave();
+  delete wave;
+
+  QString cmd;
+  float normal=0.0;
+  RDLibraryConf *rdlibrary=new RDLibraryConf(catch_rdstation->name(),0);
+  if(catch_events[event].format()<99) {
+    if(catch_events[event].normalizeLevel()<=0) {
+      normal=pow(10.0,(double)(catch_events[event].normalizeLevel()/2000.0));
+      cmd=QString().
+        sprintf("rd_export_file %6.4f %d %d %s %d %d %d %d %d %s %s.dat %s.%s %d",
+	      normal,
+	      format_in,
+	      samplerate,
+	      (const char *)local_filename,
+	      catch_events[event].format(),
+	      catch_events[event].channels(),
+	      catch_events[event].sampleRate(),
+	      catch_events[event].bitrate()/1000,
+	      catch_events[event].quality(),
+	      (const char *)RDEscapeString(catch_events[event].tempName().utf8()),
+	      (const char *)(*tempname),
+	      (const char *)(*tempname),
+	      RDConfiguration()->audioExtension().ascii(),
+	      rdlibrary->srcConverter());
+    }
+    else {
+      cmd=QString().
+        sprintf("rd_export_file 0 %d %d %s %d %d %d %d %d %s %s.dat %s.%s %d",
+	      format_in,
+	      samplerate,
+	      (const char *)local_filename,
+	      catch_events[event].format(),
+	      catch_events[event].channels(),
+	      catch_events[event].sampleRate(),
+	      catch_events[event].bitrate()/1000,
+	      catch_events[event].quality(),
+	      (const char *)RDEscapeString(catch_events[event].tempName().utf8()),
+	      (const char *)(*tempname),
+	      (const char *)(*tempname),
+	      RDConfiguration()->audioExtension().ascii(),
+	      rdlibrary->srcConverter());
+    }
+  }
+  else { 
+    cmd=QString().
+      sprintf("cp %s %s",(const char *)local_filename,
+	      (const char *)RDEscapeString(catch_events[event].tempName().utf8()));
+  }
+  delete rdlibrary;
+  switch(catch_events[event].format()) {  // Custom format?
+    case RDSettings::Pcm16:
+    case RDSettings::MpegL1:
+    case RDSettings::MpegL2:
+    case RDSettings::MpegL3:
+    case RDSettings::Flac:
+    case RDSettings::OggVorbis:
+    case RDSettings::Copy:
+      break;
+
+    default:
+      settings.setFormat((RDSettings::Format)catch_events[event].format());
+      settings.setChannels(catch_events[event].channels());
+      settings.setSampleRate(catch_events[event].sampleRate());
+      settings.setBitRate(catch_events[event].bitrate());
+      custom_cmd=settings.resolvedCustomCommandLine(
+	RDEscapeString(catch_events[event].tempName()));
+      if(custom_cmd.isEmpty()) {
+	return QString();
+      }
+      cmd+=" \""+custom_cmd+"\"";
+      break;
+  }
+
+  // LogLine(RDConfig::LogNotice,QString().sprintf("CMD: %s",(const char *)cmd));
+  return cmd;
+}
+
+
+bool MainObject::Import(int event)
+{
+  QString temp_importname;
+
+  QString import_cmd=GetImportCmd(event,&temp_importname);
+  if(import_cmd.isEmpty()) {
+    WriteExitCode(event,RDRecording::ServerError);
+    LogLine(RDConfig::LogWarning,QString().
+	    sprintf("import of %s failed to start, id=%d",
+		    (const char *)catch_events[event].tempName(),
+		    catch_events[event].id()));
+    return false;
+  }
+  LogLine(RDConfig::LogInfo,QString().
+	  sprintf("started import of %s to cut %s, id=%d, cmd=\"%s\"",
+		  (const char *)catch_events[event].tempName(),
+		  (const char *)catch_events[event].cutName(),
+		  catch_events[event].id(),
+		  (const char *)import_cmd.utf8()));
+  if(system(import_cmd.utf8())!=0) {
+    WriteExitCode(event,RDRecording::ServerError);
+    LogLine(RDConfig::LogWarning,QString().
+	    sprintf("import of %s returned an error, id=%d",
+		    (const char *)catch_events[event].tempName(),
+		    catch_events[event].id()));
+    unlink(QString().sprintf("%s.%s",(const char *)temp_importname,
+			     RDConfiguration()->audioExtension().ascii()));
+    unlink(temp_importname+".dat");
+    return false;
+  }
+  unlink(QString().sprintf("%s.%s",(const char *)temp_importname,
+			   RDConfiguration()->audioExtension().ascii()));
+  unlink(temp_importname+".dat");
+  chown(RDCut::pathName(catch_events[event].cutName()),catch_config->uid(),
+	catch_config->gid());
+  chmod(RDCut::pathName(catch_events[event].cutName()),
+	S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  CheckInRecording(catch_events[event].cutName(),
+		   catch_events[event].trimThreshold(),
+                   catch_events[event].normalizeLevel());
+  if(catch_events[event].deleteTempFile()) {
+    unlink(catch_events[event].tempName());
+    LogLine(RDConfig::LogDebug,QString().
+	    sprintf("deleted file %s",
+		    (const char *)catch_events[event].tempName()));
+  }
+  WriteExitCode(event,RDRecording::Ok);
+  LogLine(RDConfig::LogInfo,QString().
+	  sprintf("finished import of %s to cut %s, id=%d",
+		  (const char *)catch_events[event].tempName(),
+		  (const char *)catch_events[event].cutName(),
+		  catch_events[event].id()));
+  return true;
+}
+
+
+QString MainObject::GetImportCmd(int event,QString *tempname)
+{
+  int format_in=0;
+  int format_out=0;
+  bool open_failed=false;
+
+  if(catch_events[event].type()==RDRecording::Download) {
+    catch_events[event].setFormat((RDCae::AudioCoding)catch_default_format);
+    catch_events[event].setSampleRate(catch_default_samplerate);
+    catch_events[event].setBitrate(catch_default_bitrate*catch_events[event].channels());
+  }   
+  //
+  // Calculate Temporary Filenames
+  //
+  *tempname=QString().sprintf("%s/rdcatchd-import-%d",
+			      (const char *)catch_temp_dir,
+			      catch_events[event].id());
+
+  QFile file(catch_events[event].tempName());
+  if(!file.exists()) {
+    return QString();
+  }
+  RDWaveFile *wave=new RDWaveFile(catch_events[event].tempName());
+  if(!wave->openWave()) {
+    if(catch_events[event].format()==3 || catch_events[event].format()==5) {
+      open_failed=true;
+    }
+    else {
+    delete wave;
+    LogLine(RDConfig::LogWarning,QString().
+	    sprintf("unable to open temporary file %s for importing, id=%d",
+		    (const char *)catch_events[event].tempName(),
+		    catch_events[event].id()));
+    return QString();
+  }
+  }
+  if(wave->type()==RDWaveFile::Unknown) {
+    if(catch_events[event].format()==3 || catch_events[event].format()==5 ) {
+      open_failed=true;
+    }
+    else {
+    wave->closeWave();
+    delete wave;
+    LogLine(RDConfig::LogWarning,QString().
+	    sprintf("unrecognized format in temporary file %s, id=%d",
+		    (const char *)catch_events[event].tempName(),
+		    catch_events[event].id()));
+    return QString();
+  }
+  }
+  
+  int samplerate=wave->getSamplesPerSec();
+  switch(wave->getFormatTag()) {
+      case WAVE_FORMAT_PCM:
+	format_in=0;
+	break;
+
+      case WAVE_FORMAT_MPEG:
+	format_in=wave->getHeadLayer();
+	break;
+      
+      case WAVE_FORMAT_FLAC:
+	format_in=4;
+	break;
+      
+      case WAVE_FORMAT_VORBIS:
+	format_in=5;
+	break;
+  }
+  delete wave;
+
+  switch(catch_default_format) {
+      case 0:  // PCM16
+	catch_events[event].
+	  setFinalLength((int)(((double)catch_events[event].tempLength()/2.0)*
+			    (double)catch_default_channels*
+			    (double)catch_default_samplerate/44100.0));
+	break;
+      case 1:  // MPEG-1 Layer 2
+      case 2:  // MPEG-1 Layer 3
+      case 3:
+      case 4:
+      case 5:
+	catch_events[event].
+	  setFinalLength((int)((double)catch_events[event].tempLength()*
+			       (double)catch_default_channels*
+			       (double)catch_default_bitrate/1411200.0));
+	break;
+  }
+  file.close();
+  switch(catch_events[event].format()) {
+      case 0:  // PCM16
+	format_out=0;
+	break;
+
+      case 2:  // MPEG L2
+	format_out=1;
+	break;
+
+      case 3:  // MPEG L2
+	format_out=3;
+	break;
+
+      case 4:  
+	format_out=4;
+	break;
+
+      case 5:  
+	format_out=5;
+	break;
+
+
+      default:
+	LogLine(RDConfig::LogWarning,QString().
+		sprintf("unknown output format %d, id=%d",
+			catch_events[event].format(),
+			catch_events[event].id()));
+	break;
+  }
+  
+  QString cmd;
+  float normal=0.0;
+  RDLibraryConf *rdlibrary=new RDLibraryConf(catch_rdstation->name(),0);
+  if(catch_events[event].normalizeLevel()!=0) {
+    normal=pow(10.0,(double)(catch_events[event].normalizeLevel()/2000.0));
+    if(format_out!=3 && format_out!=5) {
+    cmd=QString().
+      sprintf("rd_import_file %6.4f %d %d %s %d %d %d %d %s %s.dat %s.%s %d",
+	      normal,
+	      format_in,
+	      samplerate,
+	      (const char *)RDEscapeString(catch_events[event].tempName().utf8()),  
+	      format_out,
+	      catch_events[event].channels(),
+	      catch_events[event].sampleRate(),
+	      catch_events[event].bitrate()/1000,
+	      RDCut::pathName(catch_events[event].cutName()).ascii(),
+	      (const char *)*tempname,
+	      (const char *)*tempname,
+	      RDConfiguration()->audioExtension().ascii(),
+	      rdlibrary->srcConverter());
+  }
+  else {
+      if((format_in!=3 && format_in!=5) || open_failed || samplerate!=catch_events[event].sampleRate()) {
+        cmd=QString().
+          sprintf("rd_import_encode %s %s %d %d %d %d %f %s %s",
+	        (const char *)RDEscapeString(catch_events[event].tempName().utf8()),  
+	        RDCut::pathName(catch_events[event].cutName()).ascii(),  
+	        format_out,
+	        catch_events[event].sampleRate(),
+	        catch_events[event].channels(),
+	        catch_events[event].bitrate()/1000,
+	        normal,
+	        catch_config->audioOwner().ascii(),
+	        catch_config->audioGroup().ascii());
+      }
+      else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s %f %s %s",
+	        (const char *)RDEscapeString(catch_events[event].tempName().utf8()),  
+	        RDCut::pathName(catch_events[event].cutName()).ascii(),  
+	        normal,
+	        catch_config->audioOwner().ascii(),
+	        catch_config->audioGroup().ascii());
+      }  	      
+    }	      
+  }
+  else {
+    if(format_out!=3 && format_out!=5) {
+    cmd=QString().
+      sprintf("rd_import_file 0 %d %d %s %d %d %d %d %s %s.dat %s.%s %d",
+	      format_in,
+	      samplerate,
+	      (const char *)RDEscapeString(catch_events[event].tempName().utf8()),
+	      format_out,
+	      catch_events[event].channels(),
+	      catch_events[event].sampleRate(),
+	      catch_events[event].bitrate()/1000,
+	      RDCut::pathName(catch_events[event].cutName()).ascii(),
+	      (const char *)*tempname,
+	      (const char *)*tempname,
+	      RDConfiguration()->audioExtension().ascii(),
+	      rdlibrary->srcConverter());
+    }
+    if((format_in!=3 && format_in!=5) || open_failed || samplerate!=catch_events[event].sampleRate()) {
+         cmd=QString().
+           sprintf("rd_import_encode %s %s %d %d %d %d 0 %s %s",
+ 	        (const char *)RDEscapeString(catch_events[event].tempName().utf8()),  
+ 	        RDCut::pathName(catch_events[event].cutName()).ascii(),  
+ 	        format_out,
+ 	        catch_events[event].sampleRate(),
+ 	        catch_events[event].channels(),
+ 	        catch_events[event].bitrate()/1000,
+ 	        catch_config->audioOwner().ascii(),
+ 	        catch_config->audioGroup().ascii());
+      }
+      else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s 0 %s %s",
+	        (const char *)RDEscapeString(catch_events[event].tempName().utf8()),  
+	        RDCut::pathName(catch_events[event].cutName()).ascii(),  
+	        catch_config->audioOwner().ascii(),
+	        catch_config->audioGroup().ascii());
+      }  	      
+  }
+  delete rdlibrary;
+  return cmd;
+}
+
+
 void MainObject::CheckInRecording(QString cutname,unsigned threshold,int normalize_level)
-  {
+{
   RDCut *cut=new RDCut(cutname);
   cut->checkInRecording(catch_rdstation->name());
   cut->autoTrim(RDCut::AudioBoth,-threshold);
@@ -2317,11 +3010,14 @@ void MainObject::CheckInRecording(QString cutname,unsigned threshold,int normali
   cart->updateLength();
   delete cart;
   delete cut;
-  chown(RDCut::pathName(cutname),catch_config->uid(),catch_config->gid());
+  system(QString().sprintf("chown %s:%s %s",
+			   (const char *)catch_config->audioOwner(),
+			   (const char *)catch_config->audioGroup(),
+			   (const char *)RDCut::pathName(cutname)));
 }
 
 
-void MainObject::CheckInPodcast(CatchEvent *e) const
+void MainObject::CheckInPodcast(CatchEvent *e)
 {
   QString sql;
   RDSqlQuery *q;
@@ -2428,15 +3124,9 @@ void MainObject::WriteExitCodeById(int id,RDRecording::ExitCode code)
 
 QString MainObject::BuildTempName(int event,QString str)
 {
-  return BuildTempName(&catch_events[event],str);
-}
-
-
-QString MainObject::BuildTempName(CatchEvent *evt,QString str)
-{
   return QString().sprintf("%s/rdcatchd-%s-%d.%s",(const char *)catch_temp_dir,
-	 (const char *)str,evt->id(),
-	 (const char *)GetFileExtension(evt->resolvedUrl()));
+	 (const char *)str,catch_events[event].id(),
+	 (const char *)GetFileExtension(catch_events[event].resolvedUrl()));
 }
 
 
@@ -2466,6 +3156,9 @@ void MainObject::SendExitErrorMessage(CatchEvent *event,
 {
   if(SendErrorMessage(event,err_desc,rml)) {
     return;
+  }
+  if(catch_forked) {
+    exit(0);
   }
 }
 
@@ -2674,29 +3367,6 @@ void MainObject::StartRmlRecording(int chan,int cartnum,int cutnum,int maxlen)
   StartRecording(catch_events.size()-1);
   delete cut;
   delete deck;
-}
-
-
-void MainObject::StartBatch(int id)
-{
-  if((fork())==0) {
-    QString bin=QString(RD_PREFIX)+"/"+"bin/rdcatchd";
-    execl(bin,(const char *)bin,
-	  (const char *)QString().sprintf("--event-id=%d",id),
-	  (char *)NULL);
-    LogLine(RDConfig::LogErr,QString().
-	    sprintf("failed to exec %s --event-id=%d: %s",(const char *)bin,
-		    id,strerror(errno)));
-    exit(0);
-  }
-}
-
-
-QString MainObject::GetTempRecordingName(int id) const
-{
-  return QString().sprintf("%s/rdcatchd-record-%d.%s",
-			   RDConfiguration()->audioRoot().ascii(),id,
-			   RDConfiguration()->audioExtension().ascii());
 }
 
 

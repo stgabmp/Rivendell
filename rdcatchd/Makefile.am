@@ -4,7 +4,7 @@
 ##
 ## (C) Copyright 2002-2006 Fred Gleason <fredg@paravelsystems.com>
 ##
-##      $Id: Makefile.am,v 1.17.4.1 2010/05/11 13:06:20 cvs Exp $
+##      $Id: Makefile.am,v 1.17 2008/10/02 18:52:13 fredg Exp $
 ##
 ##   This program is free software; you can redistribute it and/or modify
 ##   it under the terms of the GNU General Public License version 2 as
@@ -33,7 +33,7 @@ moc_%.cpp:	%.h
 
 bin_PROGRAMS = rdcatchd
 dist_rdcatchd_SOURCES = rdcatchd.cpp rdcatchd.h\
-                        local_macros.cpp batch.cpp\
+                        local_macros.cpp\
                         rdcatchd_socket.cpp rdcatchd_socket.h\
                         catch_event.cpp catch_event.h
 nodist_rdcatchd_SOURCES = moc_rdcatchd.cpp moc_rdcatchd_socket.cpp

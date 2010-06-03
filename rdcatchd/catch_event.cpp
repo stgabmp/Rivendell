@@ -4,7 +4,7 @@
 //
 //   (C) Copyright 2002-2004 Fred Gleason <fredg@paravelsystems.com>
 //
-//      $Id: catch_event.cpp,v 1.17.2.1.2.1 2010/05/11 13:06:20 cvs Exp $
+//      $Id: catch_event.cpp,v 1.17.2.1 2008/11/14 21:30:56 fredg Exp $
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License version 2 as
@@ -20,9 +20,8 @@
 //   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <rddatedecode.h>
-
 #include <catch_event.h>
+
 
 CatchEvent::CatchEvent()
 {
@@ -639,19 +638,6 @@ int CatchEvent::eventdateOffset() const
 void CatchEvent::setEventdateOffset(int days)
 {
   catch_eventdate_offset=days;
-}
-
-
-void CatchEvent::resolveUrl(int time_offset)
-{
-  QDate date=QDate::currentDate();
-  QTime current_time=QTime::currentTime();
-  if((current_time.msecsTo(QTime(23,59,59))+1000)<time_offset) {
-    date=date.addDays(1);
-  }
-  setResolvedUrl(RDDateTimeDecode(url(),
-				  QDateTime(date.addDays(eventdateOffset()),
-					    current_time)));
 }
 
 

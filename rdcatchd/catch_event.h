@@ -4,7 +4,7 @@
 //
 //   (C) Copyright 2002-2004 Fred Gleason <fredg@paravelsystems.com>
 //
-//      $Id: catch_event.h,v 1.17.2.1.2.1 2010/05/11 13:06:20 cvs Exp $
+//      $Id: catch_event.h,v 1.17.2.1 2008/11/14 21:30:56 fredg Exp $
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License version 2 as
@@ -135,7 +135,6 @@ class CatchEvent
   void setPodcastTime(int msecs);
   int eventdateOffset() const;
   void setEventdateOffset(int days);
-  void resolveUrl(int time_offset);
   void clear();
 
  private:
