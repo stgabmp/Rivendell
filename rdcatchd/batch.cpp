@@ -644,9 +644,6 @@ bool MainObject::Import(CatchEvent *evt)
     unlink(temp_importname+".dat");
     exit(256);
   }
-  else {
-LogLine(RDConfig::LogInfo,QString().sprintf("Import Failed!\n"));
-  }
   unlink(QString().sprintf("%s.%s",(const char *)temp_importname,
 			   RDConfiguration()->audioExtension().ascii()));
   unlink(temp_importname+".dat");
@@ -655,11 +652,11 @@ LogLine(RDConfig::LogInfo,QString().sprintf("Import Failed!\n"));
   chmod(RDCut::pathName(evt->cutName()),
 	S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
   CheckInRecording(evt->cutName(),evt->trimThreshold(),evt->normalizeLevel());
-  if(evt->deleteTempFile()) {
+//  if(evt->deleteTempFile()) {
     unlink(evt->tempName());
     LogLine(RDConfig::LogDebug,
 	    QString().sprintf("deleted file %s",(const char *)evt->tempName()));
-  }
+//  }
   catch_connect->setExitCode(evt->id(),RDRecording::Ok);
   qApp->processEvents();
   LogLine(RDConfig::LogInfo,QString().
