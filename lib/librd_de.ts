@@ -279,85 +279,186 @@ setzen</translation>
     <name>RDCartDialog</name>
     <message>
         <source>Select Cart</source>
-        <translation>Cart auswählen</translation>
+        <translation type="obsolete">Cart auswählen</translation>
     </message>
     <message>
         <source>Please Wait...</source>
-        <translation>Bitte warten...</translation>
+        <translation type="obsolete">Bitte warten...</translation>
     </message>
     <message>
         <source>Cart Filter:</source>
-        <translation>Cart Filter:</translation>
+        <translation type="obsolete">Cart Filter:</translation>
     </message>
     <message>
         <source>&amp;Search</source>
-        <translation>&amp;Suchen</translation>
+        <translation type="obsolete">&amp;Suchen</translation>
     </message>
     <message>
         <source>C&amp;lear</source>
-        <translation>&amp;Löschen</translation>
+        <translation type="obsolete">&amp;Löschen</translation>
     </message>
     <message>
         <source>Group:</source>
-        <translation>Gruppe:</translation>
+        <translation type="obsolete">Gruppe:</translation>
     </message>
     <message>
         <source>NUMBER</source>
-        <translation>NUMMER</translation>
+        <translation type="obsolete">NUMMER</translation>
     </message>
     <message>
         <source>LENGTH</source>
-        <translation>LÄNGE</translation>
+        <translation type="obsolete">LÄNGE</translation>
     </message>
     <message>
         <source>TITLE</source>
-        <translation>TITEL</translation>
+        <translation type="obsolete">TITEL</translation>
     </message>
     <message>
         <source>ARTIST</source>
-        <translation>KÜNSTLER</translation>
+        <translation type="obsolete">KÜNSTLER</translation>
     </message>
     <message>
         <source>GROUP</source>
-        <translation>GRUPPE</translation>
+        <translation type="obsolete">GRUPPE</translation>
     </message>
     <message>
         <source>CLIENT</source>
-        <translation>KUNDE</translation>
+        <translation type="obsolete">KUNDE</translation>
     </message>
     <message>
         <source>AGENCY</source>
-        <translation>AGENTUR</translation>
+        <translation type="obsolete">AGENTUR</translation>
     </message>
     <message>
         <source>USER DEF</source>
-        <translation>BENUTZER DEF</translation>
+        <translation type="obsolete">BENUTZER DEF</translation>
     </message>
     <message>
         <source>START</source>
-        <translation>START</translation>
+        <translation type="obsolete">START</translation>
     </message>
     <message>
         <source>END</source>
-        <translation>END</translation>
+        <translation type="obsolete">END</translation>
     </message>
     <message>
         <source>Send to
 &amp;Editor</source>
-        <translation>An &amp;Editor
+        <translation type="obsolete">An &amp;Editor
 senden</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Cancel</translation>
+        <translation type="obsolete">&amp;Cancel</translation>
     </message>
     <message>
         <source>ALL</source>
-        <translation>ALLE</translation>
+        <translation type="obsolete">ALLE</translation>
+    </message>
+</context>
+<context>
+    <name>RDCartSelector</name>
+    <message>
+        <source>Select Cart</source>
+        <translation type="unfinished">Cart auswählen</translation>
+    </message>
+    <message>
+        <source>Please Wait...</source>
+        <translation type="unfinished">Bitte warten...</translation>
+    </message>
+    <message>
+        <source>Cart Filter:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Search</source>
+        <translation type="unfinished">&amp;Suchen</translation>
+    </message>
+    <message>
+        <source>C&amp;lear</source>
+        <translation type="unfinished">&amp;Löschen</translation>
+    </message>
+    <message>
+        <source>Group:</source>
+        <translation type="unfinished">Gruppe:</translation>
+    </message>
+    <message>
+        <source>NUMBER</source>
+        <translation type="unfinished">NUMMER</translation>
+    </message>
+    <message>
+        <source>LENGTH</source>
+        <translation type="unfinished">LÄNGE</translation>
+    </message>
+    <message>
+        <source>TITLE</source>
+        <translation type="unfinished">TITEL</translation>
+    </message>
+    <message>
+        <source>ARTIST</source>
+        <translation type="unfinished">KÜNSTLER</translation>
+    </message>
+    <message>
+        <source>GROUP</source>
+        <translation type="unfinished">GRUPPE</translation>
+    </message>
+    <message>
+        <source>CLIENT</source>
+        <translation type="unfinished">KUNDE</translation>
+    </message>
+    <message>
+        <source>AGENCY</source>
+        <translation type="unfinished">AGENTUR</translation>
+    </message>
+    <message>
+        <source>USER DEF</source>
+        <translation type="unfinished">BENUTZER DEF</translation>
+    </message>
+    <message>
+        <source>START</source>
+        <translation type="unfinished">START</translation>
+    </message>
+    <message>
+        <source>END</source>
+        <translation type="unfinished">END</translation>
+    </message>
+    <message>
+        <source>Send to
+&amp;Editor</source>
+        <translation type="unfinished">An &amp;Editor
+senden</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="unfinished">&amp;OK</translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Hinzufügen</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ALL</source>
+        <translation type="unfinished">ALLE</translation>
     </message>
 </context>
 <context>
@@ -1362,6 +1463,25 @@ Bitte Kofiguration prüfen und erneut versuchen.</translation>
     <message>
         <source>Tracker</source>
         <translation>Tracker</translation>
+    </message>
+</context>
+<context>
+    <name>RDPanelButton</name>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished">Hinzufügen</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished">Löschen</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

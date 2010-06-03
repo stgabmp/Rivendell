@@ -279,84 +279,184 @@ farge</translation>
     <name>RDCartDialog</name>
     <message>
         <source>Select Cart</source>
-        <translation>Vel korg</translation>
+        <translation type="obsolete">Vel korg</translation>
     </message>
     <message>
         <source>Please Wait...</source>
-        <translation>Vent litt...</translation>
+        <translation type="obsolete">Vent litt...</translation>
     </message>
     <message>
         <source>Cart Filter:</source>
-        <translation>Korgfilter:</translation>
+        <translation type="obsolete">Korgfilter:</translation>
     </message>
     <message>
         <source>&amp;Search</source>
-        <translation>&amp;Søk</translation>
+        <translation type="obsolete">&amp;Søk</translation>
     </message>
     <message>
         <source>C&amp;lear</source>
-        <translation>&amp;Tøm</translation>
+        <translation type="obsolete">&amp;Tøm</translation>
     </message>
     <message>
         <source>Group:</source>
-        <translation>Gruppe:</translation>
+        <translation type="obsolete">Gruppe:</translation>
     </message>
     <message>
         <source>NUMBER</source>
-        <translation>NUMMER</translation>
+        <translation type="obsolete">NUMMER</translation>
     </message>
     <message>
         <source>LENGTH</source>
-        <translation>LENGD</translation>
+        <translation type="obsolete">LENGD</translation>
     </message>
     <message>
         <source>TITLE</source>
-        <translation>TITTEL</translation>
+        <translation type="obsolete">TITTEL</translation>
     </message>
     <message>
         <source>ARTIST</source>
-        <translation>ARTIST</translation>
+        <translation type="obsolete">ARTIST</translation>
     </message>
     <message>
         <source>GROUP</source>
-        <translation>GRUPPE</translation>
+        <translation type="obsolete">GRUPPE</translation>
     </message>
     <message>
         <source>CLIENT</source>
-        <translation>KLIENT</translation>
+        <translation type="obsolete">KLIENT</translation>
     </message>
     <message>
         <source>AGENCY</source>
-        <translation>AGENT</translation>
+        <translation type="obsolete">AGENT</translation>
     </message>
     <message>
         <source>USER DEF</source>
-        <translation>BRUKARDEFINERT</translation>
+        <translation type="obsolete">BRUKARDEFINERT</translation>
     </message>
     <message>
         <source>START</source>
-        <translation>START</translation>
+        <translation type="obsolete">START</translation>
     </message>
     <message>
         <source>END</source>
-        <translation>SLUTT</translation>
+        <translation type="obsolete">SLUTT</translation>
     </message>
     <message>
         <source>Send to
 &amp;Editor</source>
-        <translation>Send til R&amp;edigering</translation>
+        <translation type="obsolete">Send til R&amp;edigering</translation>
     </message>
     <message>
         <source>&amp;OK</source>
-        <translation>&amp;OK</translation>
+        <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation>&amp;Avbryt</translation>
+        <translation type="obsolete">&amp;Avbryt</translation>
     </message>
     <message>
         <source>ALL</source>
-        <translation>ALLE</translation>
+        <translation type="obsolete">ALLE</translation>
+    </message>
+</context>
+<context>
+    <name>RDCartSelector</name>
+    <message>
+        <source>Select Cart</source>
+        <translation type="unfinished">Vel korg</translation>
+    </message>
+    <message>
+        <source>Please Wait...</source>
+        <translation type="unfinished">Vent litt...</translation>
+    </message>
+    <message>
+        <source>Cart Filter:</source>
+        <translation type="unfinished">Korgfilter:</translation>
+    </message>
+    <message>
+        <source>&amp;Search</source>
+        <translation type="unfinished">&amp;Søk</translation>
+    </message>
+    <message>
+        <source>C&amp;lear</source>
+        <translation type="unfinished">&amp;Tøm</translation>
+    </message>
+    <message>
+        <source>Group:</source>
+        <translation type="unfinished">Gruppe:</translation>
+    </message>
+    <message>
+        <source>NUMBER</source>
+        <translation type="unfinished">NUMMER</translation>
+    </message>
+    <message>
+        <source>LENGTH</source>
+        <translation type="unfinished">LENGD</translation>
+    </message>
+    <message>
+        <source>TITLE</source>
+        <translation type="unfinished">TITTEL</translation>
+    </message>
+    <message>
+        <source>ARTIST</source>
+        <translation type="unfinished">ARTIST</translation>
+    </message>
+    <message>
+        <source>GROUP</source>
+        <translation type="unfinished">GRUPPE</translation>
+    </message>
+    <message>
+        <source>CLIENT</source>
+        <translation type="unfinished">KLIENT</translation>
+    </message>
+    <message>
+        <source>AGENCY</source>
+        <translation type="unfinished">AGENT</translation>
+    </message>
+    <message>
+        <source>USER DEF</source>
+        <translation type="unfinished">BRUKARDEFINERT</translation>
+    </message>
+    <message>
+        <source>START</source>
+        <translation type="unfinished">START</translation>
+    </message>
+    <message>
+        <source>END</source>
+        <translation type="unfinished">SLUTT</translation>
+    </message>
+    <message>
+        <source>Send to
+&amp;Editor</source>
+        <translation type="unfinished">Send til R&amp;edigering</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="unfinished">&amp;OK</translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished">&amp;Avbryt</translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ALL</source>
+        <translation type="unfinished">ALLE</translation>
     </message>
 </context>
 <context>
@@ -1368,6 +1468,25 @@ Sjekk eksportoppsettet ditt og prøv att.</translation>
     <message>
         <source>Tracker</source>
         <translation>Sporleggjar</translation>
+    </message>
+</context>
+<context>
+    <name>RDPanelButton</name>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished">Tøm</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

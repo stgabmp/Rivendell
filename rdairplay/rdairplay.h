@@ -76,7 +76,7 @@
 #define AIR_LOG_PORTS 2
 #define AIR_PANEL_PORTS 1
 #define AIR_PANEL_BUTTON_ROWS 5
-#define AIR_PANEL_BUTTON_COLUMNS 5
+#define AIR_PANEL_BUTTON_COLUMNS 3
 #define AIR_TOTAL_PORTS 3
 #define METER_INTERVAL 20
 #define MASTER_TIMER_INTERVAL 100
@@ -118,7 +118,8 @@ class MainWidget : public QWidget
   void keyReleaseEvent(QKeyEvent *e);
   void closeEvent(QCloseEvent *);
   void paintEvent(QPaintEvent *e);
-  
+  void addCartData();
+
  private:
   void RunLocalMacros(RDMacro *rml);
   void StopEvent(int button_id);

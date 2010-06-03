@@ -393,6 +393,11 @@ desactivados para el servicio actual!
         <source>Select</source>
         <translation>Seleccionar</translation>
     </message>
+    <message>
+        <source>Carts
+Library</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditLogLine</name>

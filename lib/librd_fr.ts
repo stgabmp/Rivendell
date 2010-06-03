@@ -275,6 +275,9 @@ Color</source>
 </context>
 <context>
     <name>RDCartDialog</name>
+</context>
+<context>
+    <name>RDCartSelector</name>
     <message>
         <source>Select Cart</source>
         <translation type="unfinished"></translation>
@@ -350,6 +353,22 @@ Color</source>
     </message>
     <message>
         <source>&amp;Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1337,6 +1356,25 @@ Please check your configuration and try again.</source>
     </message>
     <message>
         <source>Tracker</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RDPanelButton</name>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

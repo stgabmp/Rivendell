@@ -363,7 +363,8 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 				 rdcae,rdripc,rdstation_conf,
 				 rdstation_conf->editorPath(),
 				 this,"rdcart_dialog");
-
+  connect(rdcart_dialog,SIGNAL(addClicked()),this,SLOT(addCartData()));
+  
   //
   // Wall Clock
   //
@@ -559,6 +560,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
   if (rdairplay_conf->panels(RDAirPlayConf::StationPanel) || 
       rdairplay_conf->panels(RDAirPlayConf::UserPanel)){
     int card=-1;
+    int button_x_size=156;
     air_panel=
       new RDSoundPanel(AIR_PANEL_BUTTON_COLUMNS,AIR_PANEL_BUTTON_ROWS,
 		       rdairplay_conf->panels(RDAirPlayConf::StationPanel),
@@ -566,7 +568,7 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 		       rdairplay_conf->flashPanel(),
 		       rdairplay_conf->buttonLabelTemplate(),false,
 		       rdevent_player,rdripc,rdcae,rdstation_conf,
-		       rdcart_dialog,this,"air_panel");
+		       rdcart_dialog,this,"air_panel",button_x_size);
     air_panel->setLogfile(air_config->airplayLogname());
     air_panel->setGeometry(510,140,air_panel->sizeHint().width(),
 			 air_panel->sizeHint().height());
@@ -1809,7 +1811,7 @@ void MainWidget::SetActionMode(StartButton::Mode mode)
 	if(air_panel!=NULL) {
 	  air_panel->setActionMode(RDAirPlayConf::Normal);
 	}
-	if(rdcart_dialog->exec(&air_add_cart,RDCart::All,0,0)==0) {
+	if(rdcart_dialog->exec(&air_add_cart,RDCart::All,0,0,false)==0) {
 	  SetActionMode(StartButton::AddTo);
 	}
 	else {
@@ -1910,6 +1912,12 @@ void MainWidget::SetActionMode(StartButton::Mode mode)
       default:
 	break;
   }
+}
+
+
+void MainWidget::addCartData()
+{
+  SetActionMode(StartButton::AddTo);
 }
 
 

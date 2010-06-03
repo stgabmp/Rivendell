@@ -393,6 +393,11 @@ die für den gewählten Service ungültig sind!</translation>
         <source>Select</source>
         <translation>Auswählen</translation>
     </message>
+    <message>
+        <source>Carts
+Library</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditLogLine</name>

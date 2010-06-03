@@ -384,6 +384,11 @@ for the selected service!</source>
         <source>Select</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Carts
+Library</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditLogLine</name>
