@@ -263,7 +263,7 @@ void MainObject::RunDownload(CatchEvent *evt)
 		    (const char *)evt->tempName(),
 		    evt->id(),
 		    (const char *)xload_cmd));
-    if(system(xload_cmd)!=0) {
+    if(system(xload_cmd.utf8())!=0) {
       catch_connect->setExitCode(evt->id(),RDRecording::ServerError);
       qApp->processEvents();
       LogLine(RDConfig::LogErr,QString().
@@ -428,7 +428,7 @@ void MainObject::RunUpload(CatchEvent *evt)
 		    resolvedUrl(),
 		    evt->id(),
 		    (const char *)xload_cmd));
-    if(system(xload_cmd)!=0) {
+    if(system(xload_cmd.utf8())!=0) {
       unlink(evt->tempName());
       LogLine(RDConfig::LogDebug,QString().sprintf("deleted file %s",
 						   (const char *)evt->tempName()));
@@ -475,7 +475,7 @@ bool MainObject::Export(CatchEvent *evt)
 {
   QString temp_exportname;
   QString export_cmd=GetExportCmd(evt,&temp_exportname);
-  if(system(export_cmd)!=0) {
+  if(system(export_cmd.utf8())!=0) {
     unlink(QString().sprintf("%s.%s",(const char *)temp_exportname,
 			     RDConfiguration()->audioExtension().ascii()));
     unlink(temp_exportname+".dat");
@@ -526,6 +526,12 @@ QString MainObject::GetExportCmd(CatchEvent *evt,QString *tempname)
 	  setTempLength(wave->getSampleLength()*wave->getChannels()*2);
 	break;
 
+      case WAVE_FORMAT_VORBIS:
+ 	format_in=5;
+ 	evt->
+ 	  setTempLength(wave->getSampleLength()*wave->getChannels()*2);
+ 	break;
+ 
   }
   wave->closeWave();
   delete wave;
@@ -533,10 +539,11 @@ QString MainObject::GetExportCmd(CatchEvent *evt,QString *tempname)
   QString cmd;
   float normal=0.0;
   RDLibraryConf *rdlibrary=new RDLibraryConf(catch_config->stationName(),0);
-  if(evt->normalizeLevel()<=0) {
-    normal=pow(10.0,(double)(evt->normalizeLevel()/2000.0));
-    cmd=QString().
-      sprintf("rd_export_file %6.4f %d %d %s %d %d %d %d %d %s %s.dat %s.%s %d",
+  if(evt->format()<99) {
+    if(evt->normalizeLevel()<=0) {
+      normal=pow(10.0,(double)(evt->normalizeLevel()/2000.0));
+      cmd=QString().
+        sprintf("rd_export_file %6.4f %d %d %s %d %d %d %d %d %s %s.dat %s.%s %d",
 	      normal,
 	      format_in,
 	      samplerate,
@@ -546,15 +553,15 @@ QString MainObject::GetExportCmd(CatchEvent *evt,QString *tempname)
 	      evt->sampleRate(),
 	      evt->bitrate()/1000,
 	      evt->quality(),
-	      (const char *)RDEscapeString(evt->tempName()),
+	      (const char *)RDEscapeString(evt->tempName().utf8()),
 	      (const char *)(*tempname),
 	      (const char *)(*tempname),
 	      RDConfiguration()->audioExtension().ascii(),
 	      rdlibrary->srcConverter());
-  }
-  else {
-    cmd=QString().
-      sprintf("rd_export_file 0 %d %d %s %d %d %d %d %d %s %s.dat %s.%s %d",
+    }
+    else {
+      cmd=QString().
+        sprintf("rd_export_file 0 %d %d %s %d %d %d %d %d %s %s.dat %s.%s %d",
 	      format_in,
 	      samplerate,
 	      (const char *)local_filename,
@@ -563,11 +570,17 @@ QString MainObject::GetExportCmd(CatchEvent *evt,QString *tempname)
 	      evt->sampleRate(),
 	      evt->bitrate()/1000,
 	      evt->quality(),
-	      (const char *)RDEscapeString(evt->tempName()),
+	      (const char *)RDEscapeString(evt->tempName().utf8()),
 	      (const char *)(*tempname),
 	      (const char *)(*tempname),
 	      RDConfiguration()->audioExtension().ascii(),
 	      rdlibrary->srcConverter());
+    }
+  }
+  else { 
+    cmd=QString().
+      sprintf("cp %s %s",(const char *)local_filename,
+	      (const char *)RDEscapeString(evt->tempName().utf8()));
   }
   delete rdlibrary;
   switch(evt->format()) {  // Custom format?
@@ -577,6 +590,7 @@ QString MainObject::GetExportCmd(CatchEvent *evt,QString *tempname)
     case RDSettings::MpegL3:
     case RDSettings::Flac:
     case RDSettings::OggVorbis:
+    case RDSettings::Copy:
       break;
 
     default:
@@ -618,7 +632,7 @@ bool MainObject::Import(CatchEvent *evt)
 		  (const char *)evt->cutName(),
 		  evt->id(),
 		  (const char *)import_cmd));
-  if(system(import_cmd)!=0) {
+  if(system(import_cmd.utf8())!=0) {
     catch_connect->setExitCode(evt->id(),RDRecording::ServerError);
     qApp->processEvents();
     LogLine(RDConfig::LogWarning,QString().
@@ -630,6 +644,9 @@ bool MainObject::Import(CatchEvent *evt)
     unlink(temp_importname+".dat");
     exit(256);
   }
+  else {
+LogLine(RDConfig::LogInfo,QString().sprintf("Import Failed!\n"));
+  }
   unlink(QString().sprintf("%s.%s",(const char *)temp_importname,
 			   RDConfiguration()->audioExtension().ascii()));
   unlink(temp_importname+".dat");
@@ -637,7 +654,7 @@ bool MainObject::Import(CatchEvent *evt)
 	catch_config->gid());
   chmod(RDCut::pathName(evt->cutName()),
 	S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
-  CheckInRecording(evt->cutName(),evt->trimThreshold());
+  CheckInRecording(evt->cutName(),evt->trimThreshold(),evt->normalizeLevel());
   if(evt->deleteTempFile()) {
     unlink(evt->tempName());
     LogLine(RDConfig::LogDebug,
@@ -658,6 +675,36 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
 {
   int format_in=0;
   int format_out=0;
+  bool open_failed=false;
+  
+        QString sql=QString().sprintf("select DEFAULT_FORMAT,DEFAULT_CHANNELS,\
+                               DEFAULT_SAMPRATE,DEFAULT_LAYER,DEFAULT_BITRATE,\
+                               RIPPER_LEVEL\
+                               from RDLIBRARY where STATION=\"%s\"",
+			      (const char *)catch_config->stationName());
+	RDSqlQuery *q=new RDSqlQuery(sql);
+	if(q->first())
+	{
+	  catch_default_format=q->value(0).toInt();
+	  catch_default_channels=q->value(1).toInt();
+	  catch_default_samplerate=q->value(2).toInt();
+	  catch_default_layer=q->value(3).toInt();
+	  catch_default_bitrate=q->value(4).toInt();
+	  catch_ripper_level=q->value(5).toInt();
+
+          evt->setFormat((RDCae::AudioCoding)q->value(0).toInt());
+          evt->setSampleRate(q->value(2).toInt());
+          evt->setChannels(q->value(1).toInt());
+          evt->setBitrate(q->value(4).toInt()*q->value(1).toInt());
+          evt->setNormalizeLevel(q->value(5).toInt());
+	}
+	else {
+	  LogLine(RDConfig::LogWarning,
+		  "unable to load import audio configuration");
+	  delete q;
+	  return "";
+	}
+	delete q;
 
   //
   // Calculate Temporary Filenames
@@ -672,21 +719,31 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
   }
   RDWaveFile *wave=new RDWaveFile(evt->tempName());
   if(!wave->openWave()) {
-    delete wave;
-    LogLine(RDConfig::LogWarning,QString().
+    if(evt->format()==3 || evt->format()==5) {
+      open_failed=true;
+    }
+    else {
+      delete wave;
+      LogLine(RDConfig::LogWarning,QString().
 	    sprintf("unable to open temporary file %s for importing, id=%d",
 		    (const char *)evt->tempName(),
 		    evt->id()));
-    return QString();
+      return QString();
+    }
   }
   if(wave->type()==RDWaveFile::Unknown) {
-    wave->closeWave();
-    delete wave;
-    LogLine(RDConfig::LogWarning,QString().
+    if(evt->format()==3 || evt->format()==5 ) {
+      open_failed=true;
+    }
+    else {
+      wave->closeWave();
+      delete wave;
+      LogLine(RDConfig::LogWarning,QString().
 	    sprintf("unrecognized format in temporary file %s, id=%d",
 		    (const char *)evt->tempName(),
 		    evt->id()));
-    return QString();
+      return QString();
+    }
   }
   int samplerate=wave->getSamplesPerSec();
   switch(wave->getFormatTag()) {
@@ -697,10 +754,19 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
       case WAVE_FORMAT_MPEG:
 	format_in=wave->getHeadLayer();
 	break;
+
+     case WAVE_FORMAT_FLAC:
+       format_in=4;
+       break;
+
+     case WAVE_FORMAT_VORBIS:
+       format_in=5;
+       break;
+
   }
   delete wave;
 
-  switch(catch_default_format) {
+  switch(evt->format()) {
       case 0:  // PCM16
 	evt->
 	  setFinalLength((int)(((double)evt->tempLength()/2.0)*
@@ -709,6 +775,9 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
 	break;
       case 1:  // MPEG-1 Layer 2
       case 2:  // MPEG-1 Layer 3
+      case 3:
+      case 4:
+      case 5:
 	evt->
 	  setFinalLength((int)((double)evt->tempLength()*
 			       (double)catch_default_channels*
@@ -725,6 +794,18 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
 	format_out=1;
 	break;
 
+      case 3:  // MPEG L3
+	format_out=3;
+	break;
+
+      case 4:  
+	format_out=4;
+	break;
+
+      case 5:  
+	format_out=5;
+	break;
+
       default:
 	LogLine(RDConfig::LogWarning,QString().
 		sprintf("unknown output format %d, id=%d",
@@ -732,14 +813,15 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
 			evt->id()));
 	break;
   }
-  
+
   QString cmd;
   float normal=0.0;
   RDLibraryConf *rdlibrary=new RDLibraryConf(catch_config->stationName(),0);
   if(evt->normalizeLevel()!=0) {
     normal=pow(10.0,(double)(evt->normalizeLevel()/2000.0));
-    cmd=QString().
-      sprintf("rd_import_file %6.4f %d %d %s %d %d %d %d %s %s.dat %s.%s %d",
+    if(format_out!=3 && format_out!=5) {
+      cmd=QString().
+        sprintf("rd_import_file %6.4f %d %d %s %d %d %d %d %s %s.dat %s.%s %d",
 	      normal,
 	      format_in,
 	      samplerate,
@@ -753,8 +835,34 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
 	      (const char *)*tempname,
 	      RDConfiguration()->audioExtension().ascii(),
 	      rdlibrary->srcConverter());
+    }
+    else {
+      if((format_in!=3 && format_in!=5) || open_failed || samplerate!=evt->sampleRate()) {
+        cmd=QString().
+          sprintf("rd_import_encode %s %s %d %d %d %d %f %s %s",
+	        (const char *)RDEscapeString(evt->tempName().utf8()),  
+	        RDCut::pathName(evt->cutName()).ascii(),  
+	        format_out,
+	        evt->sampleRate(),
+	        evt->channels(),
+	        evt->bitrate()/1000,
+	        normal,
+	        catch_config->audioOwner().ascii(),
+	        catch_config->audioGroup().ascii());
+      }
+      else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s %f %s %s",
+	        (const char *)RDEscapeString(evt->tempName().utf8()),  
+	        RDCut::pathName(evt->cutName()).ascii(),  
+	        normal,
+	        catch_config->audioOwner().ascii(),
+	        catch_config->audioGroup().ascii());
+      }  	      
+    }	      
   }
   else {
+    if(format_out!=3 && format_out!=5) {
     cmd=QString().
       sprintf("rd_import_file 0 %d %d %s %d %d %d %d %s %s.dat %s.%s %d",
 	      format_in,
@@ -769,6 +877,7 @@ QString MainObject::GetImportCmd(CatchEvent *evt,QString *tempname)
 	      (const char *)*tempname,
 	      RDConfiguration()->audioExtension().ascii(),
 	      rdlibrary->srcConverter());
+    }
   }
   //LogLine(RDConfig::LogErr,QString().sprintf("CMD: %s",(const char *)cmd));
   delete rdlibrary;

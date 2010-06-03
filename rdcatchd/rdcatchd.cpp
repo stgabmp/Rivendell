@@ -769,6 +769,12 @@ void MainObject::engineData(int id)
 	  catch_default_layer=q->value(3).toInt();
 	  catch_default_bitrate=q->value(4).toInt();
 	  catch_ripper_level=q->value(5).toInt();
+
+          catch_events[event].setFormat((RDCae::AudioCoding)q->value(0).toInt());
+          catch_events[event].setSampleRate(q->value(2).toInt());
+          catch_events[event].setChannels(q->value(1).toInt());
+          catch_events[event].setBitrate(q->value(4).toInt()*q->value(1).toInt());
+          catch_events[event].setNormalizeLevel(q->value(5).toInt());
 	}
 	else {
 	  LogLine(RDConfig::LogWarning,
