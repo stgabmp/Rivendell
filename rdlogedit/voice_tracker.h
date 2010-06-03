@@ -35,6 +35,7 @@
 #include <qtimer.h>
 #include <qcursor.h>
 #include <qpopupmenu.h>
+#include <qprogressdialog.h>
 
 #include <rdtransportbutton.h>
 #include <rdstereometer.h>
@@ -169,6 +170,8 @@ class VoiceTracker : public QDialog
   void CheckChanges();
   void PushSegues();
   void PopSegues();
+  void extEditor();
+
   RDStereoMeter *track_meter;
   QTimer *track_meter_timer;
   RDTransportButton *track_play_button;
@@ -184,6 +187,8 @@ class VoiceTracker : public QDialog
   QPushButton *track_insert_button;
   QPushButton *track_delete_button;
   QPushButton *track_close_button;
+  QProgressDialog *update_progress_dialog;
+
   RDLog *track_log;
   RDLogEvent *track_log_event;
   RDEventPlayer *track_event_player;

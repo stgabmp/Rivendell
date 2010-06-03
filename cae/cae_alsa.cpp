@@ -32,6 +32,7 @@
 #include <rdmeteraverage.h>
 
 #include <cae.h>
+#include <rdcae.h>
 
 #ifdef ALSA
 //
@@ -779,8 +780,12 @@ bool MainObject::alsaLoadPlayback(int card,QString wavename,int *stream)
     *stream=-1;
     return false;
   }
-  if((alsa_play_wave[card][*stream]->getFormatTag()!=WAVE_FORMAT_PCM)||
-     (alsa_play_wave[card][*stream]->getBitsPerSample()!=16)) {
+   switch(alsa_play_wave[card][*stream]->type()){
+ 	  case RDWaveFile::Wave:
+ 	  case RDWaveFile::Ogg:
+ 	  case RDWaveFile::Mpeg:
+ 		  break;
+ 	  default:
     LogLine(RDConfig::LogErr,QString().sprintf(
             "Error: alsaLoadPlayback(%s)   getFormatTag()%d || getBistsPerSample()%d failed",
             (const char *) wavename,
@@ -791,6 +796,7 @@ bool MainObject::alsaLoadPlayback(int card,QString wavename,int *stream)
     FreeAlsaOutputStream(card,*stream);
     *stream=-1;
     return false;
+  	   break;
   }
   alsa_output_channels[card][*stream]=
     alsa_play_wave[card][*stream]->getChannels();
@@ -907,14 +913,22 @@ bool MainObject::alsaLoadRecord(int card,int stream,int coding,int chans,
   alsa_record_wave[card][stream]->setChannels(chans);
   alsa_record_wave[card][stream]->setSamplesPerSec(samprate);
   alsa_record_wave[card][stream]->setBitsPerSample(16);
-  alsa_record_wave[card][stream]->setBextChunk(true);
   alsa_record_wave[card][stream]->setLevlChunk(true);
+  if(coding==RDCae::OggVorbis || coding==RDCae::MpegL3) {
+    alsa_record_wave[card][stream]->setEnergyTag(1);
+    }
+  else {
+    alsa_record_wave[card][stream]->setBextChunk(true);
+    } 
   if(!alsa_record_wave[card][stream]->createWave()) {
     delete alsa_record_wave[card][stream];
     alsa_record_wave[card][stream]=NULL;
     return false;
   }
   chown((const char *)wavename,rd_config->uid(),rd_config->gid());
+  if(coding==RDCae::OggVorbis || coding==RDCae::MpegL3) {
+    chown((const char *)(wavename+".energy"),rd_config->uid(),rd_config->gid());
+    }
   alsa_input_channels[card][stream]=chans;
   alsa_record_ring[card][stream]=new RDRingBuffer(RINGBUFFER_SIZE);
   alsa_record_ring[card][stream]->reset();

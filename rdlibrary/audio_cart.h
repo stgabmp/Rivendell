@@ -91,6 +91,7 @@ class AudioCart : public QWidget
   AudioControls *rdcart_controls;
   QPushButton *paste_cut_button;
   QProgressDialog *rdcart_progress_dialog;
+  QProgressDialog *update_progress_dialog;
   bool rdcart_modification_allowed;
   bool rdcart_import_metadata;
 };

@@ -187,6 +187,10 @@ QString RDSettings::description()
       desc=QString().sprintf("OggVorbis, Qual %d, ",set_quality);
       break;
       
+      case RDSettings::Copy:
+	desc=QString().sprintf("Copy File ");
+	break;
+
     default:  // Custom format
       if(set_format_name.isEmpty()) {
 	sql=QString().sprintf("select NAME from ENCODERS where ID=%d",
@@ -208,18 +212,21 @@ QString RDSettings::description()
   if(set_sample_rate>0) {
     desc+=QString().sprintf("%d samp/sec, ",set_sample_rate);
   }
-  switch(set_channels) {
-      case 1:
-	desc+="Mono";
-	break;
+    if(set_format!=RDSettings::Copy) {
+      desc+=QString().sprintf("%d samp/sec, ",set_sample_rate);
+      switch(set_channels) {
+        case 1:
+	  desc+="Mono";
+	  break;
 
-      case 2:
-	desc+="Stereo";
-	break;
+        case 2:
+	  desc+="Stereo";
+	  break;
 
-      default:
-	desc+=QString().sprintf("%d chans",set_channels);
-	break;
+        default:
+	  desc+=QString().sprintf("%d chans",set_channels);
+	  break;
+    }
   }
   return desc;
 }
@@ -265,6 +272,9 @@ QString RDSettings::pathName(const QString &stationname,QString pathname,
 			     RDSettings::Format fmt)
 {
   QString ext;
+  if(fmt==RDSettings::Copy) {
+    return pathname;
+  }
   int index=pathname.findRev(".");
   if(index<0) {
     return pathname+"."+defaultExtension(stationname,fmt);

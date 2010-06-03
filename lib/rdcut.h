@@ -82,11 +82,11 @@ class RDCut
   unsigned localCounter() const;
   void setLocalCounter(unsigned count) const;
   unsigned codingFormat() const;
-  void setCodingFormat(unsigned format) const;
+  void setCodingFormat(unsigned format);
   unsigned sampleRate() const;
   void setSampleRate(unsigned rate) const;
   unsigned bitRate() const;
-  void setBitRate(unsigned rate) const;
+  void setBitRate(unsigned rate);
   unsigned channels() const;
   void setChannels(unsigned chan) const;
   int playGain() const;
@@ -121,6 +121,7 @@ class RDCut
   void setMetadata(RDWaveData *data);
   bool checkInRecording(const QString &stationname) const;
   void autoTrim(RDCut::AudioEnd end,int level);
+  void normalize(int level);
   void autoSegue(int level,int length);
   void reset() const;
   void connect(QObject *receiver,const char *member) const;
@@ -141,6 +142,8 @@ class RDCut
   QSqlDatabase *cut_db;
   QString cut_name;
   unsigned cut_number;
+  unsigned coding_format;
+  unsigned bitrate;
 };
 
 

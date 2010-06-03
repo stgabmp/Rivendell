@@ -167,6 +167,22 @@ Audio</source>
         <translation>Editar
 Audio</translation>
     </message>
+    <message>
+        <source>Updateing audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting External Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Audio?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CdRipper</name>
@@ -351,11 +367,11 @@ Do you want to proceed?</source>
     </message>
     <message>
         <source>Disk Progress</source>
-        <translation>Progreso en el Disco</translation>
+        <translation type="obsolete">Progreso en el Disco</translation>
     </message>
     <message>
         <source>Track Progress</source>
-        <translation>Progreso en la pista</translation>
+        <translation type="obsolete">Progreso en la pista</translation>
     </message>
     <message>
         <source>Set
@@ -451,7 +467,7 @@ Por favor, chequee la configuración e intente de nuevo.</translation>
     </message>
     <message>
         <source>Total Progress</source>
-        <translation>Progreso total</translation>
+        <translation type="obsolete">Progreso total</translation>
     </message>
     <message>
         <source>No Access</source>
@@ -488,6 +504,10 @@ Por favor, chequee la configuración e intente de nuevo.</translation>
 Disc</source>
         <translation>Lee&amp;r
 disco</translation>
+    </message>
+    <message>
+        <source>Ripping Track</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

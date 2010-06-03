@@ -148,6 +148,7 @@ class RDImportAudio : public QDialog
   RDWaveData *import_wavedata;
   QString import_tempwav_name;
   QString import_tempdat_name;
+  bool open_failed;
 };
 
 

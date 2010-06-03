@@ -1,0 +1,10 @@
+#!/bin/bash
+# rd_import_copy file_in file_out  normalize owner group
+cp "$1" $2 
+rdfilewrite --add-mode --normalize=$3 $2
+NO_ENERGY=$?
+chmod ug+rw $2
+chmod ug+rw $2.energy
+exit $NO_ENERGY
+ 
+

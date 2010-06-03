@@ -65,21 +65,21 @@ EditCart::EditCart(unsigned number,QString *path,bool new_cart,
   setMinimumWidth(sizeHint().width());
   setMaximumWidth(sizeHint().width());
   if(lib_cart_list_edit==NULL) {
-  setMinimumHeight(sizeHint().height());
-  setMaximumHeight(sizeHint().height());
-    }
+    setMinimumHeight(sizeHint().height());
+    setMaximumHeight(sizeHint().height());
+  }
   else {
     setMinimumHeight(sizeHint().height()-270);
     setMaximumHeight(sizeHint().height()-270);
-    }
+  }
 
   if(lib_cart_list_edit==NULL) {
-  rdcart_cart=new RDCart(number);
-  rdcart_import_path=path;
-  setCaption(QString().sprintf("%06u",rdcart_cart->number())+" - "+
+    rdcart_cart=new RDCart(number);
+    rdcart_import_path=path;
+    setCaption(QString().sprintf("%06u",rdcart_cart->number())+" - "+
     rdcart_cart->title());
     modification_allowed=
-    lib_user->modifyCarts()&&rdcart_cart->owner().isEmpty();
+     lib_user->modifyCarts()&&rdcart_cart->owner().isEmpty();
   }
   else {
     setCaption("Edit Carts");
@@ -89,11 +89,13 @@ EditCart::EditCart(unsigned number,QString *path,bool new_cart,
   //
   // Create Default Cut
   //
-  if(new_cart&&(rdcart_cart->type()==RDCart::Audio)) {
-    rdcart_cart->addCut(rdlibrary_conf->defaultFormat(),
+  if(lib_cart_list_edit==NULL) {
+    if(new_cart&&(rdcart_cart->type()==RDCart::Audio)) {
+      rdcart_cart->addCut(rdlibrary_conf->defaultFormat(),
 			rdlibrary_conf->defaultSampleRate(),
 			rdlibrary_conf->defaultBitrate(),
 			rdlibrary_conf->defaultChannels());
+    }
   }
 
   //
@@ -723,7 +725,7 @@ EditCart::EditCart(unsigned number,QString *path,bool new_cart,
 
 QSize EditCart::sizeHint() const
 {
-  return QSize(640,750);
+  return QSize(640,720);
 } 
 
 

@@ -360,7 +360,30 @@ EditRDLibrary::EditRDLibrary(RDStation *station,unsigned instance,
   lib_riplevel_spin->setValue(lib_lib->ripperLevel()/100);
   lib_format_box->insertItem(tr("PCM16"));
   lib_format_box->insertItem(tr("MPEG Layer 2"));
-  lib_format_box->setCurrentItem(lib_lib->defaultFormat());
+  lib_format_box->insertItem(tr("Ogg Vorbis"));
+  lib_format_box->insertItem(tr("Mpeg Layer 3"));
+  //lib_format_box->insertItem(tr("Flac"));
+    switch(lib_lib->defaultFormat()) {
+	case RDSettings::Pcm16:
+	  lib_format_box->setCurrentItem(0);
+	  break;
+
+	case RDSettings::MpegL2:
+	  lib_format_box->setCurrentItem(1);
+	  break;
+
+	case RDSettings::MpegL1:
+         break;
+	case RDSettings::MpegL3:
+	  lib_format_box->setCurrentItem(3);
+	  break;
+	case RDSettings::OggVorbis:
+	  lib_format_box->setCurrentItem(2);
+	  break;
+	case RDSettings::Flac:
+	  //lib_format_box->setCurrentItem(4);
+	  break;
+    }
   lib_channels_box->insertItem("1");
   lib_channels_box->insertItem("2");
   lib_channels_box->setCurrentItem(lib_lib->defaultChannels()-1);
@@ -451,7 +474,24 @@ void EditRDLibrary::okData()
   lib_lib->setRipperDevice(lib_ripdev_edit->text());
   lib_lib->setParanoiaLevel(lib_paranoia_box->currentItem());
   lib_lib->setRipperLevel(lib_riplevel_spin->value()*100);
-  lib_lib->setDefaultFormat(lib_format_box->currentItem());
+  switch(lib_format_box->currentItem())
+  {
+	case 0:
+	  lib_lib->setDefaultFormat(RDSettings::Pcm16);
+	  break;
+	case 1:
+	  lib_lib->setDefaultFormat(RDSettings::MpegL2);
+	  break;
+	case 2:
+	  lib_lib->setDefaultFormat(RDSettings::OggVorbis);
+	  break;
+	case 3:
+	  lib_lib->setDefaultFormat(RDSettings::MpegL3);
+	  break;
+	case 4:
+	  lib_lib->setDefaultFormat(RDSettings::Flac);
+	  break;
+  }
   lib_lib->setDefaultChannels(lib_channels_box->currentItem()+1);
   sscanf(lib_samprate_box->currentText(),"%d",&rate);
   lib_lib->setDefaultSampleRate(rate);
@@ -559,6 +599,9 @@ void EditRDLibrary::ShowBitRates(int layer,int rate)
 	break;
 
       case 2:  // MPEG-1 Layer 3
+      case 3:
+      case RDSettings::Flac:
+      case RDSettings::OggVorbis:
 	lib_bitrate_box->setEnabled(true);
 	lib_bitrate_box->insertItem(tr("32 kbps/chan"));
 	lib_bitrate_box->insertItem(tr("40 kbps/chan"));
@@ -574,7 +617,7 @@ void EditRDLibrary::ShowBitRates(int layer,int rate)
 	lib_bitrate_box->insertItem(tr("224 kbps/chan"));
 	lib_bitrate_box->insertItem(tr("256 kbps/chan"));
 	lib_bitrate_box->insertItem(tr("320 kbps/chan"));
-	switch(lib_lib->defaultLayer()) {
+	switch(lib_lib->defaultBitrate()) {
 	    case 32000:
 	      lib_bitrate_box->setCurrentItem(0);
 	      break;

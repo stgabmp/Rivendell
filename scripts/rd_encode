@@ -1,0 +1,50 @@
+#!/bin/bash
+# rd_encode file format rate channels bitrate owner group
+echo rd_encode
+case $3 in
+   44100)
+     SRATE=44.1 ;;
+   48000)
+     SRATE=48 ;;
+   32000)
+     SRATE=32 ;;
+esac
+case $4 in
+   1)
+     CHAN=m ;;
+   *)
+     CHAN=s ;;
+esac
+case $2 in 
+  5)
+    sox $1 -r $3 -c $4 -s -t raw - | oggenc -r -R $3 -C $4 -b $5 /dev/stdin -o $1.ogg 
+    if [ "$1" -ot "$1.ogg" ] ; then
+      mv $1.ogg $1 
+      chmod ug+rw $1
+    else
+      rm $1.ogg
+    fi 
+    ;;
+
+  3)
+    sox $1 -r $3 -c $4 -s -t wav - | lame - -b $5 $1.mp3 
+    if [ "$1" -ot "$1.mp3" ] ; then
+      mv $1.mp3 $1 
+      chmod ug+rw $1
+    else
+      rm $1.mp3
+    fi 
+    ;;
+
+  2)
+    sox $1 -r $3 -c $4 -s -t raw - | toolame -s $SRATE -m $CHAN -W -b $5 /dev/stdin $1.mp2
+    if [ "$1" -ot "$1.mp2" ] ; then
+      mv $1.mp2 $1 
+      chmod ug+rw $1
+    else
+      rm $1.mp2
+    fi
+    ;;
+
+esac
+

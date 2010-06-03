@@ -709,15 +709,28 @@ void RecordCut::recordData()
     QFile(filename).remove();
     switch(rdlibrary_conf->defaultFormat()) {
 	case 0:
-	  rec_cut->setCodingFormat(0);
+          rec_cut->setCodingFormat(rdlibrary_conf->defaultFormat());
 	  rec_format=RDCae::Pcm16;
 	  break;
 
 	case 1:
-	  rec_cut->setCodingFormat(1);
+	case 2:
+          rec_cut->setCodingFormat(rdlibrary_conf->defaultFormat());
 	  rec_format=RDCae::MpegL2;
 	  break;
 
+  	case RDSettings::OggVorbis:
+  	  rec_cut->setCodingFormat(rdlibrary_conf->defaultFormat());
+  	  rec_cut->setBitRate(rdlibrary_conf->defaultBitrate());
+  	  rec_format=RDCae::OggVorbis;
+  	  break;
+  
+  	case RDSettings::MpegL3:
+  	  rec_cut->setCodingFormat(rdlibrary_conf->defaultFormat());
+  	  rec_cut->setBitRate(rdlibrary_conf->defaultBitrate());
+  	  rec_format=RDCae::MpegL3;
+  	  break;
+  
 	default:
 	  rec_cut->setCodingFormat(0);
 	  rec_format=RDCae::Pcm16;
@@ -860,6 +873,10 @@ void RecordCut::recordUnloadedData(int card,int stream)
 
   rec_meter->setLeftSolidBar(-100000);
   rec_meter->setRightSolidBar(-100000);
+  //
+  //if(rec_cut->codingFormat()==5 || rec_cut->codingFormat()==3)
+  //  rec_cut->normalize(rdlibrary_conf->ripperLevel());
+  //
   rec_cut->checkInRecording(rdstation_conf->name());
   if(rec_trim_box->currentItem()==0) {
     rec_cut->autoTrim(RDCut::AudioBoth,rdlibrary_conf->trimThreshold());

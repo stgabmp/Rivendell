@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <syslog.h>
@@ -31,8 +33,6 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 
-#include <id3/tag.h>
-#include <id3/misc_support.h>
 #include <FLAC/metadata.h>
 
 #include <qobject.h>
@@ -43,6 +43,1043 @@
 #include <rdwavefile.h>
 #include <rdconf.h>
 
+#include <id3/tag.h>
+#include <id3/misc_support.h>
+
+#include <mad.h> 
+#include <qfile.h>
+#include <map>
+
+
+// Taglib for reading OGG Metadata
+#include <taglib/taglib.h>
+#include <taglib/tag.h>
+#include <taglib/fileref.h>
+// 
+
+#ifndef _AFLIBMPGFILE_H
+#define _AFLIBMPGFILE_H
+
+#define INPUT_BUFFER_SIZE	(4*8192)
+#define OUTPUT_BUFFER_SIZE	8192 /* Must be an integer multiple of 4. */
+class Mpegtoraw;
+
+class RMpegFile  {
+
+   public:
+
+      RMpegFile();
+
+      ~RMpegFile();
+
+      bool 
+	 afopen(
+	       QFile& wave_file 
+	       );
+
+      void 
+	 afclose();
+
+      // Read len shorts from mpeg file into p_data.
+      // Return shorts read.
+      int 
+	 afread(
+	       signed short * p_data,
+	       int len
+	       );
+
+      int 
+	 afread(
+	       float * p_data,
+	       int len
+	       );
+
+      int
+	 afseek( int position, int whence);
+
+      bool IsMpeg(const char *);
+      // General
+      int  getVersion(void)   const {return _version;};
+      int  getLayer(void)     const {return _layer;};
+      // Frequency and bitrate
+      int  getFrequency(void) const {return _frequency;};
+      int  getBitrate(void)   const {return _bitrate;};
+      int getTotalSamples(void) const 
+      //{return _total_frames*_samples_per_frame;};
+      {return _total_samples;};
+      int getDataLength(void) const { return _data_length;};
+      int getDataStart(void) const { return _data_start;};
+      int getChannels(void) const { return _channels;};
+   private:
+
+      signed short MadFixedToSshort(mad_fixed_t Fixed);
+      float MadFixedToFloat(mad_fixed_t Fixed);
+      unsigned long seekFrame(unsigned long frame);
+      int MadDecodeFrame(signed short * buffer, unsigned long frame);
+      bool MadDecodeHeader(unsigned long frames);
+      size_t getOffset(unsigned long frame);
+
+      std::map<unsigned long,size_t> _frame_offsets;
+
+      struct mad_stream	Stream;
+      struct mad_frame	Frame;
+      struct mad_synth	Synth;
+      mad_timer_t			Timer;
+      int                 _version;
+      int                 _layer;
+      int                 _bitrate;
+      int                 _frequency;
+      int                 _length;
+      long 		_samples_per_frame;
+      long		_total_frames;
+      long		_total_samples;
+      int		_channels;
+      long 			    _buflen;
+      int 			    _bufpos;
+      unsigned long 		_frame_count;
+
+      unsigned char		InputBuffer[INPUT_BUFFER_SIZE+MAD_BUFFER_GUARD],
+				*GuardPtr;
+      int					Status;
+
+
+      //        signed short *          _buffer;
+      signed short		_buffer[OUTPUT_BUFFER_SIZE];
+      QFile               _fd;
+      size_t              _last_read_pos;
+
+
+      bool id3v1_tag;
+      bool id3v2_tag;
+      unsigned id3v2_offset;
+      int _data_length;
+      int _data_start;
+};
+
+
+#endif
+
+#if (MAD_VERSION_MAJOR>=1) || \
+			((MAD_VERSION_MAJOR==0) && \
+			 (((MAD_VERSION_MINOR==14) && \
+			   (MAD_VERSION_PATCH>=2)) || \
+			  (MAD_VERSION_MINOR>14)))
+#define MadErrorString(x) mad_stream_errorstr(x)
+#else
+static const char *MadErrorString(const struct mad_stream *Stream)
+{
+   switch(Stream->error)
+   {
+      /* Generic unrecoverable errors. */
+      case MAD_ERROR_BUFLEN:
+	 return("input buffer too small (or EOF)");
+      case MAD_ERROR_BUFPTR:
+	 return("invalid (null) buffer pointer");
+      case MAD_ERROR_NOMEM:
+	 return("not enough memory");
+
+	 /* Frame header related unrecoverable errors. */
+      case MAD_ERROR_LOSTSYNC:
+	 return("lost synchronization");
+      case MAD_ERROR_BADLAYER:
+	 return("reserved header layer value");
+      case MAD_ERROR_BADBITRATE:
+	 return("forbidden bitrate value");
+      case MAD_ERROR_BADSAMPLERATE:
+	 return("reserved sample frequency value");
+      case MAD_ERROR_BADEMPHASIS:
+	 return("reserved emphasis value");
+
+	 /* Recoverable errors */
+      case MAD_ERROR_BADCRC:
+	 return("CRC check failed");
+      case MAD_ERROR_BADBITALLOC:
+	 return("forbidden bit allocation value");
+      case MAD_ERROR_BADSCALEFACTOR:
+	 return("bad scalefactor index");
+      case MAD_ERROR_BADFRAMELEN:
+	 return("bad frame length");
+      case MAD_ERROR_BADBIGVALUES:
+	 return("bad big_values count");
+      case MAD_ERROR_BADBLOCKTYPE:
+	 return("reserved block_type");
+      case MAD_ERROR_BADSCFSI:
+	 return("bad scalefactor selection info");
+      case MAD_ERROR_BADDATAPTR:
+	 return("bad main_data_begin pointer");
+      case MAD_ERROR_BADPART3LEN:
+	 return("bad audio data length");
+      case MAD_ERROR_BADHUFFTABLE:
+	 return("bad Huffman table select");
+      case MAD_ERROR_BADHUFFDATA:
+	 return("Huffman data overrun");
+      case MAD_ERROR_BADSTEREO:
+	 return("incompatible block_type for JS");
+
+	 /* Unknown error. This switch may be out of sync with libmad's
+	  * defined error codes.
+	  */
+      default:
+	 return("Unknown error code");
+   }
+}
+#endif
+
+/****************************************************************************
+ * Converts a sample from libmad's fixed point number format to a signed	*
+ * short (16 bits).															*
+ ****************************************************************************/
+signed short RMpegFile::MadFixedToSshort(mad_fixed_t Fixed)
+{
+   /* A fixed point number is formed of the following bit pattern:
+    *
+    * SWWWFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    * MSB                          LSB
+    * S ==> Sign (0 is positive, 1 is negative)
+    * W ==> Whole part bits
+    * F ==> Fractional part bits
+    *
+    * This pattern contains MAD_F_FRACBITS fractional bits, one
+    * should alway use this macro when working on the bits of a fixed
+    * point number. It is not guaranteed to be constant over the
+    * different platforms supported by libmad.
+    *
+    * The signed short value is formed, after clipping, by the least
+    * significant whole part bit, followed by the 15 most significant
+    * fractional part bits. Warning: this is a quick and dirty way to
+    * compute the 16-bit number, madplay includes much better
+    * algorithms.
+    */
+
+   /* Clipping */
+   if(Fixed>=MAD_F_ONE)
+      return(SHRT_MAX);
+   if(Fixed<=-MAD_F_ONE)
+      return(-SHRT_MAX);
+
+   /* Conversion. */
+   Fixed=Fixed>>(MAD_F_FRACBITS-15);
+   return((signed short)Fixed);
+}
+
+/****************************************************************************
+ * Converts a sample from libmad's fixed point number format to a signed	*
+ * short (16 bits).															*
+ ****************************************************************************/
+float RMpegFile::MadFixedToFloat(mad_fixed_t Fixed)
+{
+   /* A fixed point number is formed of the following bit pattern:
+    *
+    * SWWWFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    * MSB                          LSB
+    * S ==> Sign (0 is positive, 1 is negative)
+    * W ==> Whole part bits
+    * F ==> Fractional part bits
+    *
+    * This pattern contains MAD_F_FRACBITS fractional bits, one
+    * should alway use this macro when working on the bits of a fixed
+    * point number. It is not guaranteed to be constant over the
+    * different platforms supported by libmad.
+    *
+    * The signed short value is formed, after clipping, by the least
+    * significant whole part bit, followed by the 15 most significant
+    * fractional part bits. Warning: this is a quick and dirty way to
+    * compute the 16-bit number, madplay includes much better
+    * algorithms.
+    */
+
+   float f;
+   if (Fixed & (1<<31)) {
+      // negative
+      Fixed = Fixed & ((1<<31)-1); // strip sign
+      f = -(float)Fixed / (1<<MAD_F_FRACBITS);
+   }
+   else {
+      f = (float)Fixed / (1<<MAD_F_FRACBITS);
+   }
+   return f;
+}
+
+size_t RMpegFile::getOffset(unsigned long frame){
+   //unsigned long frame_no=0;
+   size_t offset = 0;
+
+   std::map<unsigned long,size_t>::const_iterator it; 
+   /*
+      for(it = _frame_offsets.begin();it != _frame_offsets.end() && frame_no != frame;it++){
+      offset = it->second;
+      frame_no = it->first;
+      }
+      */
+
+   while(1){
+      it  = _frame_offsets.find(frame);
+      if(it == _frame_offsets.end())
+      {
+	 if(MadDecodeHeader(1)){
+	    offset = _data_start;
+	    break;
+	 }
+      }
+      else
+      {
+	 offset = it->second;
+	 break;
+      }
+   }
+   return offset;
+
+}
+
+   unsigned long
+RMpegFile::seekFrame(unsigned long frame)
+{
+
+   int offset = 0;
+
+   //bool dump_one = true;
+   unsigned long frame_no=0;
+   if(frame >=5){
+      frame_no = frame - 5;
+   } else {
+      frame_no = 0;      
+   }
+
+   offset = getOffset(frame_no);
+   mad_synth_finish(&Synth);
+   mad_frame_finish(&Frame);
+   mad_stream_finish(&Stream);
+
+   mad_stream_init(&Stream);
+   mad_frame_init(&Frame);
+   mad_synth_init(&Synth);
+   mad_timer_reset(&Timer);
+
+   _frame_count = frame_no;
+   GuardPtr = NULL;
+   if(_fd.at(offset)) _last_read_pos = offset;
+   while(frame_no != frame){
+      MadDecodeFrame(_buffer,1);
+      frame_no++;
+   }
+   return frame;
+
+}
+static int PrintFrameInfo(FILE *fp, struct mad_header *Header)
+{
+   const char	*Layer,
+	 *Mode,
+
+	 *Emphasis;
+
+   /* Convert the layer number to it's printed representation. */
+   switch(Header->layer)
+   {
+      case MAD_LAYER_I:
+	 Layer="I";
+	 break;
+      case MAD_LAYER_II:
+	 Layer="II";
+	 break;
+      case MAD_LAYER_III:
+	 Layer="III";
+	 break;
+      default:
+	 Layer="(unexpected layer value)";
+	 break;
+   }
+
+   /* Convert the audio mode to it's printed representation. */
+   switch(Header->mode)
+   {
+      case MAD_MODE_SINGLE_CHANNEL:
+	 Mode="single channel";
+	 break;
+      case MAD_MODE_DUAL_CHANNEL:
+	 Mode="dual channel";
+	 break;
+      case MAD_MODE_JOINT_STEREO:
+	 Mode="joint (MS/intensity) stereo";
+	 break;
+      case MAD_MODE_STEREO:
+	 Mode="normal LR stereo";
+	 break;
+      default:
+	 Mode="(unexpected mode value)";
+	 break;
+   }
+
+   /* Convert the emphasis to it's printed representation. Note that
+    * the MAD_EMPHASIS_RESERVED enumeration value appeared in libmad
+    * version 0.15.0b.
+    */
+   switch(Header->emphasis)
+   {
+      case MAD_EMPHASIS_NONE:
+	 Emphasis="no";
+	 break;
+      case MAD_EMPHASIS_50_15_US:
+	 Emphasis="50/15 us";
+	 break;
+      case MAD_EMPHASIS_CCITT_J_17:
+	 Emphasis="CCITT J.17";
+	 break;
+#if (MAD_VERSION_MAJOR>=1) || \
+	 ((MAD_VERSION_MAJOR==0) && (MAD_VERSION_MINOR>=15))
+      case MAD_EMPHASIS_RESERVED:
+	 Emphasis="reserved(!)";
+	 break;
+#endif
+      default:
+	 Emphasis="(unexpected emphasis value)";
+	 break;
+   }
+
+/*   fprintf(fp,"%lu kb/s audio MPEG layer %s stream %s CRC, "
+	 "%s with %s emphasis at %d Hz sample rate\n",
+	 Header->bitrate,Layer,
+	 Header->flags&MAD_FLAG_PROTECTION?"with":"without",
+	 Mode,Emphasis,Header->samplerate);*/
+   return(ferror(fp));
+}
+
+/****************************************************************************
+ * Main decoding loop. This is where mad is used.							*
+ ****************************************************************************/
+bool RMpegFile::MadDecodeHeader(unsigned long frames)
+{
+   struct mad_header Header;
+   mad_header_init(&Header);
+   Status = 0;
+   while(frames){
+      /* The input bucket must be filled if it becomes empty or if
+       * it's the first execution of the loop.
+       */
+      if(Stream.buffer==NULL || Stream.error==MAD_ERROR_BUFLEN)
+      {
+	 size_t			ReadSize,
+				Remaining;
+	 unsigned char	*ReadStart;
+
+	 /* {2} libmad may not consume all bytes of the input
+	  * buffer. If the last frame in the buffer is not wholly
+	  * contained by it, then that frame's start is pointed by
+	  * the next_frame member of the Stream structure. This
+	  * common situation occurs when mad_frame_decode() fails,
+	  * sets the stream error code to MAD_ERROR_BUFLEN, and
+	  * sets the next_frame pointer to a non NULL value. (See
+	  * also the comment marked {4} bellow.)
+	  *
+	  * When this occurs, the remaining unused bytes must be
+	  * put back at the beginning of the buffer and taken in
+	  * account before refilling the buffer. This means that
+	  * the input buffer must be large enough to hold a whole
+	  * frame at the highest observable bit-rate (currently 448
+	  * kb/s). XXX=XXX Is 2016 bytes the size of the largest
+	  * frame? (448000*(1152/32000))/8
+	  */
+	 _last_read_pos = _fd.at();
+	 if(Stream.next_frame!=NULL)
+	 {
+	    Remaining=Stream.bufend-Stream.next_frame;
+	    memmove(InputBuffer,Stream.next_frame,Remaining);
+	    ReadStart=InputBuffer+Remaining;
+	    ReadSize=INPUT_BUFFER_SIZE-Remaining;
+	    _last_read_pos -= Remaining;
+	 }
+	 else
+	    ReadSize=INPUT_BUFFER_SIZE,
+	       ReadStart=InputBuffer,
+	       Remaining=0;
+
+	 /* Fill-in the buffer. If an error occurs print a message
+	  * and leave the decoding loop. If the end of stream is
+	  * reached we also leave the loop but the return status is
+	  * left untouched.
+	  */
+	 ReadSize=_fd.readBlock((char*)ReadStart,ReadSize);
+	 if(ReadSize<=0)
+	 {
+	    if(ReadSize < 0)
+	       Status=1;
+	    break;
+	 }
+
+	 /* {3} When decoding the last frame of a file, it must be
+	  * followed by MAD_BUFFER_GUARD zero bytes if one wants to
+	  * decode that last frame. When the end of file is
+	  * detected we append that quantity of bytes at the end of
+	  * the available data. Note that the buffer can't overflow
+	  * as the guard size was allocated but not used the the
+	  * buffer management code. (See also the comment marked
+	  * {1}.)
+	  *
+	  * In a message to the mad-dev mailing list on May 29th,
+	  * 2001, Rob Leslie explains the guard zone as follows:
+	  *
+	  *    "The reason for MAD_BUFFER_GUARD has to do with the
+	  *    way decoding is performed. In Layer III, Huffman
+	  *    decoding may inadvertently read a few bytes beyond
+	  *    the end of the buffer in the case of certain invalid
+	  *    input. This is not detected until after the fact. To
+	  *    prevent this from causing problems, and also to
+	  *    ensure the next frame's main_data_begin pointer is
+	  *    always accessible, MAD requires MAD_BUFFER_GUARD
+	  *    (currently 8) bytes to be present in the buffer past
+	  *    the end of the current frame in order to decode the
+	  *    frame."
+	  */
+	 if(_fd.atEnd())
+	 {
+	    GuardPtr=ReadStart+ReadSize;
+	    memset(GuardPtr,0,MAD_BUFFER_GUARD);
+	    ReadSize+=MAD_BUFFER_GUARD;
+	 }
+
+	 /* Pipe the new buffer content to libmad's stream decoder
+	  * facility.
+	  */
+	 mad_stream_buffer(&Stream,(unsigned char*)InputBuffer,ReadSize+Remaining);
+	 Stream.error=MAD_ERROR_NONE;
+      }
+
+      /* Decode the next MPEG frame. The streams is read from the
+       * buffer, its constituents are break down and stored the the
+       * Frame structure, ready for examination/alteration or PCM
+       * synthesis. Decoding options are carried in the Frame
+       * structure from the Stream structure.
+       *
+       * Error handling: mad_frame_decode() returns a non zero value
+       * when an error occurs. The error condition can be checked in
+       * the error member of the Stream structure. A mad error is
+       * recoverable or fatal, the error status is checked with the
+       * MAD_RECOVERABLE macro.
+       *
+       * {4} When a fatal error is encountered all decoding
+       * activities shall be stopped, except when a MAD_ERROR_BUFLEN
+       * is signaled. This condition means that the
+       * mad_frame_decode() function needs more input to complete
+       * its work. One shall refill the buffer and repeat the
+       * mad_frame_decode() call. Some bytes may be left unused at
+       * the end of the buffer if those bytes forms an incomplete
+       * frame. Before refilling, the remaining bytes must be moved
+       * to the beginning of the buffer and used for input for the
+       * next mad_frame_decode() invocation. (See the comments
+       * marked {2} earlier for more details.)
+       *
+       * Recoverable errors are caused by malformed bit-streams, in
+       * this case one can call again mad_frame_decode() in order to
+       * skip the faulty part and re-sync to the next frame.
+       */
+      if(mad_header_decode(&Header,&Stream))
+      {
+	 //fprintf(stderr,"%s\n",MadErrorString(&Stream));
+	 if(MAD_RECOVERABLE(Stream.error))
+	 {
+	    /* Do not print a message if the error is a loss of
+	     * synchronization and this loss is due to the end of
+	     * stream guard bytes. (See the comments marked {3}
+	     * supra for more informations about guard bytes.)
+	     */
+	    if(Stream.error!=MAD_ERROR_LOSTSYNC ||
+		  Stream.this_frame!=(unsigned char*)GuardPtr)
+	    {
+	    }
+	    continue;
+	 }
+	 else
+	    if(Stream.error==MAD_ERROR_BUFLEN)
+	       continue;
+	    else
+	    {
+	       Status=1;
+	       break;
+	    }
+      }
+      frames--;
+
+      std::map<unsigned long,size_t>::const_iterator it; 
+      it  = _frame_offsets.find(_frame_count);
+      if(it == _frame_offsets.end())
+      {
+	 size_t this_frame_at = _last_read_pos + Stream.this_frame - Stream.buffer;
+
+	 std::pair<unsigned long,size_t> offset(_frame_count,this_frame_at);
+	 _frame_offsets.insert(offset);
+      }
+
+      /* Accounting. The computed frame duration is in the frame
+       * header structure. It is expressed as a fixed point number
+       * whole data type is mad_timer_t. It is different from the
+       * samples fixed point format and unlike it, it can't directly
+       * be added or subtracted. The timer module provides several
+       * functions to operate on such numbers. Be careful there, as
+       * some functions of libmad's timer module receive some of
+       * their mad_timer_t arguments by value!
+       */
+      _frame_count++;
+   }
+   return Status;
+}
+
+/****************************************************************************
+ * Main decoding loop. This is where mad is used.							*
+ ****************************************************************************/
+int RMpegFile::MadDecodeFrame(signed short * buffer, unsigned long frames)
+{
+   // unsigned char * c_buffer = buffer;
+   signed short * head = buffer;
+
+   while(frames){
+      /* The input bucket must be filled if it becomes empty or if
+       * it's the first execution of the loop.
+       */
+      if(Stream.buffer==NULL || Stream.error==MAD_ERROR_BUFLEN)
+      {
+	 size_t			ReadSize,
+				Remaining;
+	 unsigned char	*ReadStart;
+
+	 /* {2} libmad may not consume all bytes of the input
+	  * buffer. If the last frame in the buffer is not wholly
+	  * contained by it, then that frame's start is pointed by
+	  * the next_frame member of the Stream structure. This
+	  * common situation occurs when mad_frame_decode() fails,
+	  * sets the stream error code to MAD_ERROR_BUFLEN, and
+	  * sets the next_frame pointer to a non NULL value. (See
+	  * also the comment marked {4} bellow.)
+	  *
+	  * When this occurs, the remaining unused bytes must be
+	  * PUT back at the beginning of the buffer and taken in
+	  * account before refilling the buffer. This means that
+	  * the input buffer must be large enough to hold a whole
+	  * frame at the highest observable bit-rate (currently 448
+	  * kb/s). XXX=XXX Is 2016 bytes the size of the largest
+	  * frame? (448000*(1152/32000))/8
+	  */
+	 _last_read_pos = _fd.at();
+	 if(Stream.next_frame!=NULL)
+	 {
+	    Remaining=Stream.bufend-Stream.next_frame;
+	    memmove(InputBuffer,Stream.next_frame,Remaining);
+	    ReadStart=InputBuffer+Remaining;
+	    ReadSize=INPUT_BUFFER_SIZE-Remaining;
+	    _last_read_pos -= Remaining;
+	 }
+	 else
+	    ReadSize=INPUT_BUFFER_SIZE,
+	       ReadStart=InputBuffer,
+	       Remaining=0;
+
+	 /* Fill-in the buffer. If an error occurs print a message
+	  * and leave the decoding loop. If the end of stream is
+	  * reached we also leave the loop but the return status is
+	  * left untouched.
+	  */
+	 ReadSize=_fd.readBlock((char*)ReadStart,ReadSize);
+	 if(ReadSize<=0)
+	 {
+	    if(ReadSize < 0)
+	       Status=1;
+	    break;
+	 }
+
+	 /* {3} When decoding the last frame of a file, it must be
+	  * followed by MAD_BUFFER_GUARD zero bytes if one wants to
+	  * decode that last frame. When the end of file is
+	  * detected we append that quantity of bytes at the end of
+	  * the available data. Note that the buffer can't overflow
+	  * as the guard size was allocated but not used the the
+	  * buffer management code. (See also the comment marked
+	  * {1}.)
+	  *
+	  * In a message to the mad-dev mailing list on May 29th,
+	  * 2001, Rob Leslie explains the guard zone as follows:
+	  *
+	  *    "The reason for MAD_BUFFER_GUARD has to do with the
+	  *    way decoding is performed. In Layer III, Huffman
+	  *    decoding may inadvertently read a few bytes beyond
+	  *    the end of the buffer in the case of certain invalid
+	  *    input. This is not detected until after the fact. To
+	  *    prevent this from causing problems, and also to
+	  *    ensure the next frame's main_data_begin pointer is
+	  *    always accessible, MAD requires MAD_BUFFER_GUARD
+	  *    (currently 8) bytes to be present in the buffer past
+	  *    the end of the current frame in order to decode the
+	  *    frame."
+	  */
+	 if(_fd.atEnd())
+	 {
+	    GuardPtr=ReadStart+ReadSize;
+	    memset(GuardPtr,0,MAD_BUFFER_GUARD);
+	    ReadSize+=MAD_BUFFER_GUARD;
+	 }
+
+	 /* Pipe the new buffer content to libmad's stream decoder
+	  * facility.
+	  */
+	 mad_stream_buffer(&Stream,(unsigned char*)InputBuffer,ReadSize+Remaining);
+	 Stream.error=MAD_ERROR_NONE;
+      }
+
+      /* Decode the next MPEG frame. The streams is read from the
+       * buffer, its constituents are break down and stored the the
+       * Frame structure, ready for examination/alteration or PCM
+       * synthesis. Decoding options are carried in the Frame
+       * structure from the Stream structure.
+       *
+       * Error handling: mad_frame_decode() returns a non zero value
+       * when an error occurs. The error condition can be checked in
+       * the error member of the Stream structure. A mad error is
+       * recoverable or fatal, the error status is checked with the
+       * MAD_RECOVERABLE macro.
+       *
+       * {4} When a fatal error is encountered all decoding
+       * activities shall be stopped, except when a MAD_ERROR_BUFLEN
+       * is signaled. This condition means that the
+       * mad_frame_decode() function needs more input to complete
+       * its work. One shall refill the buffer and repeat the
+       * mad_frame_decode() call. Some bytes may be left unused at
+       * the end of the buffer if those bytes forms an incomplete
+       * frame. Before refilling, the remaining bytes must be moved
+       * to the beginning of the buffer and used for input for the
+       * next mad_frame_decode() invocation. (See the comments
+       * marked {2} earlier for more details.)
+       *
+       * Recoverable errors are caused by malformed bit-streams, in
+       * this case one can call again mad_frame_decode() in order to
+       * skip the faulty part and re-sync to the next frame.
+       */
+      if(mad_frame_decode(&Frame,&Stream))
+      {
+	 //fprintf(stderr,"%s\n",MadErrorString(&Stream));
+	 if(MAD_RECOVERABLE(Stream.error))
+	 {
+	    /* Do not print a message if the error is a loss of
+	     * synchronization and this loss is due to the end of
+	     * stream guard bytes. (See the comments marked {3}
+	     * supra for more informations about guard bytes.)
+	     */
+	    if(Stream.error!=MAD_ERROR_LOSTSYNC ||
+		  Stream.this_frame!=(unsigned char*)GuardPtr)
+	    {
+	    }
+	    continue;
+	 }
+	 else
+	    if(Stream.error==MAD_ERROR_BUFLEN)
+	       continue;
+	    else
+	    {
+	       Status=1;
+	       break;
+	    }
+      }
+      frames--;
+
+      std::map<unsigned long,size_t>::const_iterator it; 
+      it  = _frame_offsets.find(_frame_count);
+      if(it == _frame_offsets.end())
+      {
+	 size_t this_frame_at = _last_read_pos + Stream.this_frame - Stream.buffer;
+
+	 std::pair<unsigned long,size_t> offset(_frame_count,this_frame_at);
+	 _frame_offsets.insert(offset);
+      }
+
+      /* The characteristics of the stream's first frame is printed
+       * on stderr. The first frame is representative of the entire
+       * stream.
+       */
+      if(_frame_count==0)
+	 if(PrintFrameInfo(stderr,&Frame.header))
+	 {
+	    Status=1;
+	    break;
+	 }
+
+      /* Accounting. The computed frame duration is in the frame
+       * header structure. It is expressed as a fixed point number
+       * whole data type is mad_timer_t. It is different from the
+       * samples fixed point format and unlike it, it can't directly
+       * be added or subtracted. The timer module provides several
+       * functions to operate on such numbers. Be careful there, as
+       * some functions of libmad's timer module receive some of
+       * their mad_timer_t arguments by value!
+       */
+      _frame_count++;
+      mad_timer_add(&Timer,Frame.header.duration);
+
+      /* Once decoded the frame is synthesized to PCM samples. No errors
+       * are reported by mad_synth_frame();
+       */
+      mad_synth_frame(&Synth,&Frame);
+
+      /* Synthesized samples must be converted from libmad's fixed
+       * point number to the consumer format. Here we use unsigned
+       * 16 bit big endian integers on two channels. Integer samples
+       * are temporarily stored in a buffer that is flushed when
+       * full.
+       */
+      for(int i=0;i<Synth.pcm.length;i++)
+      {
+	 signed short	Sample;
+
+	 /* Left channel */
+	 Sample=MadFixedToSshort(Synth.pcm.samples[0][i]);
+	 *(buffer++)=Sample;
+	 /*
+	  *(c_buffer++)=Sample>>8;
+	  *(c_buffer++)=Sample&0xff;
+	  */
+
+	 /* Right channel. If the decoded stream is monophonic then
+	  * the right output channel is the same as the left one.
+	  */
+	 if(MAD_NCHANNELS(&Frame.header)==2)
+	 {
+	    Sample=MadFixedToSshort(Synth.pcm.samples[1][i]);
+	 }
+	 *(buffer++)=Sample;
+	    /*
+	     *(c_buffer++)=Sample>>8;
+	     *(c_buffer++)=Sample&0xff;
+	     */
+
+
+      }
+   }
+   return buffer - head;
+}
+
+//#define RMPEGFILE_SHOW_SLOTS 1
+RMpegFile::RMpegFile() 
+{
+   /* First the structures used by libmad must be initialized. */
+   mad_stream_init(&Stream);
+   mad_frame_init(&Frame);
+   mad_synth_init(&Synth);
+   mad_timer_reset(&Timer);
+}
+
+RMpegFile::~RMpegFile()
+{
+   mad_synth_finish(&Synth);
+   mad_frame_finish(&Frame);
+   mad_stream_finish(&Stream);
+   _fd.close();
+}
+
+void 
+RMpegFile::afclose()
+{
+   _fd.close();
+}
+
+bool
+RMpegFile::afopen(
+      QFile& wave_file
+      )
+{
+   id3v1_tag = false;
+   id3v2_tag = false;
+   id3v2_offset = 0;
+   _bufpos = _buflen = _frame_count = 0;
+   // This function needs to be redone to find the header info correctly
+   // This function will open an existing MP3 file.
+   ID3_Tag id3_tag(QCString().sprintf("%s",(const char *)wave_file.name().utf8()));
+   const Mp3_Headerinfo* mp3info;
+   mp3info = id3_tag.GetMp3HeaderInfo();
+        
+   if(mp3info){
+      switch(mp3info->version){
+	 case MPEGVERSION_1:
+	    _version = 0;
+	    _samples_per_frame = 1152; 
+	    break;
+	 case MPEGVERSION_2:
+	    _version = 1;
+	    _samples_per_frame = 576; 
+	    break;
+	 case MPEGVERSION_2_5:
+	    _version = 2;
+	    _samples_per_frame = 576; 
+	    break;
+	 default:
+	    return false;
+	    break;
+      }
+      switch (mp3info->layer)
+      {
+         case MPEGLAYER_III:
+            _layer = 3;
+            break;
+         case MPEGLAYER_II:
+            _layer = 2;
+            break;
+         case MPEGLAYER_I:
+            _layer = 1;
+            break;
+         default:
+  	    return false;
+            break;
+      }
+      switch (mp3info->channelmode)
+      {
+         case MP3CHANNELMODE_STEREO:
+         case MP3CHANNELMODE_JOINT_STEREO:
+         case MP3CHANNELMODE_DUAL_CHANNEL:
+         case MP3CHANNELMODE_SINGLE_CHANNEL:
+         case MP3CHANNELMODE_FALSE:
+            break;
+      }
+      _channels = 2;
+
+      _bitrate = mp3info->bitrate;
+      _frequency = mp3info->frequency;
+      _total_samples = ((mp3info->time)+1)*_frequency;
+      _total_frames = _total_samples / _samples_per_frame;
+//      _total_frames = mp3info->frames;
+//      _total_samples = _total_frames * _samples_per_frame;
+   } else { return false; }
+   
+   _fd.setName(wave_file.name());
+   if(!_fd.open(IO_ReadOnly)) {
+	   return false;
+   }
+   _fd.at(0);
+
+
+   _data_length=wave_file.size();
+   if(id3v1_tag) {
+      _data_length-=128;
+   }
+   if(id3v2_tag) {
+      _data_length-=id3v2_offset;
+   }
+   _data_start=id3v2_offset;
+
+   short buf;
+   if(!afread(&buf,1)){
+      _fd.close();
+      return false;
+   }
+   afseek(0, SEEK_SET);
+
+   return (true);
+}
+
+int
+RMpegFile::afread(
+      signed short * p_data,
+      int len
+      )
+{
+   if(_fd.handle() == -1) return 0;
+   long   new_length = 0;
+
+   while(new_length < len){
+      if (_bufpos == _buflen){
+	 _buflen = MadDecodeFrame(_buffer,1);
+	 _bufpos = 0;
+	 if(_buflen == 0 )
+	    break;
+      }
+      *(p_data + new_length++) = _buffer[_bufpos++];
+   }
+
+   if (new_length != len)
+      _total_frames = _frame_count;
+
+#ifdef RMPEGFILE_SHOW_SLOTS
+   fprintf(stderr,"length requested = %d returned %d\n",len, _current_position);
+#endif
+
+   return(new_length);
+}
+
+int
+RMpegFile::afread(
+      float * p_data,
+      int len
+      )
+{
+   if(_fd.handle() == -1) return 0;
+   long   new_length = 0;
+
+   while(new_length < len){
+      if (_bufpos == _buflen){
+	 _buflen = MadDecodeFrame(_buffer,1);
+	 _bufpos = 0;
+	 if(_buflen == 0 )
+	    break;
+      }
+      *(p_data + new_length++) = MadFixedToFloat(_buffer[_bufpos++]);
+   }
+
+   if (new_length != len)
+      _total_frames = _frame_count;
+
+#ifdef RMPEGFILE_SHOW_SLOTS
+   fprintf(stderr,"length requested = %d returned %d\n",len, _current_position);
+#endif
+
+   return(new_length);
+}
+
+int
+RMpegFile::afseek( int position, int whence)
+{
+   if(_fd.handle() == -1) return 0;
+   position /= 4;
+   switch(whence) {
+      case SEEK_SET:
+	 break;
+      case SEEK_CUR:
+	 position += _frame_count*_samples_per_frame + _bufpos;
+	 break;
+      case SEEK_END:
+	 position = _total_frames * _samples_per_frame - position;
+	 if(position < 0)
+	    position = 0;
+	 break;
+   }
+   // get remainder
+   _bufpos = (position) % _samples_per_frame;
+   int frame_no = (position - _bufpos)/_samples_per_frame;
+
+   // IF we are beyond last frame then we are done
+   if (frame_no > _total_frames)
+   {
+      return (_frame_count*_samples_per_frame + _bufpos) * 2;
+   }
+   else if(_frame_count != frame_no)
+   {
+      _frame_count = seekFrame(frame_no);
+      _buflen = MadDecodeFrame(_buffer,1); 
+   }
+   if(_buflen < _bufpos){
+      _bufpos = _buflen;
+      position = _frame_count*_samples_per_frame + _bufpos;
+   }
+#ifdef RMPEGFILE_SHOW_SLOTS
+   fprintf(stderr,"requested seek to: %d\n _frame_count: %d of %d total frames.\n _last_read_pos: %d\n _buflen: %d _bufpos: %d\n",position, _frame_count, _total_frames, _last_read_pos,_buflen,_bufpos);
+#endif
+   return position*4;
+}
+
+bool RMpegFile::IsMpeg(const char * file_name)
+{
+   QFile file(file_name);
+   if(!afopen(file))
+      return false;
+   _fd.close();
+   return true;
+  // using namespace TagLib;
+
+}
+
+
 RDWaveFile::RDWaveFile(QString file_name)
 {
   // 
@@ -50,9 +1087,12 @@ RDWaveFile::RDWaveFile(QString file_name)
   //
   wave_file.setName(file_name);
   wave_data=NULL;
+  mpeg_file=NULL;
   recordable=false;
   format_chunk=false;
   format_tag=0;
+  energy_tag=0;
+  normalize_level=1.0;
   channels=0;
   samples_per_sec=0;
   avg_bytes_per_sec=0;
@@ -173,6 +1213,10 @@ RDWaveFile::~RDWaveFile()
   if(cook_buffer!=NULL) {
     free(cook_buffer);
   }
+  if(mpeg_file!=NULL) {
+    delete mpeg_file;
+  }
+  mpeg_file = NULL;
 }
 
 
@@ -217,8 +1261,32 @@ bool RDWaveFile::openWave(RDWaveData *data)
 	}
 	data_chunk=true;
 	data_start=lseek(wave_file.handle(),0,SEEK_CUR);
+	if(format_tag==WAVE_FORMAT_MPEG) {
+              mpeg_file = new RMpegFile();
+              if(!mpeg_file->afopen(wave_file)) {
+                 delete mpeg_file;
+                 mpeg_file=NULL;
+                 return false;
+              }
+  
+              data_length=mpeg_file->getDataLength();
+              data_start=mpeg_file->getDataStart();
+   
+              bits_per_sample=16;
+              sample_length=mpeg_file->getTotalSamples();
+              ext_time_length=
+                 (unsigned)(1000.0*(double)sample_length/(double)samples_per_sec);
+              time_length=ext_time_length/1000;
+              data_chunk=true;
+              lseek(wave_file.handle(),data_start,SEEK_SET);
+              format_chunk=true;
+   	      ReadNormalizeLevel(wave_file.name());
+              wave_type=RDWaveFile::Mpeg;
+              block_align=2*channels;
+              ReadId3Metadata();
+        }
 	if((!GetFact(wave_file.handle()))||(sample_length==0)) {
-	  if((format_tag!=WAVE_FORMAT_PCM)&&format_chunk) {
+	  if((format_tag!=WAVE_FORMAT_PCM) && format_chunk) {
 #ifdef MPEG_FACT_FUDGE
 	    // Guesstimate the overall sample size
 	    time_length=data_length/avg_bytes_per_sec;
@@ -279,23 +1347,28 @@ bool RDWaveFile::openWave(RDWaveData *data)
 	  wave_file.close();
 	  return false;
 	}
-	data_length=wave_file.size();
-	if(id3v1_tag) {
-	  data_length-=128;
-	}
-	if(id3v2_tag[1]) {
-	  data_length-=id3v2_offset[1];
-	}
-	data_start=id3v2_offset[0];
-	sample_length=1152*(data_length/mpeg_frame_size);
-	ext_time_length=
-	  (unsigned)(1000.0*(double)sample_length/(double)samples_per_sec);
-	time_length=ext_time_length/1000;
-	data_chunk=true;
-	lseek(wave_file.handle(),data_start,SEEK_SET);
-	format_chunk=true;
-	wave_type=RDWaveFile::Mpeg;
-	ReadId3Metadata();
+        mpeg_file = new RMpegFile();
+        if(mpeg_file->afopen(wave_file) == false) {
+            delete mpeg_file;
+            mpeg_file=NULL;
+            return false;
+        } 
+    
+        data_length=mpeg_file->getDataLength();
+        data_start=mpeg_file->getDataStart();
+   
+        bits_per_sample=16;
+        sample_length=mpeg_file->getTotalSamples();
+     	ext_time_length=
+   	       (unsigned)(1000.0*(double)sample_length/(double)samples_per_sec);
+   	time_length=ext_time_length/1000;
+   	data_chunk=true;
+   	lseek(wave_file.handle(),data_start,SEEK_SET);
+   	format_chunk=true;
+      	ReadNormalizeLevel(wave_file.name());
+   	wave_type=RDWaveFile::Mpeg;
+        block_align=2*channels;
+   	ReadId3Metadata();
     	break;
 
       case RDWaveFile::Ogg:
@@ -315,8 +1388,9 @@ bool RDWaveFile::openWave(RDWaveData *data)
 	time_length=(unsigned)ov_time_total(&vorbis_file,-1);
 	data_chunk=true;
 	format_chunk=true;
+        ReadNormalizeLevel(wave_file.name());
 	wave_type=RDWaveFile::Ogg;
-	ValidateMetadata();
+	ReadOggMetadata();
 	return true;
 #else
 	return false;
@@ -391,9 +1465,12 @@ bool RDWaveFile::openWave(RDWaveData *data)
 
 bool RDWaveFile::createWave(RDWaveData *data)
 {
+  QFile energy_file;
+  QString str;
   mode_t prev_mask;
   bool rc;
   wave_data=data;
+  unlink((wave_file.name()+".energy").ascii());
   if(wave_data!=NULL) {
     cart_title=wave_data->title();
     cart_artist=wave_data->artist();
@@ -462,6 +1539,10 @@ bool RDWaveFile::createWave(RDWaveData *data)
 
       case WAVE_FORMAT_VORBIS:
 #ifdef HAVE_VORBIS
+	energy_data.clear();
+	for(int i=0;i<channels;i++) {
+	  energy_data.push_back(0);
+	}
 	avg_bytes_per_sec=2*channels*samples_per_sec;
 	vorbis_info_init(&vorbis_inf);
 	if(vorbis_encode_init_vbr(&vorbis_inf,channels,samples_per_sec,
@@ -511,9 +1592,25 @@ bool RDWaveFile::createWave(RDWaveData *data)
   }
   levl_timestamp=QDateTime(QDate::currentDate(),QTime::currentTime());
   data_length=0;
+  if(energy_tag==1)
+    {
+     energy_file.setName(wave_file.name()+".energy");
+     prev_mask = umask(0113);      // Set umask so files are user and group writable.
+     rc=energy_file.open(IO_ReadWrite|IO_Truncate);
+     umask(prev_mask);
+     energy_file.close();
+    }
   return true;
 }
 
+bool RDWaveFile::recreateEnergy()
+{
+has_energy=false;
+energy_loaded=false;
+unlink(wave_file.name()+".energy");
+GetEnergy();
+return has_energy;
+}
 
 void RDWaveFile::closeWave(int samples)
 {
@@ -521,6 +1618,23 @@ void RDWaveFile::closeWave(int samples)
   unsigned csize;
   unsigned lsize=0;
   unsigned cptr;
+  QFile energy_file;
+  QString str;
+  mode_t prev_mask;
+  bool rc;
+
+  if(energy_tag==1) {
+      str=str.sprintf("%f\n",normalize_level);
+      energy_file.setName(wave_file.name()+".energy");
+      prev_mask = umask(0113);      // Set umask so files are user and group writable.
+      rc=energy_file.open(IO_ReadWrite|IO_Truncate);
+      umask(prev_mask);
+      if(rc) {
+         write(energy_file.handle(),(const char*)str,strlen(str));
+         write(energy_file.handle(),&(energy_data[0]),2*energy_data.size());
+         energy_file.close();
+      }
+   }
 
   if(recordable) {
     switch(wave_type) {
@@ -528,7 +1642,7 @@ void RDWaveFile::closeWave(int samples)
 	  //
 	  // Write levl chunk
 	  //
-	  if(levl_chunk&&((format_tag==WAVE_FORMAT_PCM)||
+	  if(energy_tag==0&&levl_chunk&&((format_tag==WAVE_FORMAT_PCM)||
 			  ((format_tag==WAVE_FORMAT_MPEG)&&(head_layer==2)))) {
 	    levl_version=0;
 	    levl_format=2;
@@ -548,13 +1662,7 @@ void RDWaveFile::closeWave(int samples)
 	    size_buf[3]=(lsize>>24)&0xff;
 	    write(wave_file.handle(),size_buf,4);
 	    write(wave_file.handle(),levl_chunk_data,LEVL_CHUNK_SIZE-4);
-	    // Fixup the endianness
-	    unsigned char * sbuf = new unsigned char [2 * energy_data.size()];
-	    for (unsigned int i=0; i < energy_data.size(); i++){
-	      WriteSword (sbuf,2*i,(unsigned short) energy_data[i]);
-	    }
-	    write(wave_file.handle(),sbuf,2*energy_data.size());
-	    delete [] sbuf;
+	    write(wave_file.handle(),&(energy_data[0]),2*energy_data.size());
 	    ftruncate(wave_file.handle(),lseek(wave_file.handle(),0,SEEK_CUR));
 	  }
 
@@ -668,6 +1776,8 @@ void RDWaveFile::closeWave(int samples)
   time_length=0;
   format_chunk=false;
   format_tag=0;
+  energy_tag=0;
+  normalize_level=1.0;
   channels=0;
   samples_per_sec=0;
   avg_bytes_per_sec=0;
@@ -771,6 +1881,10 @@ void RDWaveFile::closeWave(int samples)
   encode_quality=5.0f;
   serial_number=-1;
   atx_offset=0;
+  if(mpeg_file!=NULL) {
+    delete mpeg_file;
+  }
+  mpeg_file = NULL;
   av10_chunk=false;
 }
 
@@ -781,6 +1895,10 @@ void RDWaveFile::resetWave()
     lseek(wave_file.handle(),data_start,SEEK_SET);
     ftruncate(wave_file.handle(),data_start);
   }
+  if(mpeg_file!=NULL) {
+    delete mpeg_file;
+  }
+  mpeg_file = NULL;
 }
 
 
@@ -851,19 +1969,32 @@ void RDWaveFile::setEncoding(RDWaveFile::Encoding code)
 int RDWaveFile::readWave(void *buf,int count)
 {
   int stream;
-  int n;
+  int n=0;
   unsigned int pos;
-  int c = 0;
+  int16_t *sample;
 
   switch(wave_type) {
       case RDWaveFile::Ogg:
 #ifdef HAVE_VORBIS
-	n=ov_read(&vorbis_file,(char *)buf,count,0,2,1,&stream);
+	      n = 0;
+	      while(n!=count){
+		    int ret = ov_read(&vorbis_file,(char *)buf+n,count-n,0,2,1,&stream);
+		    if (!ret) break;
+		    n+=ret;
+	      }
+           if(normalize_level != 1.0f){
+	      for (int i=0;i<n/2;i++) {
+             sample=(int16_t *)buf+i;
+            *sample=(int16_t)(normalize_level*(double)*sample);
+	      }
+           }
 	return n;
 #endif  // HAVE_VORBIS
 	return 0;
 
       case RDWaveFile::Wave:
+        switch(format_tag){
+           case WAVE_FORMAT_PCM:
 	pos = lseek(wave_file.handle(),0,SEEK_CUR);
 	//
 	// FIXME: how fix comparing singed (data_start, count) vs. 
@@ -874,20 +2005,49 @@ int RDWaveFile::readWave(void *buf,int count)
         if (((pos+count)>(data_start+data_length))&&(data_length>0)) {
           count=count - ( (pos+count) - (data_start+data_length) );
         }
-	c = read(wave_file.handle(),buf,count);
+	if(normalize_level != 1.0f) {
+           n=read(wave_file.handle(),buf,count); 
+           for (int i=0;i<n/2;i++) {
+              sample=(int16_t *)buf+i;
+              *sample=(int16_t)(normalize_level*(double)*sample);
+  	      }
+	  return n;
+          }
+        else {
+	  return read(wave_file.handle(),buf,count);
+          }
+               break;
+            case WAVE_FORMAT_MPEG:
+               {
+                  int16_t *sample;
+                  n = mpeg_file->afread((short*)buf,count/2);
+                  if(normalize_level != 1.0f){
+                     for (int i=0;i<n;i++) {
+                        sample=(int16_t *)buf+i;
+                        *sample=(int16_t)(normalize_level*(double)*sample);
+                     }
+                  }
+               }
+               return n*2;
 	break;
-      default:
-	c = read(wave_file.handle(),buf,count);
   }
-  if ( c <0 ) return 0; // read error
-  // Fixup the buffer for big endian hosts (Wav is defined as LE).
-  if (htonl (1l) == 1){ // Big endian host
-    for (unsigned int i = 0; i < c/2; i++){
-      ((short*)buf)[i] = ReadSword((unsigned char *)buf,2*i);
+  
+       case RDWaveFile::Mpeg:
+         {
+            n = mpeg_file->afread((short*)buf,count/2);
+            if(normalize_level != 1.0f){
+               for (int i=0;i<n;i++) {
+                  sample=(int16_t *)buf+i;
+                  *sample=(int16_t)(normalize_level*(double)*sample);
+               }
     }
   }
+         return n*2;
 
-  return c;
+      default:
+	return read(wave_file.handle(),buf,count);
+  }
+  return 0;
 }
 
 
@@ -951,13 +2111,6 @@ int RDWaveFile::writeWave(void *buf,int count)
 	}
 	lseek(wave_file.handle(),0,SEEK_END);
 	data_length+=count;
-	// Fixup the buffer for big endian hosts (Wav is defined as LE).
-	if (htonl (1l) == 1l){ // Big endian host
-	  for (unsigned int i = 0; i < count/2; i++){
-	    unsigned short s = ((unsigned short*)buf)[i];
-	    WriteSword((unsigned char *)buf,2*i,s);
-	  }
-	}
 	return write(wave_file.handle(),buf,count);
 
       case WAVE_FORMAT_MPEG:
@@ -1004,6 +2157,55 @@ int RDWaveFile::writeWave(void *buf,int count)
 	return write(wave_file.handle(),buf,count);
 
       case WAVE_FORMAT_VORBIS:
+	  for(int i=0;i<count;i++) {
+	    switch(levl_istate) {
+		case 0:   // Left Channel, LSB
+		  levl_accum=((char *)buf)[i]&0xff;
+		  levl_istate=1;
+		  break;
+
+		case 1:   // Left Channel, MSB
+		  levl_accum|=((((char *)buf)[i]&0xff)<<8);
+		  switch(channels) {
+		      case 1:
+			if(levl_accum>energy_data[energy_data.size()-1]) {
+			  energy_data[energy_data.size()-1]=levl_accum;
+			}
+			if(++levl_block_ptr==1152) {
+			  energy_data.push_back(0);
+			  levl_block_ptr=0;
+			}
+			levl_istate=0;
+			break;
+
+		      case 2:
+			if(levl_accum>energy_data[energy_data.size()-2]) {
+			  energy_data[energy_data.size()-2]=levl_accum;
+			}
+			levl_istate=2;
+			break;
+		  }
+		  break;
+
+		case 2:   // Right Channel, LSB
+		  levl_accum=((char *)buf)[i]&0xff;
+		  levl_istate=3;
+		  break;
+
+		case 3:   // Right Channel, MSB
+		  levl_accum|=((((char *)buf)[i]&0xff)<<8);
+		  if(levl_accum>energy_data[energy_data.size()-1]) {
+		    energy_data[energy_data.size()-1]=levl_accum;
+		  }
+		  if(++levl_block_ptr==1152) {
+		    energy_data.push_back(0);
+		    energy_data.push_back(0);
+		    levl_block_ptr=0;
+		  }
+		  levl_istate=0;
+		  break;
+	    }
+	  }
 	WriteOggBuffer((char *)buf,count);
 	break;
   }
@@ -1030,20 +2232,20 @@ unsigned RDWaveFile::energySize()
 
 unsigned short RDWaveFile::energy(unsigned frame)
 {
+  GetEnergy();
   if(!has_energy) {
     return 0;
   }
-  GetEnergy();
   return energy_data[frame];
 }
 
 
 int RDWaveFile::readEnergy(unsigned short buf[],int count)
 {
+  GetEnergy();
   if(!has_energy) {
     return 0;
   }
-  GetEnergy();
   for(int i=0;i<count;i++) {
     if((i+energy_ptr)<energy_data.size()) {
       buf[i]=energy_data[i+energy_ptr];
@@ -1083,6 +2285,43 @@ int RDWaveFile::endTrim(int level)
 }
 
 
+void RDWaveFile::normalize(double level)
+{
+  GetEnergy();
+        //
+        // The way sox does this:
+        // - Find the sample with the highest value.  
+        // Should be looking at minimum values too and take the absolute value.
+        double peak_level = 0;
+        for(unsigned i=0;i<energy_data.size();i++) {
+           if(energy_data[i] > peak_level) {
+               peak_level = energy_data[i]; 
+           }
+        }
+        peak_level=peak_level/normalize_level;
+        // - Then we need a ratio to multiple all our samples by.  i.e.
+        // vol_scale * sample will never be greater then SIGNED_SHORT_MAX.
+        double vol_scale = 32768.0f/peak_level; 
+        // - Then we want to allow for adjusting the volume so it's not so full on loud.  
+        // Like set it 13db below the max.  This is where the user selectable level comes in.
+        double scale_level=(level*vol_scale)/normalize_level;
+        normalize_level = level*vol_scale;
+        if( normalize_level==0){
+           normalize_level=1.0f;
+           scale_level=1.0f;
+        }else{
+           for(unsigned i=0;i<energy_data.size();i++) {
+              energy_data[i] *= scale_level;
+           }
+        }
+
+        // I Propose the normalize_level here is the same as sent to rd_import_file.
+        // i.e. normal=pow(10.0,(double)(library_conf->ripperLevel())/20.0);
+        // failing that change it to a int and set the normalize_level to ripperLevel() and 
+        // keep the gory details of converting that to double within this library.
+        energy_tag=1;
+}
+
 int RDWaveFile::seekWave(int offset,int whence)
 {
   int pos;
@@ -1093,10 +2332,10 @@ int RDWaveFile::seekWave(int offset,int whence)
 	switch(whence) {
 	    case SEEK_SET:
 	      if(ov_pcm_seek(&vorbis_file,offset/(2*channels))==0) {
-	      printf("RDWaveFile::seekWave() = %d\n",offset);
+	      //printf("RDWaveFile::seekWave() = %d\n",offset);
 		return offset;
 	      }
-	      printf("RDWaveFile::seekWave() = -1\n");
+	      //printf("RDWaveFile::seekWave() = -1\n");
 	      return -1;
 	      break;
 
@@ -1114,6 +2353,11 @@ int RDWaveFile::seekWave(int offset,int whence)
 #endif  // HAVE_VORBIS
 	return -1;
 	break;
+      case RDWaveFile::Mpeg:
+         if(mpeg_file) 
+            return mpeg_file->afseek(offset,whence);
+         return -1;
+         break;
 
       case RDWaveFile::Wave:// FIXME: how fix comparing singed (data_start, offset, pos) vs. unsigned (data_length) ... WAVE standard is 32 bit, but not sure if signed or not... grauf@rfa.org Tue, 04 Apr 2006 21:02:51 -0400
         switch(whence) {
@@ -1180,6 +2424,30 @@ void RDWaveFile::setFormatTag(unsigned short format)
   if(!recordable) {
     format_tag=format;
   }
+}
+
+
+void RDWaveFile::setEnergyTag(int format)
+{
+  energy_tag=format;
+}
+
+
+int RDWaveFile::getEnergyTag() const
+{
+  return energy_tag;
+}
+
+
+double RDWaveFile::getNormalizeLevel() const
+{
+  return normalize_level;
+}
+
+
+void RDWaveFile::setNormalizeLevel(double level)
+{
+  normalize_level=level;
 }
 
 
@@ -1957,46 +3225,11 @@ bool RDWaveFile::IsWav(int fd)
 
 bool RDWaveFile::IsMpeg(int fd)
 {
-  int i;
-  unsigned char buffer[11];
-
-  id3v1_tag=false;
-  id3v2_tag[0]=false;
-  id3v2_tag[1]=false;
-  id3v2_offset[0]=0;
-  id3v2_offset[1]=0;
-
-  lseek(fd,0,SEEK_SET);
-  if((i=read(fd,buffer,10))!=10) {
-    return false;
-  }
-  buffer[3]=0;
-  if(!strcasecmp((char *)buffer,"ID3")) {
-    id3v2_tag[0]=true;
-    id3v2_offset[0]=
-      (buffer[9]|(buffer[8]<<7)|(buffer[7]<<14)|(buffer[6]<<21))+10;
-  }  
-  lseek(fd,id3v2_offset[0],SEEK_SET);
-  if((i=read(fd,buffer,2))!=2) {
-    return false;
-  }
-  if((buffer[0]==0xFF)&&((buffer[1]&0xE0)==0xE0)) {
+  RMpegFile mpegfile;
+  if(mpegfile.afopen(wave_file)) {
+    mpegfile.afclose();
     return true;
   }
-//  if(buffer[0]==0) {   // Possibly a broken null-padded ID3 tag -- see if
-                       // we can find the start of the MPEG data
-    while(read(fd,buffer,1)==1) {
-      if(buffer[0]==0xFF) {  // Could be it -- check the next byte
-	if(read(fd,buffer,1)==1) {
-	  if((buffer[0]&0xF0)==0xF0) {  // Got it -- fix things up
-	    id3v2_tag[0]=true;
-	    id3v2_offset[0]=lseek(fd,0,SEEK_CUR)-2;
-	    return true;
-	  }
-	}
-      }
-    }
-//  }
   return false;
 }
 
@@ -2400,6 +3633,55 @@ bool RDWaveFile::GetMext(int fd)
 }
 
 
+
+bool RDWaveFile::ReadEnergyFile(QString wave_file_name)
+{
+  if(has_energy && energy_loaded) return true;
+
+  QFile energy_file;
+  QString str;
+  unsigned char frame[50];
+
+  energy_file.setName(wave_file_name+".energy");
+  if(!energy_file.open(IO_ReadOnly)) 
+    return false;
+  if(energy_file.readLine(str,20) <= 0)
+     return false;
+  normalize_level=str.toDouble();
+  energy_file.close();
+  if(!energy_file.open(IO_ReadOnly)) 
+    return false;
+  read(energy_file.handle(),frame,str.length());
+  int i=0;
+  while(read(energy_file.handle(),frame,2)>0) {
+      energy_data.push_back(frame[0]+256*frame[1]);
+      i++;
+  }
+  ext_time_length=
+   	       (unsigned)(1000.0*(((double)i*1152)/getChannels())/(double)samples_per_sec);  
+  energy_file.close();
+  energy_loaded=true;
+  has_energy=true;
+  return true;
+}
+
+
+bool RDWaveFile::ReadNormalizeLevel(QString wave_file_name)
+{
+  QFile energy_file;
+  QString str;
+
+  energy_file.setName(wave_file_name+".energy");
+  if(!energy_file.open(IO_ReadOnly)) 
+    return false;
+  if(energy_file.readLine(str,20) <= 0)
+     return false;
+  normalize_level=str.toDouble();
+  energy_file.close();
+  return true;
+}
+
+
 bool RDWaveFile::GetLevl(int fd)
 {
   unsigned size=LEVL_CHUNK_SIZE;
@@ -2412,7 +3694,14 @@ bool RDWaveFile::GetLevl(int fd)
    * Load the chunk
    */
   if(!GetChunk(fd,"levl",&chunk_size,levl_chunk_data,LEVL_CHUNK_SIZE)) {
-    return false;
+  //  if(ReadEnergyFile(wave_file.name())) {
+   //   energy_loaded=true;
+   //   has_energy=true;
+   //   return true;
+   //   }
+  //  else {
+     return false;
+  //  }
   }
   levl_chunk=true;
 
@@ -2886,6 +4175,23 @@ bool RDWaveFile::GetLine(int fd,char *buffer,int max_len)
 }
 
 
+void RDWaveFile::ReadOggMetadata()
+{
+  if(wave_data==NULL) {
+    return;
+  }
+  TagLib::FileRef f(QCString().sprintf("%s",(const char *)wave_file.name().utf8()));
+  if(!f.isNull() && f.tag()){
+    TagLib::Tag *tag=f.tag();
+    wave_data->setTitle(TStringToQString(tag->title()));
+    wave_data->setArtist(TStringToQString(tag->artist()));
+    wave_data->setAlbum(TStringToQString(tag->album()));
+    wave_data->setReleaseYear((int)tag->year());
+    wave_data->setMetadataFound(true);
+  } 
+}
+
+
 void RDWaveFile::ReadId3Metadata()
 {
   if(wave_data==NULL) {
@@ -2940,6 +4246,55 @@ void RDWaveFile::ReadId3Metadata()
 
 bool RDWaveFile::GetMpegHeader(int fd,int offset)
 {
+   if (format_tag == WAVE_FORMAT_MPEG){
+   RMpegFile mpegfile;
+   if(!mpegfile.afopen(wave_file)) return false;
+
+   switch(mpegfile.getVersion())
+   {
+      case 0:
+    mpeg_id=RDWaveFile::Mpeg1;
+	break;
+		  case 1:
+	 mpeg_id=RDWaveFile::Mpeg2;
+		    break;
+		  case 2:
+	 //mpeg_id=RDWaveFile::Mpeg25;
+		    break;
+		  default:
+	 mpeg_id=RDWaveFile::NonMpeg;
+	break;
+
+  }
+
+  //
+   // Layer
+  //
+   head_layer = mpegfile.getLayer();
+
+  //
+   // Bitrate
+  //
+   head_bit_rate = mpegfile.getBitrate();
+
+   //
+   // Sample Rate
+   //
+   samples_per_sec = mpegfile.getFrequency();
+
+  //
+   // Channels 
+  //
+   channels = mpegfile.getChannels();
+
+  //
+  // Frame Size (without padding)
+  //
+  mpeg_frame_size=144*head_bit_rate/samples_per_sec;
+  mpegfile.afclose();
+  return true;
+}
+
   unsigned char buffer[4];
   int n;
   
@@ -3950,6 +5305,7 @@ void RDWaveFile::GetEnergy()
 {
   int file_ptr;
 
+  ReadEnergyFile(wave_file.name());
   if(!levl_chunk) {
     GetLevl(wave_file.handle());
   }
@@ -3958,7 +5314,9 @@ void RDWaveFile::GetEnergy()
   }
   file_ptr=lseek(wave_file.handle(),0,SEEK_CUR);
   lseek(wave_file.handle(),0,SEEK_SET);
-  LoadEnergy();
+  unsigned energy_size=LoadEnergy();
+  ext_time_length=
+   	       (unsigned)(1000.0*(((double)energy_size*1152)/getChannels())/(double)samples_per_sec);  
   energy_loaded=true;
   lseek(wave_file.handle(),file_ptr,SEEK_SET);
 }
@@ -3976,11 +5334,10 @@ unsigned RDWaveFile::LoadEnergy()
   short max=0;
 
   energy_data.clear();
-
   energy_size=getSampleLength()*getChannels()/1152;
   seekWave(0,SEEK_SET);
   switch(format_tag) {
-      case WAVE_FORMAT_MPEG:
+/*      case WAVE_FORMAT_MPEG:
 	if((head_layer==2)&&(mext_left_energy||mext_right_energy)) {
 	  while(i<energy_size) {
 	    lseek(wave_file.handle(),block_align-5,SEEK_CUR);
@@ -4005,11 +5362,35 @@ unsigned RDWaveFile::LoadEnergy()
 	  return 0;
 	}
 	break;
-
+*/
       case WAVE_FORMAT_PCM:
 	block_size=2304*channels;
 	while(i<energy_size) {
 	  if(read(wave_file.handle(),pcm,block_size)!=block_size) {
+	    has_energy=true;
+	    return i;
+	  }
+	  for(int j=0;j<channels;j++) {
+	    max=0;
+	    energy_data.push_back(0);
+	    for(int k=0;k<1152;k++) {
+	      offset=2*k*channels+2*j;
+	      if((pcm[offset]+256*pcm[offset+1])>energy_data[i]) {
+		energy_data[i]=pcm[offset]+256*pcm[offset+1];
+	      }
+	    }
+	    i++;
+	  }
+	}
+	has_energy=true;
+	return i;
+	break;
+
+      case WAVE_FORMAT_MPEG:
+      case WAVE_FORMAT_VORBIS:
+	block_size=2304*channels;
+	while(i<energy_size) {
+	  if(readWave(pcm,block_size)!=block_size) {
 	    has_energy=true;
 	    return i;
 	  }
@@ -4095,9 +5476,13 @@ int RDWaveFile::WriteOggBuffer(char *buf,int size)
 	high=buffer[j][i];
       }
 */
+	    buffer[j][i] = ((buf[i*2*channels + 2*j + 1]<<8) |
+			    (buf[i*2*channels + 2*j] & 0xff))/32768.0f;
+            /* My compilier doesn't like these casts.
       buffer[j][i]=
 	((float)(buf[2*channels*i+2*j]&0xff)+
 	 (256.0f*(float)(buf[2*channels*i+2*j+1]&0xff)))/32768.0f;
+         */
     }
 //    printf("HIGH: %5.3f\n",high);
   }

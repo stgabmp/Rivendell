@@ -62,6 +62,7 @@ RDImportAudio::RDImportAudio(QString cutname,QString *path,
   import_station=station;
   import_running=running;
   import_file_filter=RD_AUDIO_FILE_FILTER;
+  open_failed=false;
 
   setCaption(tr("Import/Export Audio File"));
 
@@ -235,7 +236,7 @@ RDImportAudio::RDImportAudio(QString cutname,QString *path,
   //
   // Progress Bar
   //
-  import_bar=new QProgressBar(this,"import_bar");
+  import_bar=new QProgressBar(100,this,"import_bar");
   import_bar->setGeometry(10,230,sizeHint().width()-20,20);
 
   //
@@ -554,16 +555,26 @@ void RDImportAudio::Import()
   }
   RDWaveFile *wave=new RDWaveFile(import_in_filename_edit->text());
   if(!wave->openWave(import_wavedata)) {
+    if(import_default_settings->format()!=0 && import_default_settings->format()!=3 && import_default_settings->format()!=5) {
     QMessageBox::warning(this,tr("Import Audio File"),tr("Cannot open file!"));
     delete wave;
     return;
   }
+    else {
+      open_failed=true;
+    }  
+  }
   if(wave->type()==RDWaveFile::Unknown) {
+    if(import_default_settings->format()!=5 && import_default_settings->format()!=3) {
     QMessageBox::warning(this,tr("Import Audio File"),
 			 tr("Unsupported file type!"));
     wave->closeWave();
     delete wave;
     return;
+  }
+    else {
+      open_failed=true;
+    }  
   }
   int samplerate=wave->getSamplesPerSec();
   switch(wave->getFormatTag()) {
@@ -580,6 +591,11 @@ void RDImportAudio::Import()
 
       case WAVE_FORMAT_FLAC:
 	format_in=0;
+	import_temp_length=wave->getSampleLength()*wave->getChannels()*2;
+	break;
+      
+      case WAVE_FORMAT_VORBIS:
+	format_in=5;
 	import_temp_length=wave->getSampleLength()*wave->getChannels()*2;
 	break;
   }
@@ -638,12 +654,31 @@ void RDImportAudio::Import()
 	break;
 
       case RDSettings::MpegL1:
+	break;
       case RDSettings::MpegL3:
+	import_finished_length=
+	  (int)((double)import_temp_length*
+		(double)(import_channels_box->currentItem()+1)*
+		(double)import_default_settings->bitRate()/1411200.0);
+	lib_fmt=RDSettings::MpegL3;
+	break;
       case RDSettings::Flac:
+	import_finished_length=
+	  (int)((double)import_temp_length*
+		(double)(import_channels_box->currentItem()+1)*
+		(double)import_default_settings->bitRate()/1411200.0);
+	lib_fmt=RDSettings::Flac;
+	break;
       case RDSettings::OggVorbis:
+	import_finished_length=
+	  (int)((double)import_temp_length*
+		(double)(import_channels_box->currentItem()+1)*
+		(double)import_default_settings->bitRate()/1411200.0);
+	lib_fmt=RDSettings::OggVorbis;
+	break;
+      case RDSettings::Copy:
 	break;
   }
-
   //
   // Generate Temporary Filenames
   //
@@ -657,6 +692,7 @@ void RDImportAudio::Import()
   if(import_normalize_box->isChecked()) {
     normal=pow(10.0,(double)(import_normalize_spin->value())/20.0);
     import_multipass=true;
+    if (lib_fmt!=5 && lib_fmt!=3) {
     cmd=QString().
       sprintf("rd_import_file %6.4f %d %d %s %d %d %d %d %s %s %s %d",
 	      normal,
@@ -674,7 +710,34 @@ void RDImportAudio::Import()
 	      rdlibrary->srcConverter());
   }
   else {
+      if((format_in!=3 && format_in!=5) || open_failed || samplerate!=import_default_settings->sampleRate()) {
+        cmd=QString().
+          sprintf("rd_import_encode %s %s %d %d %d %d %f %s %s",
+	        (const char *)RDEscapeString(import_in_filename_edit->text()).utf8(),  
+	        RDCut::pathName(import_cutname).ascii(),  
+	        lib_fmt,
+	        import_default_settings->sampleRate(),
+	        import_channels_box->currentItem()+1,
+	        (import_channels_box->
+	         currentItem()+1)*import_default_settings->bitRate()/1000,
+	        normal,
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }
+      else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s %f %s %s",
+	        (const char *)RDEscapeString(import_in_filename_edit->text()).utf8(),  
+	        RDCut::pathName(import_cutname).ascii(),  
+	        normal,
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }  	      
+    }	      
+  }
+  else {
     import_multipass=false;
+    if (lib_fmt!=3 && lib_fmt!=5) {
     cmd=QString().
       sprintf("rd_import_file 0 %d %d %s %d %d %d %d %s %s %s %d",
 	      format_in,
@@ -690,7 +753,30 @@ void RDImportAudio::Import()
 	      (const char *)import_tempwav_name,
 	      rdlibrary->srcConverter());
   }
-  // printf("CMD: %s\n",(const char *)cmd);
+    else {
+      if((format_in!=3 && format_in!=5) || open_failed || samplerate!=import_default_settings->sampleRate()) {
+        cmd=QString().
+          sprintf("rd_import_encode %s %s %d %d %d %d 0 %s %s",
+	        (const char *)RDEscapeString(import_in_filename_edit->text()).utf8(),  
+	        RDCut::pathName(import_cutname).ascii(),  
+	        lib_fmt,
+	        import_default_settings->sampleRate(),
+	        import_channels_box->currentItem()+1,
+	        (import_channels_box->
+	         currentItem()+1)*import_default_settings->bitRate()/1000,
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }
+    else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s 0 %s %s",
+	        (const char *)RDEscapeString(import_in_filename_edit->text()).utf8(),  
+	        RDCut::pathName(import_cutname).ascii(),
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }  	      
+    }	      
+  }
   delete rdlibrary;
   *import_running=true;
   import_import_aborted=false;
@@ -701,7 +787,7 @@ void RDImportAudio::Import()
     bar_temp_file.setName(import_tempwav_name);
   }
   if((import_script_pid=fork())==0) {
-    if(system((const char *)cmd.utf8())==0) {
+    if(system(cmd.utf8())==0) {
       chown(RDCut::pathName(import_cutname),import_config->uid(),
 	    import_config->gid());
       chmod(RDCut::pathName(import_cutname),
@@ -714,7 +800,7 @@ void RDImportAudio::Import()
   }
   else {
     import_bar->setProgress(0);
-    import_bar->setPercentageVisible(true);
+    import_bar->setPercentageVisible(false);
     import_bar_timer->start(IMPORT_BAR_INTERVAL,true);
   }
 }
@@ -725,7 +811,7 @@ void RDImportAudio::ImportProgress()
   QString cuts_sql;
 
   if(*import_running) {
-    if(import_multipass) {
+/*    if(import_multipass) {
       import_bar->
 	setProgress((int)(50.0*((double)bar_temp_file.
 				size()/(double)import_temp_length+
@@ -735,7 +821,14 @@ void RDImportAudio::ImportProgress()
     else {
       import_bar->setProgress((int)(100.0*(double)GetFileSize(import_dest_filename)/
 				    (double)import_finished_length));
+    }*/
+    if(import_bar->progress()==100) {
+      import_bar->setProgress(0);
     }
+    else {
+      import_bar->setProgress(import_bar->progress()+10);
+    }
+    
     import_bar_timer->start(IMPORT_BAR_INTERVAL,true);
   }
   else {
@@ -745,16 +838,23 @@ void RDImportAudio::ImportProgress()
     RDCut *cut=new RDCut(import_cutname);
     cut->reset();
     cut->setOriginName(import_station->name());
-    if(import_autotrim_box->isChecked()) {
-      AutoTrim();
-    }
 
     //
     // Update Metadata
     //
     if(import_wavedata!=NULL) {
+      RDWaveFile *wave=new RDWaveFile(cut->pathName(cut->cutName()));
+      if(wave->openWave()) {
+         wave->hasEnergy();
+         import_wavedata->setEndPos(wave->getExtTimeLength());
+         wave->closeWave();
+      }   
+      delete wave;
       cart->setMetadata(import_wavedata);
       cut->setMetadata(import_wavedata);
+    }
+    if(import_autotrim_box->isChecked()) {
+      AutoTrim();
     }
     delete cut;
     delete cart;
@@ -773,7 +873,8 @@ void RDImportAudio::ImportProgress()
       else {
 	QMessageBox::warning(this,tr("Import Failed"),
 			     tr("The importer encountered an error.\n\
-Please check your importer configuration and try again."));
+Please check your importer configuration\n\
+or the input file and try again."));
       }
     }
     *import_import_metadata=import_in_metadata_box->isChecked();
@@ -827,6 +928,11 @@ void RDImportAudio::Export()
 	format_in=wave->getHeadLayer();
 	import_temp_length=wave->getSampleLength()*wave->getChannels()*2;
 	break;
+
+      case WAVE_FORMAT_VORBIS:
+	format_in=5;
+	import_temp_length=wave->getSampleLength()*wave->getChannels()*2;
+	break;
   }
   import_import_aborted=false;
 
@@ -876,6 +982,9 @@ void RDImportAudio::Export()
 	      176400.0);
       break;
       
+      case RDSettings::Copy:
+	break;
+
     default:  // Custom format
       import_finished_length=0;
       custom_cmd=import_settings->
@@ -894,10 +1003,11 @@ void RDImportAudio::Export()
   QString cmd;
   float normal=0.0;
   RDLibraryConf *rdlibrary=new RDLibraryConf(import_station->name(),0);
-  if(import_normalize_box->isChecked()) {
-    normal=pow(10.0,(double)(import_normalize_spin->value())/20.0);
-    import_multipass=true;
-    cmd=QString().
+  if(import_settings->format()<99) {
+    if(import_normalize_box->isChecked()) {
+      normal=pow(10.0,(double)(import_normalize_spin->value())/20.0);
+      import_multipass=true;
+      cmd=QString().
       sprintf("rd_export_file %6.4f %d %d %s %d %d %d %d %d %s %s %s %d",
 	      normal,
 	      format_in,
@@ -912,10 +1022,10 @@ void RDImportAudio::Export()
 	      (const char *)import_tempdat_name,
 	      (const char *)import_tempwav_name,
 	      rdlibrary->srcConverter());
-  }
-  else {
-    import_multipass=false;
-    cmd=QString().
+    }
+    else {
+      import_multipass=false;
+      cmd=QString().
       sprintf("rd_export_file 0 %d %d %s %d %d %d %d %d %s %s %s %d",
 	      format_in,
 	      samplerate,
@@ -929,6 +1039,12 @@ void RDImportAudio::Export()
 	      (const char *)import_tempdat_name,
 	      (const char *)import_tempwav_name,
 	      rdlibrary->srcConverter());
+    }
+  }
+  else { 
+    cmd=QString().
+      sprintf("cp %s %s",RDCut::pathName(import_cutname).ascii(),
+	      (const char *)(const char *)RDEscapeString(import_out_filename_edit->text()).utf8());
   }
   delete rdlibrary;
   if(!custom_cmd.isEmpty()) {

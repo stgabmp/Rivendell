@@ -358,6 +358,27 @@ farge</translation>
         <source>ALL</source>
         <translation>ALLE</translation>
     </message>
+    <message>
+        <source>&amp;Edit
+Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updateing audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting External Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Audio?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDCutDialog</name>
@@ -902,6 +923,10 @@ Skriv over?</translation>
         <source>144 kbps</source>
         <translation>144 kbps</translation>
     </message>
+    <message>
+        <source>Copy File</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDGetAth</name>
@@ -1097,7 +1122,7 @@ Vil du halda fram?</translation>
     <message>
         <source>The importer encountered an error.
 Please check your importer configuration and try again.</source>
-        <translation>Det var ein feil med importen.
+        <translation type="obsolete">Det var ein feil med importen.
 Sjå over importoppsettet ditt og prøv att.</translation>
     </message>
     <message>
@@ -1159,6 +1184,12 @@ Vil du skriva over henne?</translation>
 Please check your configuration and try again.</source>
         <translation>Det var ein feil med eksporten.
 Sjekk eksportoppsettet ditt og prøv att.</translation>
+    </message>
+    <message>
+        <source>The importer encountered an error.
+Please check your importer configuration
+or the input file and try again.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

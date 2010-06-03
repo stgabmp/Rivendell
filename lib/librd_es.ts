@@ -359,6 +359,27 @@ Color</translation>
         <source>Please Wait...</source>
         <translation>Por favor, espere...</translation>
     </message>
+    <message>
+        <source>&amp;Edit
+Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updateing audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting External Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Audio?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDCutDialog</name>
@@ -905,6 +926,10 @@ Overwrite?</source>
         <source>144 kbps</source>
         <translation></translation>
     </message>
+    <message>
+        <source>Copy File</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDGetAth</name>
@@ -1068,7 +1093,7 @@ para el período a reportar.
     <message>
         <source>The importer encountered an error.
 Please check your importer configuration and try again.</source>
-        <translation>El importador de audio encontró un error.
+        <translation type="obsolete">El importador de audio encontró un error.
 Revise la configuración e intente de nuevo.</translation>
     </message>
     <message>
@@ -1162,6 +1187,12 @@ Do you want to proceed?</source>
 Do you still want to proceed?</source>
         <translation>Importar este audio vaciará el portapapeles.
 ¿Desea continuar?</translation>
+    </message>
+    <message>
+        <source>The importer encountered an error.
+Please check your importer configuration
+or the input file and try again.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

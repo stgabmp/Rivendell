@@ -162,6 +162,22 @@ Do you want to proceed?</source>
         <source>1 Cut</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Updateing audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting External Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Audio?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CdRipper</name>
@@ -345,14 +361,6 @@ Please check your ripper configuration and try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disk Progress</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Track Progress</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Set
 &amp;Cut</source>
         <translation type="unfinished"></translation>
@@ -454,10 +462,6 @@ Please check your ripper configuration and try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Total Progress</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>No Access</source>
         <translation type="unfinished"></translation>
     </message>
@@ -472,6 +476,10 @@ Please check your ripper configuration and try again.</source>
     <message>
         <source>&amp;Rip
 Disc</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ripping Track</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

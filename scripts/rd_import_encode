@@ -1,0 +1,31 @@
+#!/bin/bash
+# rd_import_encode file_in file_out format rate channels bitrate normalize owner group
+case $4 in
+   44100)
+    SRATE=44.1 ;;
+   48000)
+    SRATE=48 ;;
+   32000)
+    SRATE=32 ;;
+esac
+case $5 in
+   1)
+    CHAN=m ;;
+   *)
+    CHAN=s ;;
+esac
+case $3 in
+  0)
+    sox "$1" -r $4 -c $5 -s -t wav $2 ;;
+  3)
+    sox "$1" -r $4 -c $5 -s -t wav - | lame - -b $6 $2 ;;
+  5)
+    sox "$1" -r $4 -c $5 -s -t raw - | oggenc -r -R $4 -C $5 -b $6 /dev/stdin -o $2 ;;
+esac
+rdfilewrite --add-mode --normalize=$7 $2
+NO_ENERGY=$?
+chmod ug+rw $2
+chmod ug+rw $2.energy
+exit $NO_ENERGY
+ 
+

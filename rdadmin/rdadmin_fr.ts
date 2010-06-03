@@ -724,6 +724,14 @@ in order to populate the audio resources database.</source>
         <source>[none]</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Ogg Vorbis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MPEG Layer 3</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>EditEncoder</name>
@@ -1782,6 +1790,14 @@ in order to populate the audio resources database.</source>
     </message>
     <message>
         <source>Sample Rate Converter:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ogg Vorbis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mpeg Layer 3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

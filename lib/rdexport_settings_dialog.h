@@ -60,8 +60,10 @@ class RDExportSettingsDialog : public QDialog
    RDStation *lib_station;
    QComboBox *lib_format_box;
    QComboBox *lib_channels_box;
+   QLabel *lib_channels_label;
    QLabel *lib_bitrate_label;
    QComboBox *lib_bitrate_box;
+   QLabel *lib_samprate_label;
    QComboBox *lib_samprate_box;
    QLabel *lib_quality_label;
    QSpinBox *lib_quality_spin;

@@ -359,6 +359,27 @@ senden</translation>
         <source>ALL</source>
         <translation>ALLE</translation>
     </message>
+    <message>
+        <source>&amp;Edit
+Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updateing audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting External Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Audio?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDCutDialog</name>
@@ -900,6 +921,10 @@ Overwrite?</source>
         <source>144 kbps</source>
         <translation>144 kbps</translation>
     </message>
+    <message>
+        <source>Copy File</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDGetAth</name>
@@ -1095,7 +1120,7 @@ ablage löschen! Fortfahren?</translation>
     <message>
         <source>The importer encountered an error.
 Please check your importer configuration and try again.</source>
-        <translation>Der Importer ist auf einen Fehler gestoßen.
+        <translation type="obsolete">Der Importer ist auf einen Fehler gestoßen.
 Bitte überprüfen sie die Importer-Einstellungen und versuchen sie es erneut.</translation>
     </message>
     <message>
@@ -1157,6 +1182,12 @@ bereits! Überschreiben?</translation>
 Please check your configuration and try again.</source>
         <translation>Der Exporter ist auf einen Fehler gestoßen.
 Bitte Kofiguration prüfen und erneut versuchen.</translation>
+    </message>
+    <message>
+        <source>The importer encountered an error.
+Please check your importer configuration
+or the input file and try again.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

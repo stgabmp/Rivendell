@@ -334,6 +334,9 @@ EditDecks::EditDecks(RDStation *station,QWidget *parent,const char *name)
   edit_play_channel=edit_play_deck_box->currentItem()+129;
   edit_format_box->insertItem(tr("PCM16"));
   edit_format_box->insertItem(tr("MPEG Layer 2"));
+  edit_format_box->insertItem(tr("Ogg Vorbis"));
+  edit_format_box->insertItem(tr("MPEG Layer 3"));
+  //edit_format_box->insertItem(tr("Flac"));
   edit_channels_box->insertItem("1");
   edit_channels_box->insertItem("2");
   edit_samprate_box->insertItem("32000");
@@ -588,9 +591,18 @@ void EditDecks::ReadRecord(int chan)
 	  break;
 
 	case RDSettings::MpegL1:
+         break;
 	case RDSettings::MpegL3:
+	  edit_format_box->setCurrentItem(3);
+	  edit_bitrate_box->setEnabled(true);
+	  break;
 	case RDSettings::Flac:
+	  edit_format_box->setCurrentItem(4);
+	  edit_bitrate_box->setEnabled(true);
+	  break;
 	case RDSettings::OggVorbis:
+	  edit_format_box->setCurrentItem(2);
+	  edit_bitrate_box->setEnabled(true);
 	  break;
     }
     edit_channels_box->setCurrentItem(edit_record_deck->defaultChannels()-1);
@@ -710,6 +722,15 @@ void EditDecks::WriteRecord(int chan)
 	  break;
 	case 1:
 	  edit_record_deck->setDefaultFormat(RDSettings::MpegL2);
+	  break;
+	case 2:
+	  edit_record_deck->setDefaultFormat(RDSettings::OggVorbis);
+	  break;
+	case 3:
+	  edit_record_deck->setDefaultFormat(RDSettings::MpegL3);
+	  break;
+	case 4:
+	  edit_record_deck->setDefaultFormat(RDSettings::Flac);
 	  break;
     }
     edit_record_deck->setDefaultChannels(edit_channels_box->currentItem()+1);

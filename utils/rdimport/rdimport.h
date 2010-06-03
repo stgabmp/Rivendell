@@ -112,6 +112,7 @@ class MainObject : public QObject
   };
   std::list<DropboxList *> import_dropbox_list;
   QString import_temp_fix_filename;
+  bool open_failed;
 };
 
 

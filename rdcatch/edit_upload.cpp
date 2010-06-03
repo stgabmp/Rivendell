@@ -652,6 +652,10 @@ bool EditUpload::CheckFormat()
 	  res=true;
 	}
 	break;
+
+      case RDSettings::Copy:
+        res=true;
+	break;
   }
   delete station;
 

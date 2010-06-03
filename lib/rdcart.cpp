@@ -922,6 +922,7 @@ void RDCart::removeCut(const QString &cutname)
 
   filename = RDCut::pathName(cutname); 
   unlink(filename);
+  unlink(filename+".energy");
   sql=QString().sprintf("delete from CUTS where CUT_NAME=\"%s\"",
 			(const char *)cutname);
   q=new RDSqlQuery(sql);
@@ -954,6 +955,7 @@ void RDCart::remove() const
     q=new RDSqlQuery(sql);
     while(q->next()) {
       unlink(RDCut::pathName(QString(q->value(0).toString())).ascii()); 
+      unlink((RDCut::pathName(QString(q->value(0).toString()))+".energy").ascii()); 
     }
     delete q;
     sql=QString().sprintf("delete from CUTS where CART_NUMBER=%u",cart_number);

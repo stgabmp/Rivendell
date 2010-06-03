@@ -76,7 +76,7 @@ RDExportSettingsDialog::RDExportSettingsDialog(RDSettings *settings,
   //
   lib_channels_box=new QComboBox(this,"lib_channels_box");
   lib_channels_box->setGeometry(100,32,60,19);
-  QLabel *lib_channels_label=
+  lib_channels_label=
     new QLabel(lib_channels_box,tr("&Channels:"),this,
 	       "lib_channels_label");
   lib_channels_label->setGeometry(25,32,70,19);
@@ -89,7 +89,7 @@ RDExportSettingsDialog::RDExportSettingsDialog(RDSettings *settings,
   lib_samprate_box->setGeometry(100,54,100,19);
   connect(lib_samprate_box,SIGNAL(activated(const QString &)),
 	  this,SLOT(samprateData(const QString &)));
-  QLabel *lib_samprate_label=
+  lib_samprate_label=
     new QLabel(lib_samprate_box,tr("&Sample Rate:"),this,
 	       "lib_samprate_label");
   lib_samprate_label->setGeometry(25,54,75,19);
@@ -167,6 +167,10 @@ RDExportSettingsDialog::RDExportSettingsDialog(RDSettings *settings,
       lib_format_box->setCurrentItem(lib_format_box->count()-1);
     }
   }
+  lib_format_box->insertItem(tr("Copy File"));
+  if(settings->format()==RDSettings::Copy) {
+    lib_format_box->setCurrentItem(lib_format_box->count()-1);
+    }
   for(unsigned i=0;i<lib_encoders->encoderQuantity();i++) {
     lib_format_box->insertItem(lib_encoders->encoder(i)->name());
     if(settings->format()==lib_encoders->encoder(i)->id()) {
@@ -189,6 +193,18 @@ RDExportSettingsDialog::RDExportSettingsDialog(RDSettings *settings,
   }
   ShowBitRates(lib_settings->format(),lib_settings->sampleRate(),
 	       lib_settings->bitRate(),lib_settings->quality());
+  if(lib_settings->format()==RDSettings::Copy) {
+    lib_channels_box->setEnabled(false);
+    lib_samprate_box->setEnabled(false);
+    lib_channels_label->setEnabled(false);
+    lib_samprate_label->setEnabled(false);
+  }
+  else {
+    lib_channels_box->setEnabled(true);
+    lib_samprate_box->setEnabled(true);
+    lib_channels_label->setEnabled(true);
+    lib_samprate_label->setEnabled(true);
+  }
 }
 
 
@@ -225,6 +241,18 @@ void RDExportSettingsDialog::formatData(const QString &str)
   }
   ShowBitRates(fmt,lib_samprate_box->currentText().toInt(),
 	       bitrate,lib_quality_spin->value());
+  if(fmt==RDSettings::Copy) {
+    lib_channels_box->setEnabled(false);
+    lib_samprate_box->setEnabled(false);
+    lib_channels_label->setEnabled(false);
+    lib_samprate_label->setEnabled(false);
+  }
+  else {
+    lib_channels_box->setEnabled(true);
+    lib_samprate_box->setEnabled(true);
+    lib_channels_label->setEnabled(true);
+    lib_samprate_label->setEnabled(true);
+  }
 }
 
 
@@ -283,6 +311,11 @@ void RDExportSettingsDialog::okData()
       lib_settings->setQuality(lib_quality_spin->value());
       break;
       
+      case RDSettings::Copy:
+	lib_settings->setBitRate(0);
+	lib_settings->setQuality(0);
+	break;
+
     default:   // Custom format
       for(unsigned i=0;i<lib_encoders->encoderQuantity();i++) {
 	if(lib_encoders->encoder(i)->id()==lib_settings->format()) {
@@ -851,6 +884,12 @@ void RDExportSettingsDialog::ShowBitRates(RDSettings::Format fmt,
 	lib_quality_spin->setValue(qual);
 	break;
 
+      case RDSettings::Copy: 
+	lib_bitrate_box->setDisabled(true);
+	lib_bitrate_label->setDisabled(true);
+	lib_quality_spin->setDisabled(true);
+	lib_quality_label->setDisabled(true);
+	break;
     default:   // Custom format
       lib_channels_box->clear();
       lib_samprate_box->clear();
@@ -925,6 +964,9 @@ RDSettings::Format RDExportSettingsDialog::GetFormat(QString str)
   }
   if(str==tr("OggVorbis")) {
     return RDSettings::OggVorbis;
+  }
+  if(str==tr("Copy File")) {
+    return RDSettings::Copy;
   }
   for(unsigned i=0;i<lib_encoders->encoderQuantity();i++) {
     if(str==lib_encoders->encoder(i)->name()) {

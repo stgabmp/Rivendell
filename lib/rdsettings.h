@@ -28,7 +28,7 @@
 class RDSettings
 {
  public:
-  enum Format {Pcm16=0,MpegL1=1,MpegL2=2,MpegL3=3,Flac=4,OggVorbis=5};
+  enum Format {Pcm16=0,MpegL1=1,MpegL2=2,MpegL3=3,Flac=4,OggVorbis=5,Copy=99};
   RDSettings();
   RDSettings::Format format() const;
   void setFormat(Format format);

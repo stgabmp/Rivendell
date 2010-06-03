@@ -356,6 +356,27 @@ Color</source>
         <source>ALL</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Edit
+Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Updateing audio...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting External Editor...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update Audio?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDCutDialog</name>
@@ -883,6 +904,10 @@ Overwrite?</source>
         <source>144 kbps</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Copy File</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RDGetAth</name>
@@ -1072,11 +1097,6 @@ Do you still want to proceed?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The importer encountered an error.
-Please check your importer configuration and try again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>File Exists</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1132,6 +1152,12 @@ Do you want to overwrite it?</source>
     <message>
         <source>The Exporter encountered an error.
 Please check your configuration and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The importer encountered an error.
+Please check your importer configuration
+or the input file and try again.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

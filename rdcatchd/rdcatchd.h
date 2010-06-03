@@ -164,7 +164,7 @@ class MainObject : public QObject
   int GetEvent(int id);
   void PurgeEvent(int event);
   void LoadHeartbeat();
-  void CheckInRecording(QString cutname,unsigned threshold);
+  void CheckInRecording(QString cutname,unsigned threshold,int normalize_level=0);
   void CheckInPodcast(CatchEvent *e) const;
   RDRecording::ExitCode ReadExitCode(int event);
   void WriteExitCode(int event,RDRecording::ExitCode code);

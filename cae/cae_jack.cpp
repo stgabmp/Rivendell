@@ -32,6 +32,7 @@
 #include <rdmeteraverage.h>
 
 #include <cae.h>
+#include <rdcae.h>
 
 #ifdef JACK
 //
@@ -559,8 +560,12 @@ bool MainObject::jackLoadPlayback(int card,QString wavename,int *stream)
     *stream=-1;
     return false;
   }
-  if((jack_play_wave[*stream]->getFormatTag()!=WAVE_FORMAT_PCM)||
-     (jack_play_wave[*stream]->getBitsPerSample()!=16)) {
+  switch (jack_play_wave[*stream]->type()){
+      case RDWaveFile::Wave:
+      case RDWaveFile::Ogg:
+      case RDWaveFile::Mpeg:
+        break;
+     default:
     LogLine(RDConfig::LogNotice,QString().sprintf(
             "Error: jackLoadPlayback(%s)   getFormatTag()%d || getBistsPerSample()%d failed",
             (const char *) wavename,
@@ -571,6 +576,7 @@ bool MainObject::jackLoadPlayback(int card,QString wavename,int *stream)
     FreeJackOutputStream(*stream);
     *stream=-1;
     return false;
+    break;
   }
   jack_output_channels[*stream]=jack_play_wave[*stream]->getChannels();
   jack_output_sample_rate[*stream]=jack_play_wave[*stream]->getSamplesPerSec();
@@ -696,14 +702,22 @@ bool MainObject::jackLoadRecord(int card,int stream,int coding,int chans,
   jack_record_wave[stream]->setChannels(chans);
   jack_record_wave[stream]->setSamplesPerSec(samprate);
   jack_record_wave[stream]->setBitsPerSample(16);
-  jack_record_wave[stream]->setBextChunk(true);
   jack_record_wave[stream]->setLevlChunk(true);
+  if(coding==RDCae::OggVorbis || coding==RDCae::MpegL3) {
+    jack_record_wave[stream]->setEnergyTag(1);
+    }
+  else {
+    jack_record_wave[stream]->setBextChunk(true);
+    } 
   if(!jack_record_wave[stream]->createWave()) {
     delete jack_record_wave[stream];
     jack_record_wave[stream]=NULL;
     return false;
   }
   chown((const char *)wavename,rd_config->uid(),rd_config->gid());
+  if(coding==RDCae::OggVorbis || coding==RDCae::MpegL3) {
+    chown((const char *)(wavename+".energy"),rd_config->uid(),rd_config->gid());
+    }
   jack_input_channels[stream]=chans; 
   jack_record_ring[stream]=new RDRingBuffer(RINGBUFFER_SIZE);
   jack_record_ring[stream]->reset();

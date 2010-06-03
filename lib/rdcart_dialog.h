@@ -97,6 +97,7 @@ class RDCartDialog : public QDialog
   QString cart_edit_cmd;
   RDStation::FilterMode cart_filter_mode;
   QProgressDialog *cart_progress_dialog;
+  QProgressDialog *update_progress_dialog;
 #ifndef WIN32
   RDSimplePlayer *cart_player;
 #endif  // WIN32

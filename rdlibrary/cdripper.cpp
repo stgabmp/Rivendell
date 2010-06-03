@@ -170,7 +170,7 @@ CdRipper::CdRipper(QString cutname,RDCddbRecord *rec,RDLibraryConf *conf,
   //
   // Progress Bar
   //
-  rip_bar=new QProgressBar(this,"rip_bar");
+  rip_bar=new QProgressBar(100,this,"rip_bar");
   rip_bar->setGeometry(10,480,sizeHint().width()-110,20);
 
   //
@@ -436,6 +436,13 @@ void CdRipper::ripTrackButtonData()
 	  break;
     }
     rip_track=rip_track_list->currentItem()->text(0).toInt()-1;
+    int rip_format=rip_conf->defaultFormat();
+    if(rip_format==5 || rip_format==3) {
+      rip_format=0;
+    }
+    if(rip_format==2) {
+      rip_format=1;
+    }
     if(rip_normalize_box->isChecked()) {
      cmd=QString().
        sprintf("rd_rip_cd %d %s %d %6.4lf %d %d %d %d %s %s/%s %s/%s %d",
@@ -480,10 +487,25 @@ void CdRipper::ripTrackButtonData()
       if(system(cmd)!=0) {
 	bar_file->remove();
       }
+      else {
+        if(rip_conf->defaultFormat()==5 || rip_conf->defaultFormat()==3) {
+          system(QString().sprintf("rdfilewrite --add-mode --normalize=0 %s",(const char *)rip_wavefile).ascii());
+          chmod(rip_wavefile+".energy",S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+          chown(rip_wavefile+".energy",RDConfiguration()->uid(),RDConfiguration()->gid());
+          system(QString().sprintf("rd_encode %s %d %d %d %d %s %s",
+                 rip_wavefile.ascii(),
+                 rip_conf->defaultFormat(),
+                 rip_conf->defaultSampleRate(),
+                 rip_channels_box->currentItem()+1,
+                 (rip_channels_box->currentItem()+1)*rip_conf->defaultBitrate()/1000,
+                 RDConfiguration()->audioOwner().ascii(),
+                 RDConfiguration()->audioGroup().ascii()));
+        } 
+      }
       exit(0);
     }
     rip_bar->setProgress(0);
-    rip_bar->setPercentageVisible(true);
+    rip_bar->setPercentageVisible(false);
     rip_bar_timer->start(RIPPER_BAR_INTERVAL,true);
   }
   else {
@@ -602,10 +624,12 @@ void CdRipper::autotrimCheckData(bool state)
 void CdRipper::barTimerData()
 {
   if(ripper_running) {
-    rip_bar->setProgress((int)(50.0*((double)bar_temp_file->
-				     size()/(double)rip_temp_length+
-				     (double)bar_file->size()/
-				     (double)rip_finished_length)));
+    if(rip_bar->progress()==100) {
+      rip_bar->setProgress(0);
+    }
+    else {
+      rip_bar->setProgress(rip_bar->progress()+10);
+    }
     rip_bar_timer->start(RIPPER_BAR_INTERVAL,true);
   }
   else {

@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <math.h>
 
 #include <rd.h>
 #include <rdconf.h>
@@ -50,7 +51,7 @@ RDCut::RDCut(const QString &name,bool create,QSqlDatabase *db)
 
   cut_db=db;
   cut_name=name;
-
+  coding_format=0;
   cut_signal=new QSignal();
 
   if(create) {
@@ -70,6 +71,7 @@ RDCut::RDCut(unsigned cartnum,int cutnum,bool create,QSqlDatabase *db)
 
   cut_db=db;
   cut_name=QString().sprintf("%06u_%03d",cartnum,cutnum);
+  coding_format=0;
 
   cut_signal=new QSignal();
 
@@ -458,9 +460,10 @@ unsigned RDCut::codingFormat() const
 }
 
 
-void RDCut::setCodingFormat(unsigned format) const
+void RDCut::setCodingFormat(unsigned format) 
 {
   SetRow("CODING_FORMAT",format);
+  coding_format=format;
 }
 
 
@@ -484,9 +487,10 @@ unsigned RDCut::bitRate() const
 }
 
 
-void RDCut::setBitRate(unsigned rate) const
+void RDCut::setBitRate(unsigned rate) 
 {
   SetRow("BIT_RATE",rate);
+  bitrate=rate;
 }
 
 
@@ -857,6 +861,7 @@ bool RDCut::copyTo(const QString &cutname) const
   QString srcname=RDCut::pathName(cut_name); 
   QString destname=RDCut::pathName(cutname); 
   FileCopy(srcname,destname);
+  FileCopy(srcname+".energy",destname+".energy");
 
 #endif
   return true;
@@ -1032,6 +1037,7 @@ bool RDCut::checkInRecording(const QString &stationname) const
     delete wavefile;
     return false;
   }
+  wavefile->hasEnergy();
   int format=0;
   if(wavefile->getFormatTag()==WAVE_FORMAT_MPEG) {
     format=1;
@@ -1060,6 +1066,34 @@ bool RDCut::checkInRecording(const QString &stationname) const
 			(const char *)cut_name);
   q=new RDSqlQuery(sql);
   delete q;
+  if(coding_format==3 || coding_format==5) {
+    if(fork()==0) {
+      system(QString().sprintf("nice rd_encode %s %d %d %d %d %s %s &",
+              RDCut::pathName(cut_name).ascii(),
+ 	      coding_format,
+ 	      wavefile->getSamplesPerSec(),
+ 	      wavefile->getChannels(),
+ 	      (bitrate*wavefile->getChannels())/1000,
+ 	      RDConfiguration()->audioOwner().ascii(),
+ 	      RDConfiguration()->audioGroup().ascii()));
+      exit(0);
+    } 	      
+  }
+  if(coding_format==2) {
+    if(wavefile->getFormatTag()==WAVE_FORMAT_PCM) {
+      if(fork()==0) {
+        system(QString().sprintf("nice rd_encode %s %d %d %d %d %s %s &",
+                RDCut::pathName(cut_name).ascii(),
+ 	        coding_format,
+ 	        wavefile->getSamplesPerSec(),
+ 	        wavefile->getChannels(),
+ 	        (bitrate*wavefile->getChannels())/1000,
+ 	        RDConfiguration()->audioOwner().ascii(),
+ 	        RDConfiguration()->audioGroup().ascii()));
+        exit(0);
+      } 	      
+    }
+  }
   wavefile->closeWave();
   delete wavefile;
   return true;
@@ -1083,6 +1117,7 @@ void RDCut::autoTrim(RDCut::AudioEnd end,int level)
     delete wave;
     return;
   }
+  wave->hasEnergy();
   if(level>=0) {
     if((end==RDCut::AudioHead)||(end==RDCut::AudioBoth)) {
       setStartPoint(0);
@@ -1140,6 +1175,7 @@ void RDCut::autoSegue(int level,int length)
     delete wave;
     return;
   }
+  wave->hasEnergy();
   if(level<0) {
     if((point=wave->endTrim(+REFERENCE_LEVEL-level))>-1) {
       start_point=(int)(1000.0*(double)point/(double)wave->getSamplesPerSec());
@@ -1164,9 +1200,37 @@ void RDCut::autoSegue(int level,int length)
           }
        }
     }
+  wave->closeWave();
   delete wave;
 #endif  // WIN32
 }
+
+
+void RDCut::normalize(int level)
+{
+#ifndef WIN32
+  if(!exists()) {
+    return;
+  }
+  QString wavename=QString().sprintf("%s/%s.%s",(const char *)RD_AUDIO_ROOT,
+				     (const char *)cut_name,
+				     (const char *)RD_AUDIO_EXTENSION);
+  if(level==0) {
+    return;
+    }
+  RDWaveFile *wave=new RDWaveFile(wavename);
+  if(!wave->openWave()) {
+    delete wave;
+    return;
+  }
+  wave->normalize(pow(10.0,(double)level/2000.0));
+  wave->closeWave();
+  delete wave;
+#endif  // WIN32
+}
+
+
+
 
 
 void RDCut::reset() const

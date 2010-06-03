@@ -899,12 +899,31 @@ void MainObject::recordUnloadedData(int card,int stream)
     return;
   }
 
-  if(catch_events[event].normalizeLevel()==0) {
-    CheckInRecording(catch_record_name[deck-1],catch_record_threshold[deck-1]);
+  RDCut *cut=new RDCut(catch_record_name[deck-1]);
+  if(catch_events[event].normalizeLevel()==0 || catch_events[event].format()==5 || catch_events[event].format()==3) {
+    CheckInRecording(catch_record_name[deck-1],catch_record_threshold[deck-1],catch_events[event].normalizeLevel());
+    if(catch_events[event].format()==5 || catch_events[event].format()==3) {
+      QString cmd;
+      cmd=QString().
+      sprintf("nice rd_encode %s %d %d %d %d %s %s",
+ 	      cut->pathName(catch_record_name[deck-1]).ascii(),
+ 	      catch_events[event].format(),
+	      catch_events[event].sampleRate(),
+	      catch_events[event].channels(),
+	      catch_events[event].bitrate()/1000,
+	      catch_config->audioOwner().ascii(),
+	      catch_config->audioGroup().ascii());
+      //system(cmd);
+      if(fork()==0) {
+        system(cmd+" &");
+        exit(0);
+      } 	  
+    }  
   }
   else {
     StartBatch(catch_events[event].id());
   }
+  delete cut;
   if(catch_record_aborting[deck-1]) {
     LogLine(RDConfig::LogNotice,QString().
 	    sprintf("record aborted: cut %s",
@@ -1237,7 +1256,7 @@ bool MainObject::StartRecording(int event)
   //
   RDCae::AudioCoding format=catch_events[event].format();
   QString cut_name;
-  if(catch_events[event].normalizeLevel()==0) {
+  if(catch_events[event].normalizeLevel()==0 || catch_events[event].format()==5 || catch_events[event].format()==3) {
     cut_name=catch_events[event].cutName();
   }
   else {
@@ -1290,6 +1309,18 @@ bool MainObject::StartRecording(int event)
 
       case RDCae::MpegL2:
 	cut->setCodingFormat(1);
+	break;
+
+      case RDSettings::MpegL3:
+	cut->setCodingFormat(RDSettings::MpegL3);
+	break;
+
+      case RDSettings::OggVorbis:
+	cut->setCodingFormat(RDSettings::OggVorbis);
+	break;
+
+      case RDSettings::Flac:
+	cut->setCodingFormat(RDSettings::Flac);
 	break;
 
       default:
@@ -2268,11 +2299,14 @@ void MainObject::LoadHeartbeat()
 }
 
 
-void MainObject::CheckInRecording(QString cutname,unsigned threshold)
-{
+void MainObject::CheckInRecording(QString cutname,unsigned threshold,int normalize_level)
+  {
   RDCut *cut=new RDCut(cutname);
-  cut->checkInRecording(catch_config->stationName());
+  cut->checkInRecording(catch_rdstation->name());
   cut->autoTrim(RDCut::AudioBoth,-threshold);
+  if(normalize_level!=0) {
+    cut->normalize(normalize_level);
+  }  
   RDCart *cart=new RDCart(cut->cartNumber());
   cart->updateLength();
   delete cart;
@@ -2576,7 +2610,7 @@ void MainObject::StartDropboxes()
 	    sprintf("launching dropbox configuration: \"%s\"",
 		    (const char *)cmd));
     if(fork()==0) {
-      system(cmd);
+      system((const char *)cmd.utf8());
       exit(0);
     }
   }

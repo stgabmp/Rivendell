@@ -77,13 +77,21 @@ AudioCart::AudioCart(AudioControls *controls,RDCart *cart,QString *path,
   line_edit_font.setPixelSize(12);
 
   //
-  // Progress Dialog
+  // Progress Dialogs
   //
   rdcart_progress_dialog=new QProgressDialog(this);
   rdcart_progress_dialog->setLabelText(tr("Copying audio..."));
   rdcart_progress_dialog->setCancelButton(NULL);
   rdcart_progress_dialog->setTotalSteps(10);
   rdcart_progress_dialog->setMinimumDuration(1000);
+
+  update_progress_dialog=new QProgressDialog(this);
+  update_progress_dialog->setLabelText(tr("Updateing audio..."));
+  update_progress_dialog->setCancelButton(NULL);
+  update_progress_dialog->setTotalSteps(10);
+  update_progress_dialog->setMinimumDuration(1);
+  update_progress_dialog->setCaption("");
+  
 
   //
   // Add Cut Button
@@ -373,23 +381,153 @@ void AudioCart::copyCutData()
   paste_cut_button->setEnabled(rdcart_modification_allowed);
 }
 
+
 void AudioCart::extEditorCutData()
 {
+  QString sql;
+  RDSqlQuery *q;
+  RDCut *temp_cut;
+  RDWaveFile *wavefile;
+  double level=1.0; 
+  QString extension="wav";
+  
   if(rdcart_cut_list->currentItem()==0) {
     return;
   }
 
+  temp_cut=new RDCut(rdcart_cut_list->currentItem()->text(11));
+  
+  wavefile=new RDWaveFile(RDCut::pathName(temp_cut->cutName()));
+  if(wavefile->openWave()) {
+    level=wavefile->getNormalizeLevel();
+    switch(wavefile->getFormatTag()) {
+      case WAVE_FORMAT_PCM:
+        extension="wav";
+        break;
+        
+      case WAVE_FORMAT_MPEG:
+        if(wavefile->getHeadLayer()==3) {
+          extension="mp3";
+        }
+        else {
+          extension="mp2";
+	}
+        break;
+        
+      case WAVE_FORMAT_VORBIS:
+        extension="ogg";
+        break;
+    }
+    wavefile->closeWave();
+  }  
+  delete wavefile; 
+
   QString cmd=rdstation_conf->editorPath();
-  cmd.replace("%f",RDCut::pathName(rdcart_cut_list->currentItem()->text(11)));
+  cmd.replace("%f","/tmp/"+temp_cut->cutName()+"."+extension);
   // FIXME: other replace commands to match: lib/rdcart_dialog.cpp editorData()
   //        These substitions should be documented (maybe a text file),
   //            ex: %f = cart_cut filename
   //        and possibly also add some tooltips with help advice
 
-  if(fork()==0) {
-    system(cmd+" &");
-    exit(0);
+  update_progress_dialog->setLabelText(tr("Starting External Editor..."));
+  update_progress_dialog->setProgress(1);
+  qApp->processEvents();
+
+ // if(fork()==0) {
+  system(QString().sprintf("cp %s /tmp/%s.%s",
+           RDCut::pathName(temp_cut->cutName()).ascii(),temp_cut->cutName().ascii(),
+           (const char *)extension));
+  system(cmd.ascii());
+ //   exit(0);
+ // }
+  
+  update_progress_dialog->setProgress(10);
+  
+  if(QMessageBox::question(this,tr("Update"),
+			    tr("Update Audio?"),
+			    QMessageBox::Yes,
+			    QMessageBox::No)==QMessageBox::No) {
+    delete temp_cut;
+    return;
   }
+  
+  update_progress_dialog->setLabelText(tr("Updateing audio..."));
+  update_progress_dialog->setProgress(1);
+  qApp->processEvents();
+
+  //system(QString().sprintf("rd_edit_copy /tmp/%s.%s",temp_cut->cutName().ascii(),
+  //                           (const char *)extension));
+  
+  wavefile=new RDWaveFile("/tmp/"+temp_cut->cutName()+"."+extension);
+  if(!wavefile->openWave()) {
+    delete wavefile;
+    update_progress_dialog->setProgress(10);
+    delete temp_cut;
+    return;
+  }
+  
+  if(wavefile->getFormatTag()==WAVE_FORMAT_PCM) {
+    system(QString().sprintf("sox -v %f /tmp/%s.%s -t raw -s -w -c %d -r %d - |\
+                            rdfilewrite --channels=%d --sample-rate=%d %s",
+         level,
+         temp_cut->cutName().ascii(),
+         (const char *)extension,
+         wavefile->getChannels(),
+         wavefile->getSamplesPerSec(),
+         wavefile->getChannels(),
+         wavefile->getSamplesPerSec(),
+         RDCut::pathName(temp_cut->cutName()).ascii()));
+    
+    unlink("/tmp/"+temp_cut->cutName()+"."+extension);
+    unlink(RDCut::pathName(temp_cut->cutName())+".energy");
+  }
+  else {
+    system(QString().sprintf("mv /tmp/%s.%s %s",
+         temp_cut->cutName().ascii(),
+         (const char *)extension,
+         RDCut::pathName(temp_cut->cutName()).ascii()));
+    if(wavefile->getHeadLayer()==3) {
+      RDWaveFile *wavefile_mv=new RDWaveFile(RDCut::pathName(temp_cut->cutName()));
+      wavefile_mv->openWave();
+      wavefile_mv->setNormalizeLevel(level);
+      wavefile_mv->setEnergyTag(1);
+      wavefile_mv->recreateEnergy();
+      wavefile_mv->closeWave();
+      delete wavefile_mv;
+    }
+  }
+  
+  update_progress_dialog->setProgress(5);
+  qApp->processEvents();
+  
+  delete wavefile;
+  wavefile=new RDWaveFile(RDCut::pathName(temp_cut->cutName()));
+  wavefile->openWave();
+
+  sql=QString().sprintf("update CUTS set START_POINT=0,END_POINT=%d,\
+                         FADEUP_POINT=-1,FADEDOWN_POINT=-1,\
+                         SEGUE_START_POINT=-1,SEGUE_END_POINT=-1,\
+                         TALK_START_POINT=-1,TALK_END_POINT=-1,\
+                         HOOK_START_POINT=-1,HOOK_END_POINT=-1,\
+                         LENGTH=%d\
+                         where CUT_NAME=\"%s\"",
+			wavefile->getExtTimeLength(),
+			wavefile->getExtTimeLength(),
+			temp_cut->cutName().ascii());
+  q=new RDSqlQuery(sql);
+  delete q;
+  wavefile->closeWave();
+  delete wavefile;
+  chmod(RDCut::pathName(temp_cut->cutName()),S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  chown(RDCut::pathName(temp_cut->cutName()),lib_config->uid(),lib_config->gid());
+  chmod(RDCut::pathName(temp_cut->cutName())+".energy",S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  chown(RDCut::pathName(temp_cut->cutName())+".energy",lib_config->uid(),lib_config->gid());
+  update_progress_dialog->setProgress(10);  
+  qApp->processEvents();
+  delete temp_cut;
+  RDListViewItem *item=(RDListViewItem *)rdcart_cut_list->selectedItem();
+  RefreshLine(item);
+  emit cartDataChanged();
 }
 
 void AudioCart::pasteCutData()

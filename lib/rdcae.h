@@ -43,7 +43,7 @@ class RDCae : public QObject
  public:
   enum ChannelMode {Normal=0,Swap=1,LeftOnly=2,RightOnly=3};
   enum SourceType {Analog=0,AesEbu=1};
-  enum AudioCoding {Pcm16=0,MpegL1=1,MpegL2=2,MpegL3=3};
+  enum AudioCoding {Pcm16=0,MpegL1=1,MpegL2=2,MpegL3=3,Flac=4,OggVorbis=5};
   RDCae(QObject *parent=0,const char *name=0);
   ~RDCae();
   void connectHost(QString hostname,Q_UINT16 hostport,QString password);

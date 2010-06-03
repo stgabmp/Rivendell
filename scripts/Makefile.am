@@ -23,11 +23,13 @@
 ## Use automake to process this into a Makefile.in
 
 bin_SCRIPTS = rd_rip_cd rd_import_file rd_audio_sync rd_config\
-              rd_export_file crc-unity4k.sh rd_backup
+              rd_export_file crc-unity4k.sh rd_backup\
+              rd_encode rd_import_encode rd_import_copy
 
 EXTRA_DIST = rd_rip_cd rd_import_file kill_rd rd_create_db start_rd\
              rd_audio_sync rd_config rd_export_file crc-unity4k.sh\
-             rd_backup start_traverso.sh
+             rd_backup start_traverso.sh\
+             rd_encode rd_import_encode rd_import_copy
 
 CLEANFILES = *~
 MAINTAINERCLEANFILES = *~ Makefile.in

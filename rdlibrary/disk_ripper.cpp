@@ -161,14 +161,16 @@ DiskRipper::DiskRipper(QString *filter,QString *group,
   //
   // Progress Bars
   //
-  rip_disk_bar=new QProgressBar(this,"rip_diskbar_label");
-  rip_diskbar_label=new QLabel(tr("Disk Progress"),this,"rip_diskbar_label");
-  rip_diskbar_label->setFont(label_font);
-  rip_diskbar_label->setAlignment(AlignLeft|AlignVCenter);
-  rip_diskbar_label->setDisabled(true);
-  rip_track_bar=new QProgressBar(this,"rip_track_bar");
-  rip_trackbar_label=new QLabel(tr("Track Progress"),
+//  rip_disk_bar=new QProgressBar(this,"rip_diskbar_label");
+//  rip_diskbar_label=new QLabel(tr("Disk Progress"),this,"rip_diskbar_label");
+//  rip_diskbar_label->setFont(label_font);
+//  rip_diskbar_label->setAlignment(AlignLeft|AlignVCenter);
+//  rip_diskbar_label->setDisabled(true);
+  rip_track_bar=new QProgressBar(100,this,"rip_track_bar");
+  rip_trackbar_label=new QLabel(tr("Ripping Track"),
 				this,"rip_trackbar_label");
+//  rip_trackbar_label=new QLabel(tr("Track Progress"),
+//				this,"rip_trackbar_label");
   rip_trackbar_label->setFont(label_font);
   rip_trackbar_label->setAlignment(AlignLeft|AlignVCenter);
   rip_trackbar_label->setDisabled(true);
@@ -376,8 +378,8 @@ void DiskRipper::ripDiskButtonData()
       rip_autotrim_box->setDisabled(true);
       rip_autotrim_spin->setDisabled(true);
       rip_base_length=0;
-      rip_disk_bar->setProgress(0,GetTotalLength());
-      rip_disk_bar->setPercentageVisible(true);
+//      rip_disk_bar->setProgress(0,GetTotalLength());
+//      rip_disk_bar->setPercentageVisible(true);
       RipTrack(item->text(0).toInt(),rip_cutnames[item->text(0).toInt()-1],
 	       item->text(2));
       return;
@@ -605,12 +607,12 @@ void DiskRipper::autotrimCheckData(bool state)
 void DiskRipper::barTimerData()
 {
   if(ripper_running) {
-    rip_track_bar->setProgress((int)(50.0*((double)bar_temp_file->
-					   size()/(double)rip_temp_length+
-					   (double)bar_file->size()/
-					   (double)rip_finished_length)));
-    rip_disk_bar->setProgress(rip_base_length+bar_temp_file->size()+
-			      bar_file->size());
+    if(rip_track_bar->progress()==100) {
+      rip_track_bar->setProgress(0);
+    }
+    else {
+      rip_track_bar->setProgress(rip_track_bar->progress()+10);
+    }
     rip_bar_timer->start(RIPPER_BAR_INTERVAL,true);
   }
   else {
@@ -620,7 +622,7 @@ void DiskRipper::barTimerData()
       rip_done=true;
       QListViewItem *item=rip_track_list->firstChild();
       rip_base_length+=(rip_temp_length+rip_finished_length);
-      rip_disk_bar->setProgress(rip_base_length);
+//      rip_disk_bar->setProgress(rip_base_length);
       RDCut *cut=new RDCut(rip_cutname);
       cut->reset();
       cut->setOriginName(rdstation_conf->name());
@@ -675,12 +677,13 @@ Please check your ripper configuration and try again."));
     rip_channels_box->setEnabled(true);
     rip_autotrim_box->setEnabled(true);
     rip_autotrim_spin->setEnabled(true);
-    rip_disk_bar->setPercentageVisible(false);
-    rip_disk_bar->reset();
-    rip_diskbar_label->setDisabled(true);
+    //rip_disk_bar->setPercentageVisible(false);
+//    rip_disk_bar->reset();
+//    rip_diskbar_label->setDisabled(true);
     rip_trackbar_label->setDisabled(true);
-    rip_diskbar_label->setText(tr("Total Progress"));
-    rip_trackbar_label->setText(tr("Track Progress"));
+//    rip_diskbar_label->setText(tr("Total Progress"));
+    rip_trackbar_label->setText(tr("Ripping Track"));
+//    rip_trackbar_label->setText(tr("Track Progress"));
     QListViewItem *item=rip_track_list->firstChild();
     while(item!=NULL) {
       item->setText(5,"");
@@ -702,8 +705,8 @@ void DiskRipper::resizeEvent(QResizeEvent *e)
   rip_apply_box->setGeometry(65,118,15,15);
   rip_apply_label->setGeometry(85,118,250,20);
   rip_track_list->setGeometry(10,156,size().width()-112,size().height()-342);
-  rip_diskbar_label->setGeometry(10,size().height()-174,size().width()-110,20);
-  rip_disk_bar->setGeometry(10,size().height()-154,size().width()-110,20); 
+//  rip_diskbar_label->setGeometry(10,size().height()-174,size().width()-110,20);
+//  rip_disk_bar->setGeometry(10,size().height()-154,size().width()-110,20); 
   rip_trackbar_label->setGeometry(10,size().height()-126,size().width()-110,
 				  20);
   rip_track_bar->setGeometry(10,size().height()-106,size().width()-110,20);
@@ -801,17 +804,24 @@ void DiskRipper::RipTrack(int track,QString cutname,QString title)
   bar_file->close();
 
   if(title.isEmpty()) {
+//    rip_trackbar_label->
+//      setText(QString().sprintf("%s - Track %d",
+//				(const char *)tr("Track Progress"),track));
     rip_trackbar_label->
       setText(QString().sprintf("%s - Track %d",
-				(const char *)tr("Track Progress"),track));
+				(const char *)tr("Ripping Track"),track));
   }
   else {
+//    rip_trackbar_label->
+//      setText(QString().sprintf("%s - %s",
+//				(const char *)tr("Track Progress"),
+//				(const char *)title));
     rip_trackbar_label->
       setText(QString().sprintf("%s - %s",
-				(const char *)tr("Track Progress"),
+				(const char *)tr("Ripping Track"),
 				(const char *)title));
   }
-  rip_diskbar_label->setEnabled(true);
+//  rip_diskbar_label->setEnabled(true);
   rip_trackbar_label->setEnabled(true);
 
   rip_temp_length=(int)((double)rip_cdrom->trackLength(track)*176.4);
@@ -829,6 +839,13 @@ void DiskRipper::RipTrack(int track,QString cutname,QString title)
 		(double)(rip_channels_box->currentItem()+1)*
 		(double)rdlibrary_conf->defaultBitrate()/1411200.0);
 	break;
+  }
+  int rip_format=rdlibrary_conf->defaultFormat();
+  if(rip_format==5 || rip_format==3) {
+    rip_format=0;
+  }
+  if(rip_format==2) {
+    rip_format=1;
   }
   if(rip_normalize_box->isChecked()) {
     cmd=QString().
@@ -874,10 +891,25 @@ void DiskRipper::RipTrack(int track,QString cutname,QString title)
     if(system(cmd)!=0) {
       bar_file->remove();
     }
+    else {
+      if(rdlibrary_conf->defaultFormat()==5 || rdlibrary_conf->defaultFormat()==3) {
+        system(QString().sprintf("rdfilewrite --add-mode --normalize=0 %s",(const char *)rip_wavefile).ascii());
+        chmod(rip_wavefile+".energy",S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+        chown(rip_wavefile+".energy",RDConfiguration()->uid(),RDConfiguration()->gid());
+        system(QString().sprintf("rd_encode %s %d %d %d %d %s %s",
+               rip_wavefile.ascii(),
+               rdlibrary_conf->defaultFormat(),
+               rdlibrary_conf->defaultSampleRate(),
+               rip_channels_box->currentItem()+1,
+               (rip_channels_box->currentItem()+1)*rdlibrary_conf->defaultBitrate()/1000,
+               RDConfiguration()->audioOwner().ascii(),
+               RDConfiguration()->audioGroup().ascii()));
+      }
+    }
     exit(0);
   }
   rip_track_bar->setProgress(0);
-  rip_track_bar->setPercentageVisible(true);
+  rip_track_bar->setPercentageVisible(false);
   rip_bar_timer->start(RIPPER_BAR_INTERVAL,true);
 }
 

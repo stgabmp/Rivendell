@@ -220,7 +220,8 @@ nodist_librd_la_SOURCES = moc_rdpasswd.cpp moc_rdripc.cpp moc_rdcae.cpp\
                           moc_rdintegerdialog.cpp\
                           moc_rdoneshot.cpp moc_rdfeed.cpp
 
-librd_la_LDFLAGS = -release $(VERSION)
+librd_la_LDFLAGS =  -lmad -ltag -release $(VERSION)
+librd_la_CXXFLAGS =  -I/usr/include/taglib
 
 EXTRA_DIST = lib.pro rdwin32.h rdwin32.cpp rdttydevice_win32.cpp\
              gpl2.html html_gpl2_win32.cpp\

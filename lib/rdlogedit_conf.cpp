@@ -292,12 +292,23 @@ void RDLogeditConf::getSettings(RDSettings *s) const
     s->setChannels(q->value(0).toUInt());
     s->setSampleRate(q->value(1).toUInt());
     switch(q->value(2).toInt()) {
-	case 0:
+	case RDSettings::Pcm16:
 	  s->setFormat(RDSettings::Pcm16);
 	  break;
-
-	case 1:
+	case RDSettings::MpegL1:
+	  s->setFormat(RDSettings::MpegL1);
+	  break;
+	case RDSettings::MpegL2:
 	  s->setFormat(RDSettings::MpegL2);
+	  break;
+	case RDSettings::MpegL3:
+	  s->setFormat(RDSettings::MpegL3);
+	  break;
+	case RDSettings::OggVorbis:
+	  s->setFormat(RDSettings::OggVorbis);
+	  break;
+	case RDSettings::Flac:
+	  s->setFormat(RDSettings::Flac);
 	  break;
     }
     s->setBitRate(q->value(3).toUInt());

@@ -95,6 +95,7 @@ using namespace std;
 #define DEFAULT_LEVL_BLOCK_SIZE 1152
 
 
+class RMpegFile;
 /**
  * @short A class for handling Microsoft WAV files.
  * @author Fred Gleason <fredg@wava.com>
@@ -153,6 +154,7 @@ class RDWaveFile
    * Returns true if WAV file was created successfully, otherwise false.
    **/
    bool createWave(RDWaveData *data=NULL);
+   bool recreateEnergy();
 
   /**
    * Open the WAV file for playback.  A WAV file name must first have 
@@ -294,6 +296,8 @@ class RDWaveFile
    **/
    int endTrim(int level);
 
+   void normalize(double level);
+
   /**
    * Returns the filename of the WAV file.
    **/
@@ -315,6 +319,18 @@ class RDWaveFile
    * @param format The encoding format.
    **/
    void setFormatTag(unsigned short format);
+
+   void setEnergyTag(int format);
+   int getEnergyTag() const;
+
+   /**
+    * <level> = Normalization level, expressed as linear ratio (0 = No normalization)
+    */
+   double getNormalizeLevel() const;
+
+
+   void setNormalizeLevel(double level);
+
 
   /**
    * Returns the number of audio channels recorded in the WAV file, as 
@@ -1042,6 +1058,8 @@ class RDWaveFile
    bool GetBext(int);
    bool GetMext(int);
    bool GetLevl(int);
+   bool ReadEnergyFile (QString);
+   bool ReadNormalizeLevel (QString);
    bool GetList(int);
    bool GetScot(int);
    bool GetAv10(int);
@@ -1050,6 +1068,7 @@ class RDWaveFile
    void ReadTmcTag(const QString tag,const QString value);
    bool GetLine(int fd,char *buffer,int max_len);
    void ReadId3Metadata();
+   void ReadOggMetadata();
    bool GetMpegHeader(int fd,int offset);
    int GetAtxOffset(int fd);
    bool GetFlacStreamInfo();
@@ -1078,6 +1097,7 @@ class RDWaveFile
    unsigned ext_time_length;       // Audio length in msec
    bool format_chunk;              // Does 'fmt ' chunk exist?
    unsigned short format_tag;      // Encoding Format
+   int energy_tag;	           // 0: Include Energy Data 1: Extra File
    unsigned short channels;        // Number of channels
    unsigned samples_per_sec;       // Samples/sec/channel
    unsigned avg_bytes_per_sec;     // Average bytes/sec overall
@@ -1171,6 +1191,7 @@ class RDWaveFile
    unsigned short levl_block_ptr;
    unsigned levl_istate;
    short levl_accum;
+   double normalize_level;
 
    QString cutString(char *,unsigned,unsigned);
    QDate cutDate(char *,unsigned);
@@ -1213,6 +1234,7 @@ class RDWaveFile
    ogg_page ogg_pg;
    ogg_packet ogg_pack;
 #endif  // HAVE_VORBIS
+   RMpegFile * mpeg_file;
 };
 
 

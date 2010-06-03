@@ -78,6 +78,7 @@ MainObject::MainObject(QObject *parent,const char *name)
   import_startdate_offset=0;
   import_enddate_offset=0;
   import_fix_broken_formats=false;
+  open_failed=false;
   import_persistent_dropbox_id=-1;
 
   //
@@ -567,6 +568,7 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
     effective_filename=filename;
   }
   else {
+    if(import_format!=3 && import_format!=5) { 
     if(import_fix_broken_formats) {
       if(import_verbose) {
 	PrintLogDateTime();
@@ -622,6 +624,11 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
       return MainObject::FileBad;
     }
   }
+    else {
+      effective_filename=filename;
+      open_failed=true;
+    }
+  }  
 
   if(!import_metadata_pattern.isEmpty()) {
     QString groupname=effective_group->name();
@@ -710,6 +717,7 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
   double normal=pow(10.0,(double)import_normalization_level/2000.0);
   QString cmd;
   if(import_normalization_level==0) {
+    if (import_format!=3 && import_format!=5) {
     cmd=QString().
       sprintf("rd_import_file 0 %d %d %s %d %d %d %d %s %s %s %d",
 	      format_in,
@@ -725,6 +733,31 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
 	      import_src_converter);
   }
   else {
+      if((import_format!=3 && import_format!=5) || open_failed ||
+        import_samprate!=wavefile->getSamplesPerSec()) {
+        cmd=QString().
+          sprintf("rd_import_encode %s %s %d %d %d %d 0 %s %s",
+	        (const char *)RDEscapeString(effective_filename).utf8(),  
+	        RDCut::pathName(cut->cutName()).ascii(),  
+	        import_format,
+	        import_samprate,
+	        import_channels,
+	        import_channels*import_bitrate/1000,
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }
+      else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s 0 %s %s",
+	        (const char *)RDEscapeString(effective_filename).utf8(),  
+	        RDCut::pathName(cut->cutName()).ascii(),  
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }  	      
+    }	      
+  }
+  else {
+    if (import_format!=3 && import_format!=5) {
     cmd=QString().
       sprintf("rd_import_file %6.4f %d %d %s %d %d %d %d %s %s %s %d",
 	      normal,
@@ -739,6 +772,32 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
 	      (const char *)tempdat_name,
 	      (const char *)tempwav_name,
 	      import_src_converter);
+  }
+    else {
+      if((import_format!=3 && import_format!=5) || open_failed ||
+        import_samprate!=wavefile->getSamplesPerSec()) {
+        cmd=QString().
+          sprintf("rd_import_encode %s %s %d %d %d %d %f %s %s",
+	        (const char *)RDEscapeString(effective_filename).utf8(),  
+	        RDCut::pathName(cut->cutName()).ascii(),  
+	        import_format,
+	        import_samprate,
+	        import_channels,
+	        import_channels*import_bitrate/1000,
+	        normal,
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }
+      else {
+        cmd=QString().
+          sprintf("rd_import_copy %s %s %f %s %s",
+	        (const char *)RDEscapeString(effective_filename).utf8(),  
+	        RDCut::pathName(cut->cutName()).ascii(),  
+	        normal,
+	        import_config->audioOwner().ascii(),
+	        import_config->audioGroup().ascii());
+      }  	      
+    }	      
   }
   if(import_verbose) {
     PrintLogDateTime();
@@ -783,6 +842,19 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
     return MainObject::FileBad;
   }
   cut->reset();
+  if(wavedata->metadataFound()) {
+    if(cart_created) {
+      cart->setMetadata(wavedata);
+    }
+    RDWaveFile *wave=new RDWaveFile(cut->pathName(cut->cutName()));
+    if(wave->openWave()) {
+       wave->hasEnergy();
+       wavedata->setEndPos(wave->getExtTimeLength());
+       wave->closeWave();
+    }   
+    delete wave;
+    cut->setMetadata(wavedata);
+  }
   cut->setOriginName(import_config->stationName());
   if(wavedata->metadataFound()) {
     if(cart_created) {
@@ -932,7 +1004,7 @@ void MainObject::VerifyFile(const QString &filename,unsigned *cartnum)
 RDWaveFile *MainObject::FixFile(const QString &filename,RDWaveData *wavedata)
 {
   bool fix_needed=false;
-
+printf("FixFile\n");
   //
   // Determine Fixability
   //
@@ -1062,6 +1134,7 @@ bool MainObject::FindChunk(int fd,char *chunk_name,bool *fix_needed)
 
 bool MainObject::FixChunkSizes(const QString &filename)
 {
+printf("FixChunkSizes\n");
   int i;
   char name[5]={0,0,0,0,0};
   unsigned char buffer[4];
