@@ -36,6 +36,8 @@ case "$1" in
         
         # Remove init.d configuration file
         rm -f /etc/default/rivendell
+        rm -f /etc/rd.conf
+        rm -f /usr/bin/rdd
 
         # Remove pam_rd hooks from PAM scripts
         DISPLAY_MANAGER=`cat /etc/X11/default-display-manager`
@@ -44,11 +46,10 @@ case "$1" in
         grep -v "pam_rd.so" "$dc" > "${dc}.dpkg-tmp"
         mv -f "${dc}.dpkg-tmp" "$dc"
 
-        # Remove user and group
+        if [ "$REMOVEDATA" = "true" ]; then
         deluser $AUDIOUSER $AUDIOGROUP 2> /dev/null || true
         deluser $AUDIOUSER 2> /dev/null || true
         groupdel $AUDIOGROUP 2> /dev/null || true
-        if [ "$REMOVEDATA" = "true" ]; then
             [ -d "$AUDIOROOT" ] && rm -rf "$AUDIOROOT" || true
             mysqladmin --force drop Rivendell || true
         fi

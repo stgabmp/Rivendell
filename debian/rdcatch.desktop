@@ -5,5 +5,5 @@ Comment=Rivendell Catch
 Exec=rdcatch
 Terminal=false
 Type=Application
-Icon=/usr/share/srlabs/rdcatch.xpm
+Icon=/usr/share/rivendell/rivendell.xpm
 Categories=Application;AudioVideo;

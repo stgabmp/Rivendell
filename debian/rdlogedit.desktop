@@ -5,5 +5,5 @@ Comment=Rivendell Logedit
 Exec=rdlogedit
 Terminal=false
 Type=Application
-Icon=/usr/share/srlabs/rdlogedit.xpm
+Icon=/usr/share/rivendell/rivendell.xpm
 Categories=Application;AudioVideo;

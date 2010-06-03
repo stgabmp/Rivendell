@@ -31,6 +31,11 @@ Description: How should the Rivendell daemons be started?
  pam_rd - multiple UNIX user accounts can be used, with pam_rd clearing any old
  daemons when a user logs in to an X session.
 
+Template: rivendell/text_editor
+Type: string
+Default: vi
+Description: Text Editor for Reports
+
 Template: rivendell/identity/password
 Type: string
 Default: letmein
@@ -106,6 +111,7 @@ Description: Enter the name of the database for Rivendell in the MySQL server:
 Template: rivendell/mysql/driver
 Type: select
 Choices: QMYSQL3, FIXME
+Default: QMYSQL3
 Description: Select the driver used to connect to the database:
  This is the driver used to connect to the database, which may or may
  not be a MySQL database.
@@ -132,7 +138,7 @@ Default: true
 Description: Should non standard sample rates be permitted
  If true, then non-standard rates can exist in the audio store.
  .
- FIXME: is this samplerate or bitrate or both.
+ 
 
 Template: rivendell/tuning/userealtime
 Type: boolean
@@ -184,6 +190,8 @@ Description: Select the audio adapters to use:
 Template: rivendell/audioadapters/alsaintro
 Type: note
 Description: ALSA Rivendell integration.
+ You don't have to care about this, if you are using Jack Audio.
+  
  In order for Rivendell to recognize an ALSA sound adapter, there must
  exist a standard ALSA configuration file with a card named "rd0"
  defined. 
@@ -214,12 +222,7 @@ Type: note
 Description: Rivendell introduction.
  The Rivendell radio broadcast automation solution has been installed.
  .
- The next step is to run the "rdadmin" command with a user that has permissions
- to the rivendell system.  The first time it will prompt for a MySQL userid and
- password that has permissions to connect and create the database.
- .
- Once the database has been created, run the "rdadmin" command again.
- From this point on, rdadmin will allow for configuring of Rivendell.
+ Run "rdadmin" for configuring.
  .
  The default user accounts within Rivendell are "admin" and "user", both
  with no password.

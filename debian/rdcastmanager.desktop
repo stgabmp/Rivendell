@@ -1,8 +1,8 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=rdairplay
-Comment=Rivendell Airplay
-Exec=rdairplay
+Name=rdcastmanager
+Comment=Rivendell Podcast Manager
+Exec=rdcastmanager
 Terminal=false
 Type=Application
 Icon=/usr/share/rivendell/rivendell.xpm

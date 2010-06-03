@@ -5,5 +5,5 @@ Comment=Rivendell Login Utility
 Exec=rdlogin
 Terminal=false
 Type=Application
-Icon=/usr/share/srlabs/rdlogin.xpm
+Icon=/usr/share/rivendell/rivendell.xpm
 Categories=Application;AudioVideo;

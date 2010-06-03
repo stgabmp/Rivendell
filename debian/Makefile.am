@@ -26,11 +26,12 @@
 SUBDIRS = patches
 
 EXTRA_DIST = changelog compat control copyright\
-             librivendell.install menu rdadmin.desktop rdadmin.xpm\
-             rdairplay.desktop rdairplay.xpm rdcatch.desktop\
-             rdcatch.xpm rdlibrary.desktop rdlibrary.xpm rdlogedit.desktop\
-             rdlogedit.xpm rdlogin.desktop rdlogin.xpm\
-             rdlogmanager.desktop rdlogmanager.xpm README.Debian\
+             librivendell.install menu rdadmin.desktop\
+             rdairplay.desktop rdcatch.desktop\
+             rdlibrary.desktop rdlogedit.desktop\
+             rdlogin.desktop rdcastmanager.desktop\
+             rdpanel.desktop\
+             rdlogmanager.desktop README.Debian\
              rivendell.conffiles rivendell.config\
              rivendell.docs.in rivendell.install\
              rivendell.logrotate rivendell.templates\

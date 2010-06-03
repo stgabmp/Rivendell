@@ -5,5 +5,5 @@ Comment=Rivendell Admin
 Exec=rdadmin
 Terminal=false
 Type=Application
-Icon=/usr/share/srlabs/rdadmin.xpm
+Icon=/usr/share/rivendell/rivendell.xpm
 Categories=Application;AudioVideo;

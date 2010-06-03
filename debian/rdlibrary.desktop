@@ -5,5 +5,5 @@ Comment=Rivendell Library
 Exec=rdlibrary
 Terminal=false
 Type=Application
-Icon=/usr/share/srlabs/rdlibrary.xpm
+Icon=/usr/share/rivendell/rivendell.xpm
 Categories=Application;AudioVideo;

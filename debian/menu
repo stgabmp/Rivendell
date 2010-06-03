@@ -2,41 +2,53 @@
   needs="x11"\
   section="Apps/Sound"\
   title="rdadmin" command="/usr/bin/rdadmin" \
-  icon="/usr/share/srlabs/rdadmin.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
 
 ?package(rivendell):\
   needs="x11"\
   section="Apps/Sound"\
   title="rdairplay" command="/usr/bin/rdairplay" \
-  icon="/usr/share/srlabs/rdairplay.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
 
 ?package(rivendell):\
   needs="x11"\
   section="Apps/Sound"\
   title="rdcatch" command="/usr/bin/rdcatch" \
-  icon="/usr/share/srlabs/rdcatch.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
 
 ?package(rivendell):\
   needs="x11"\
   section="Apps/Sound"\
   title="rdlibrary" command="/usr/bin/rdlibrary" \
-  icon="/usr/share/srlabs/rdlibrary.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
 
 ?package(rivendell):\
   needs="x11"\
   section="Apps/Sound"\
   title="rdlogedit" command="/usr/bin/rdlogedit" \
-  icon="/usr/share/srlabs/rdlogedit.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
 
 ?package(rivendell):\
   needs="x11"\
   section="Apps/Sound"\
   title="rdlogin" command="/usr/bin/rdlogin" \
-  icon="/usr/share/srlabs/rdlogin.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
 
 ?package(rivendell):\
   needs="x11"\
   section="Apps/Sound"\
   title="rdlogmanager" command="/usr/bin/rdlogmanager" \
-  icon="/usr/share/srlabs/rdlogmanager.xpm"
+  icon="/usr/share/rivendell/rivendell.xpm"
+
+?package(rivendell):\
+  needs="x11"\
+  section="Apps/Sound"\
+  title="rdpanel" command="/usr/bin/rdpanel" \
+  icon="/usr/share/rivendell/rivendell.xpm"
+
+?package(rivendell):\
+  needs="x11"\
+  section="Apps/Sound"\
+  title="rdcastmanager" command="/usr/bin/rdcastmanager" \
+  icon="/usr/share/rivendell/rivendell.xpm"
 
