@@ -279,91 +279,6 @@ setzen</translation>
     <name>RDCartDialog</name>
     <message>
         <source>Select Cart</source>
-        <translation type="obsolete">Cart auswählen</translation>
-    </message>
-    <message>
-        <source>Please Wait...</source>
-        <translation type="obsolete">Bitte warten...</translation>
-    </message>
-    <message>
-        <source>Cart Filter:</source>
-        <translation type="obsolete">Cart Filter:</translation>
-    </message>
-    <message>
-        <source>&amp;Search</source>
-        <translation type="obsolete">&amp;Suchen</translation>
-    </message>
-    <message>
-        <source>C&amp;lear</source>
-        <translation type="obsolete">&amp;Löschen</translation>
-    </message>
-    <message>
-        <source>Group:</source>
-        <translation type="obsolete">Gruppe:</translation>
-    </message>
-    <message>
-        <source>NUMBER</source>
-        <translation type="obsolete">NUMMER</translation>
-    </message>
-    <message>
-        <source>LENGTH</source>
-        <translation type="obsolete">LÄNGE</translation>
-    </message>
-    <message>
-        <source>TITLE</source>
-        <translation type="obsolete">TITEL</translation>
-    </message>
-    <message>
-        <source>ARTIST</source>
-        <translation type="obsolete">KÜNSTLER</translation>
-    </message>
-    <message>
-        <source>GROUP</source>
-        <translation type="obsolete">GRUPPE</translation>
-    </message>
-    <message>
-        <source>CLIENT</source>
-        <translation type="obsolete">KUNDE</translation>
-    </message>
-    <message>
-        <source>AGENCY</source>
-        <translation type="obsolete">AGENTUR</translation>
-    </message>
-    <message>
-        <source>USER DEF</source>
-        <translation type="obsolete">BENUTZER DEF</translation>
-    </message>
-    <message>
-        <source>START</source>
-        <translation type="obsolete">START</translation>
-    </message>
-    <message>
-        <source>END</source>
-        <translation type="obsolete">END</translation>
-    </message>
-    <message>
-        <source>Send to
-&amp;Editor</source>
-        <translation type="obsolete">An &amp;Editor
-senden</translation>
-    </message>
-    <message>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;OK</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">&amp;Cancel</translation>
-    </message>
-    <message>
-        <source>ALL</source>
-        <translation type="obsolete">ALLE</translation>
-    </message>
-</context>
-<context>
-    <name>RDCartSelector</name>
-    <message>
-        <source>Select Cart</source>
         <translation type="unfinished">Cart auswählen</translation>
     </message>
     <message>
@@ -372,7 +287,7 @@ senden</translation>
     </message>
     <message>
         <source>Cart Filter:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cart Filter:</translation>
     </message>
     <message>
         <source>&amp;Search</source>
@@ -438,7 +353,11 @@ senden</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Cancel</translation>
+    </message>
+    <message>
+        <source>ALL</source>
+        <translation type="unfinished">ALLE</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -456,9 +375,86 @@ senden</translation>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>RDCartSelector</name>
+    <message>
+        <source>Select Cart</source>
+        <translation type="obsolete">Cart auswählen</translation>
+    </message>
+    <message>
+        <source>Please Wait...</source>
+        <translation type="obsolete">Bitte warten...</translation>
+    </message>
+    <message>
+        <source>&amp;Search</source>
+        <translation type="obsolete">&amp;Suchen</translation>
+    </message>
+    <message>
+        <source>C&amp;lear</source>
+        <translation type="obsolete">&amp;Löschen</translation>
+    </message>
+    <message>
+        <source>Group:</source>
+        <translation type="obsolete">Gruppe:</translation>
+    </message>
+    <message>
+        <source>NUMBER</source>
+        <translation type="obsolete">NUMMER</translation>
+    </message>
+    <message>
+        <source>LENGTH</source>
+        <translation type="obsolete">LÄNGE</translation>
+    </message>
+    <message>
+        <source>TITLE</source>
+        <translation type="obsolete">TITEL</translation>
+    </message>
+    <message>
+        <source>ARTIST</source>
+        <translation type="obsolete">KÜNSTLER</translation>
+    </message>
+    <message>
+        <source>GROUP</source>
+        <translation type="obsolete">GRUPPE</translation>
+    </message>
+    <message>
+        <source>CLIENT</source>
+        <translation type="obsolete">KUNDE</translation>
+    </message>
+    <message>
+        <source>AGENCY</source>
+        <translation type="obsolete">AGENTUR</translation>
+    </message>
+    <message>
+        <source>USER DEF</source>
+        <translation type="obsolete">BENUTZER DEF</translation>
+    </message>
+    <message>
+        <source>START</source>
+        <translation type="obsolete">START</translation>
+    </message>
+    <message>
+        <source>END</source>
+        <translation type="obsolete">END</translation>
+    </message>
+    <message>
+        <source>Send to
+&amp;Editor</source>
+        <translation type="obsolete">An &amp;Editor
+senden</translation>
+    </message>
+    <message>
+        <source>&amp;OK</source>
+        <translation type="obsolete">&amp;OK</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="obsolete">Hinzufügen</translation>
+    </message>
     <message>
         <source>ALL</source>
-        <translation type="unfinished">ALLE</translation>
+        <translation type="obsolete">ALLE</translation>
     </message>
 </context>
 <context>

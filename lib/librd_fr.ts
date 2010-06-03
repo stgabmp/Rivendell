@@ -275,9 +275,6 @@ Color</source>
 </context>
 <context>
     <name>RDCartDialog</name>
-</context>
-<context>
-    <name>RDCartSelector</name>
     <message>
         <source>Select Cart</source>
         <translation type="unfinished"></translation>
@@ -356,6 +353,10 @@ Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>ALL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Ok</source>
         <translation type="unfinished"></translation>
     </message>
@@ -369,10 +370,6 @@ Color</source>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ALL</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
