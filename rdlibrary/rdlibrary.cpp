@@ -385,12 +385,6 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
 
   lib_cart_list->addColumn(tr("OWNED BY"));
   lib_cart_list->setColumnAlignment(17,Qt::AlignHCenter);
-  connect(lib_cart_list,
-	  SIGNAL(doubleClicked(QListViewItem *,const QPoint &,int)),
-	  this,
-	  SLOT(cartDoubleclickedData(QListViewItem *,const QPoint &,int)));
-  connect(lib_cart_list,SIGNAL(pressed(QListViewItem *)),
-	  this,SLOT(cartClickedData(QListViewItem *)));
 
   //
   // Add Button
