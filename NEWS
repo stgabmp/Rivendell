@@ -1,6 +1,28 @@
 The NEWS file for the Rivendell package.
 
 -------------------------------------------------------------------------------
+v1.7.2 -- 06/04/2010
+
+This is a maintenance release of Rivendell, with primary focus on fixing
+identified issues.  
+
+Changes:
+   Fixed a bug in RDCatch that could cause upload/download event 
+   notifications to fail to update properly.
+
+   Fixed a bug in RDAirPlay that resulted in zombie processes when using
+   RLMs that fork new processes.
+
+   Cleaned up the init script to make the 'reload' target more reliable.
+
+Database Update:
+   This version of Rivendell uses database schema version 186, and will
+   automatically upgrade any earlier versions.  To see the current schema
+   version prior to upgrade, see RDAdmin->SystemInfo.
+
+   As always, be sure to run RDAdmin immediately after upgrading to allow 
+   any necessary changes to the database schema to be applied.
+-------------------------------------------------------------------------------
 v1.7.1 -- 05/11/2010
 
 This is a maintenance release of Rivendell, with primary focus on fixing

@@ -4,7 +4,7 @@
 //
 //   (C) Copyright 2002-2008 Fred Gleason <fredg@paravelsystems.com>
 //
-//      $Id: rdairplay.cpp,v 1.171.2.9 2010/01/20 22:22:50 cvs Exp $
+//      $Id: rdairplay.cpp,v 1.171.2.9.2.1 2010/06/03 22:54:42 cvs Exp $
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License version 2 as
@@ -795,6 +795,11 @@ MainWidget::MainWidget(QWidget *parent,const char *name)
     }
   }
   delete q;
+
+  //
+  // Set Signal Handlers
+  //
+  signal(SIGCHLD,SigHandler);
 
   //
   // Start the RIPC Connection

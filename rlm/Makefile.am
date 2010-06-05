@@ -4,7 +4,7 @@
 ##
 ##   (C) Copyright 2008 Fred Gleason <fredg@paravelsystems.com>
 ##
-##      $Id: Makefile.am,v 1.1.2.11 2009/09/02 19:23:28 cvs Exp $
+##      $Id: Makefile.am,v 1.1.2.11.2.1 2010/06/04 00:18:26 cvs Exp $
 ##
 ##   This program is free software; you can redistribute it and/or modify
 ##   it under the terms of the GNU General Public License version 2 as
@@ -35,6 +35,8 @@ all:	$(RLM_MODULES)
 install:	all
 	mkdir -p $(DESTDIR)$(prefix)/@RD_LIB_PATH@/rivendell
 	cp $(RLM_MODULES) $(DESTDIR)$(prefix)/@RD_LIB_PATH@/rivendell/
+	mkdir -p $(headerdir)
+	cp rlm.h $(headerdir)
 
 headerdir = $(includedir)/rlm
 header_HEADERS = rlm.h
