@@ -152,12 +152,8 @@ case "$FORMAT_OUT" in
   ;;
 
   3)  # MPEG Layer 3
-<<<<<<< rd_export_file
 #    sox $SOX_SCALE $WORK -r $SAMPRATE_OUT -c $CHANS_OUT -t wav - $RESAMPLE_FLAG | lame --silent -s $SAMPRATE_OUT -m $MPEG_MODE $LAME_RATE - "$FILE_OUT"
-    rdaconvert --operation=convert --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | lame --silent -r -x -s $SAMPRATE_OUT -m $MPEG_MODE $LAME_RATE - "$FILE_OUT"
-=======
     rdaconvert --operation=convert --converter=$SRC_CONV --channels=$CHANS_OUT --sample-rate=$SAMPRATE_OUT --gain-ratio=$SCALE $WORK - | lame --silent -r -x -s $SAMPRATE_OUT -m $MPEG_MODE $LAME_RATE - "$FILE_OUT"
->>>>>>> 1.8.2.5
   ;;
 
   4)  # FLAC
