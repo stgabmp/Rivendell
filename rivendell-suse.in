@@ -4,7 +4,7 @@
 ##
 ##    (C) Copyright 2002-2006 Fred Gleason <fredg@paravelsystems.com>
 ##
-##      $Id: rivendell-suse.in,v 1.10 2008/08/18 17:30:19 fredg Exp $
+##      $Id: rivendell-suse.in,v 1.10.4.1 2010/06/04 00:04:52 cvs Exp $
 ##
 ##    This program is free software; you can redistribute it and/or modify
 ##    it under the terms of version 2 of the GNU General Public License as
@@ -23,8 +23,9 @@
 
 ### BEGIN INIT INFO
 # Provides:          rivendell
-# Required-Start:    $remote_fs mysql alsasound
+# Required-Start:    $remote_fs alsasound
 # Required-Stop:     $remote_fs alsasound
+# Should-Start:      mysql
 # Default-Start:     2 3 5
 # Default-Stop:      0 1 6
 # Description:       Start the Rivendell system daemons
@@ -70,19 +71,28 @@ function StartDaemons {
 
 function StopDaemons {
   killall rdimport > /dev/null 2> /dev/null
-  kill `cat /var/run/rivendell/rdcatchd.pid` > /dev/null 2> /dev/null
-  kill `cat /var/run/rivendell/ripcd.pid` > /dev/null 2> /dev/null
-  kill `cat /var/run/rivendell/caed.pid` > /dev/null 2> /dev/null
+  if [ -f /var/run/rivendell/rdcatchd.pid ] ; then
+    kill `cat /var/run/rivendell/rdcatchd.pid` > /dev/null 2> /dev/null
+  fi
+  if [ -f /var/run/rivendell/ripcd.pid ] ; then
+    kill `cat /var/run/rivendell/ripcd.pid` > /dev/null 2> /dev/null
+  fi
+  if [ -f /var/run/rivendell/caed.pid ] ; then
+    kill `cat /var/run/rivendell/caed.pid` > /dev/null 2> /dev/null
+  fi
   if [ -n "$JACK_COMMAND" ] ; then
 #
 # FIXME
 #  Why are three kill(1) invocations necessary to stop jackd(1)?
 #
-    kill `cat /var/run/rivendell/jackd.pid` > /dev/null 2> /dev/null
-    kill `cat /var/run/rivendell/jackd.pid` > /dev/null 2> /dev/null
-    kill `cat /var/run/rivendell/jackd.pid` > /dev/null 2> /dev/null
-    rm -f /var/run/rivendell/jackd.pid
+    if [ -f /var/run/rivendell/jackd.pid ] ; then
+      kill `cat /var/run/rivendell/jackd.pid` > /dev/null 2> /dev/null
+      kill `cat /var/run/rivendell/jackd.pid` > /dev/null 2> /dev/null
+      kill `cat /var/run/rivendell/jackd.pid` > /dev/null 2> /dev/null
+      rm -f /var/run/rivendell/jackd.pid
+    fi
   fi
+  sleep 2
 }
 
 # Set path for script functions
@@ -174,13 +184,13 @@ case "$1" in
     restart)
 	$0 silent-status
 	if test $? -eq 0 ; then
-	    StopDaemons
+	    $0 stop
 	fi
 	$0 silent-status
 	if test $? -eq 0 ; then
 	    exit 1
 	fi
-	StartDaemons
+	$0 start
 	$0 silent-status
 	if test $? -eq 0 ; then
 	    exit 0
