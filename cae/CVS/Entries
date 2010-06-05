@@ -1,10 +1,10 @@
 /Makefile.am/1.30/Fri Sep 14 14:06:23 2007//Tv1_branch-v1_7
-/cae.cpp/1.104.2.2/Mon Apr 27 14:38:09 2009//Tv1_branch-v1_7
 /cae.h/1.70/Fri Mar 28 20:00:05 2008//Tv1_branch-v1_7
-/cae_alsa.cpp/1.41.2.3/Sat Jan 23 02:53:52 2010//Tv1_branch-v1_7
 /cae_hpi.cpp/1.35/Fri Jul 18 20:06:10 2008//Tv1_branch-v1_7
-/cae_jack.cpp/1.50.2.1/Wed Jul  1 23:18:58 2009//Tv1_branch-v1_7
 /cae_socket.cpp/1.7/Fri Sep 14 14:06:23 2007//Tv1_branch-v1_7
 /cae_socket.h/1.5/Fri Sep 14 14:06:23 2007//Tv1_branch-v1_7
 /doxygen.conf/1.2/Sun Nov  4 01:31:59 2007//Tv1_branch-v1_7
+/cae.cpp/1.104.2.2/Sat Jun  5 05:50:50 2010//Tv1_branch-v1_7
+/cae_alsa.cpp/1.41.2.3/Sat Jun  5 05:51:21 2010//Tv1_branch-v1_7
+/cae_jack.cpp/1.50.2.1/Sat Jun  5 05:51:21 2010//Tv1_branch-v1_7
 D

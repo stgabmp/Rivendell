@@ -10966,3 +10966,19 @@
 	* Fixed a bug in 'rdcatchd/rdcatchd.cpp' that would cause xload
 	completion notifications to fail for the first event on the event
 	list.
+2010-06-03 Fred Gleason <fredg@paravelsystems.com>
+	* Fixed a bug in 'rdairplay/rdairplay.cpp' that caused zombie
+	processes to be created when forking new processes in an RLM.
+2010-06-03 Fred Gleason <fredg@paravelsystems.com>
+	* Modified the 'restart' target in 'rivendell-suse.in' to print
+	notification of service stop and start.
+	* Inserted a two second delay into the 'StopDaemons' subroutine in
+	'rivendell-suse.in'.
+	* Fixed a bug in 'rivendell-suse.in' that threw error messages
+	when stopping an already-stopped Rivendell service.
+2010-06-03 Fred Gleason <fredg@paravelsystems.com>
+	* Fixed a bug in 'rlm/Makefile.am' that broke the 'make uninstall'
+	target.
+2010-06-04 Fred Gleason <fredg@paravelsystems.com>
+	* Updated the 'NEWS' file.
+	* Incremented the package version to 1.7.2.
