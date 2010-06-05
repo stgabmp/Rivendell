@@ -224,6 +224,7 @@ void rlm_twitter_RLMPadDataSent(void *ptr,const char *svcname,int onair,
   char str[1024];
   char account[1024];
   char pad[1024];
+  char msg[1024];
 
   for(i=0;i<rlm_twitter_devs;i++) {
     switch(lognum) {
@@ -254,6 +255,8 @@ void rlm_twitter_RLMPadDataSent(void *ptr,const char *svcname,int onair,
 	  exit(0);
 	}
       }
+      snprintf(msg,1024,"rlm_twitter: sent \"%s\" to account %s",pad,account);
+      RLMLog(ptr,LOG_DEBUG,msg);
     }
   }
 }
