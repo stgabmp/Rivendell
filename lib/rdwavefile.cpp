@@ -5305,12 +5305,14 @@ void RDWaveFile::GetEnergy()
 {
   int file_ptr;
 
-  ReadEnergyFile(wave_file.name());
-  if(!levl_chunk) {
-    GetLevl(wave_file.handle());
-  }
   if(energy_loaded) {
     return;
+  }
+  if(ReadEnergyFile(wave_file.name())){
+    return;
+  }
+  if(!levl_chunk) {
+    GetLevl(wave_file.handle());
   }
   file_ptr=lseek(wave_file.handle(),0,SEEK_CUR);
   lseek(wave_file.handle(),0,SEEK_SET);
