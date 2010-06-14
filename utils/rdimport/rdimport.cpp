@@ -79,6 +79,7 @@ MainObject::MainObject(QObject *parent,const char *name)
   import_enddate_offset=0;
   import_fix_broken_formats=false;
   import_persistent_dropbox_id=-1;
+  import_rescan=false;
 
   //
   // Read Command Options
@@ -171,6 +172,9 @@ MainObject::MainObject(QObject *parent,const char *name)
 	delete import_cmd;
 	exit(256);
       }
+    }
+    if(import_cmd->key(i)=="--rescan") {
+      import_rescan=true;
     }
   }
 
@@ -395,6 +399,11 @@ MainObject::MainObject(QObject *parent,const char *name)
   //
   // Process Files
   //
+  if(import_rescan) {
+    RescanGroup();  
+    exit(0);
+  }  
+
   if(import_drop_box) {
     RunDropBox();
   }
@@ -523,7 +532,8 @@ void MainObject::ProcessFileEntry(const QString &entry)
     return;
   }
   globbuf.gl_offs=RDIMPORT_GLOB_SIZE;
-  while((globbuf.gl_pathc==RDIMPORT_GLOB_SIZE)||(gflags==GLOB_MARK)) {
+//  while((globbuf.gl_pathc==RDIMPORT_GLOB_SIZE)||(gflags==GLOB_MARK)) {
+  while(gflags==GLOB_MARK) {
     glob(RDEscapeString(entry),gflags,NULL,&globbuf);
     if((globbuf.gl_pathc==0)&&(gflags==GLOB_MARK)&&(!import_drop_box)) {
       PrintLogDateTime(stderr);
@@ -792,6 +802,7 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
   }
   cut->autoTrim(RDCut::AudioBoth,import_autotrim_level);
   cut->autoSegue(import_segue_level,import_segue_length);
+  ReadMmd(cart,cut,filename);
   if((wavedata->title().length()==0)||
      ((wavedata->title().length()>0)&&(wavedata->title()[0] == '\0'))) {
     QString title=effective_group->defaultTitle();
@@ -844,6 +855,8 @@ MainObject::Result MainObject::ImportFile(const QString &filename,
 
   if(import_delete_source) {
     unlink(filename.utf8());
+    QString mmdfile=filename+".mmd";
+    unlink(mmdfile.utf8());
     if(import_verbose) {
       PrintLogDateTime();
       printf(" Deleted file \"%s\"\n",(const char *)RDGetBasePart(filename).utf8());
@@ -1363,9 +1376,91 @@ void MainObject::WriteTimestampCache(const QString &filename,
 }
 
 
+void MainObject::RescanGroup()
+{
+  QString sql;
+  RDSqlQuery *q;
+  RDCut *cut;
+  sql=QString().sprintf("select CUTS.CUT_NAME from CUTS,CART where\
+          CUTS.CART_NUMBER=CART.NUMBER and CART.GROUP_NAME=\"%s\"",(const char*)import_group->name());
+  q=new RDSqlQuery(sql);
+  while(q->next()) {
+    cut=new RDCut(q->value(0).toString());
+    cut->autoTrim(RDCut::AudioBoth,import_autotrim_level);
+    cut->autoSegue(import_segue_level,import_segue_length);
+    delete cut;
+  }
+  delete q;
+}
+
+
+void MainObject::ReadMmd(RDCart* cart,RDCut* cut,QString filename)
+{
+  StructureParser handler;
+  handler.setCartCut(cart,cut);
+  QXmlSimpleReader reader;
+  reader.setContentHandler( &handler );
+  QFile xmlFile(filename+".mmd");
+  QXmlInputSource source( &xmlFile );
+  reader.parse( source );
+}
+
 int main(int argc,char *argv[])
 {
   QApplication a(argc,argv,false);
   new MainObject(NULL,"main");
   return a.exec();
 }
+
+bool StructureParser::startDocument()
+{
+  flag=false;
+  return TRUE;
+}
+
+bool StructureParser::startElement( const QString&, const QString&,
+                                    const QString& qName, const QXmlAttributes&)
+{
+  if(qName.lower()!="value") {
+    tag=qName;
+  }
+  flag=true;
+  return TRUE;
+}
+
+bool StructureParser::characters ( const QString & ch ) 
+{
+  QString s=QString(ch);
+  if(flag && s.stripWhiteSpace()!="") {
+    if (tag.lower()=="cuein") {
+      xml_cut->setStartPoint(s.toUInt()/10000);
+    }
+    if (tag.lower()=="cueout") {
+      xml_cut->setEndPoint(s.toUInt()/10000);
+      if(xml_cut->segueEndPoint()>=0) {
+        xml_cut->setSegueEndPoint(s.toUInt()/10000);
+      }
+    }
+    if (tag.lower()=="ramp") {
+      xml_cut->setTalkStartPoint(xml_cut->startPoint());
+      xml_cut->setTalkEndPoint(s.toUInt()/10000);
+    }
+    if (tag.lower()=="artist") {
+      xml_cart->setArtist(s);
+    }
+    if (tag.lower()=="title") {
+      xml_cart->setTitle(s);
+      xml_cut->setDescription(s);
+    }
+  }
+  flag=false;
+  return TRUE;
+}
+
+
+void StructureParser::setCartCut(RDCart* cart,RDCut *cut)
+{
+  xml_cart=cart;
+  xml_cut=cut;
+}
+
