@@ -249,6 +249,9 @@ bool RDPlayDeck::setCart(RDLogLine *logline,bool rotate)
 			   &play_stream,&play_handle)) {
       return false;
     }
+    if(play_handle==-1) {
+      return false;
+    }
   }
   play_state=RDPlayDeck::Stopped;
   return true;
