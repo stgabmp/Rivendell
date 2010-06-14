@@ -258,7 +258,7 @@ EditRDLibrary::EditRDLibrary(RDStation *station,unsigned instance,
   // Sample Rate Converter
   //
   lib_converter_box=new QComboBox(this,"lib_converter_box");
-  lib_converter_box->setGeometry(160,352,sizeHint().width()-170,19);
+  lib_converter_box->setGeometry(160,376,sizeHint().width()-170,19);
   int conv=0;
   while(src_get_name(conv)!=NULL) {
     lib_converter_box->insertItem(src_get_name(conv++));
@@ -266,14 +266,14 @@ EditRDLibrary::EditRDLibrary(RDStation *station,unsigned instance,
   QLabel *lib_converter_label=new QLabel(lib_converter_box,
 					 tr("Sample Rate Converter:"),this,
 					 "lib_converter_label");
-  lib_converter_label->setGeometry(10,352,145,19);
+  lib_converter_label->setGeometry(10,376,145,19);
   lib_converter_label->setAlignment(AlignRight|AlignVCenter|ShowPrefix);
 
   //
   // Defaults
   //
   QLabel *default_label=new QLabel(tr("Defaults"),this,"default_label");
-  default_label->setGeometry(25,389,120,19);
+  default_label->setGeometry(25,399,120,19);
   default_label->setFont(big_font);
   default_label->setAlignment(AlignRight|ShowPrefix);
 
@@ -281,30 +281,30 @@ EditRDLibrary::EditRDLibrary(RDStation *station,unsigned instance,
   // Default Channels
   //
   lib_channels_box=new QComboBox(this,"lib_channels_box");
-  lib_channels_box->setGeometry(160,408,60,19);
+  lib_channels_box->setGeometry(160,418,60,19);
   QLabel *lib_channels_label=new QLabel(lib_channels_box,tr("&Channels:"),this,
 				       "lib_channels_label");
-  lib_channels_label->setGeometry(25,408,130,19);
+  lib_channels_label->setGeometry(25,418,130,19);
   lib_channels_label->setAlignment(AlignRight|AlignVCenter|ShowPrefix);
 
   //
   // Default Record Mode
   //
   lib_recmode_box=new QComboBox(this,"lib_recmode_box");
-  lib_recmode_box->setGeometry(160,432,100,19);
+  lib_recmode_box->setGeometry(160,442,100,19);
   QLabel *lib_recmode_label=new QLabel(lib_recmode_box,tr("Record Mode:"),this,
 				       "lib_recmode_label");
-  lib_recmode_label->setGeometry(25,432,130,19);
+  lib_recmode_label->setGeometry(25,442,130,19);
   lib_recmode_label->setAlignment(AlignRight|AlignVCenter|ShowPrefix);
 
   //
   // Default Trim State
   //
   lib_trimstate_box=new QComboBox(this,"lib_trimstate_box");
-  lib_trimstate_box->setGeometry(160,454,100,19);
+  lib_trimstate_box->setGeometry(160,464,100,19);
   QLabel *lib_trimstate_label=new QLabel(lib_trimstate_box,tr("AutoTrim:"),
 					 this,"lib_trimstate_label");
-  lib_trimstate_label->setGeometry(25,454,130,19);
+  lib_trimstate_label->setGeometry(25,464,130,19);
   lib_trimstate_label->setAlignment(AlignRight|AlignVCenter|ShowPrefix);
 
   //
