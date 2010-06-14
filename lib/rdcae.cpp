@@ -81,6 +81,16 @@ RDCae::RDCae(QObject *parent,const char *name)
     fprintf(stderr," SHM error, failed to allocate meter block : %s\n",
 	    strerror(errno));
   }
+  for(int i=0;i<RD_MAX_CARDS;i++) {
+    for(int j=0;j<RD_MAX_PORTS;j++) {
+      for(int k=0;k<RD_MAX_STREAMS;k++) {
+        if (meter_block) {  
+    	  meter_block->output_state[i][j][k]=false;
+        }
+      }
+    }
+  }
+
   //
   // The Clock Timer
   //
@@ -342,7 +352,6 @@ bool RDCae::playPortActive(int card,int port,int except_stream)
   if(restart_lock) {
     return false;
   }
-
   for(int i=0;i<RD_MAX_STREAMS;i++) {
     if(meter_block && meter_block->output_state[card][port][i]&&(i!=except_stream)) {
       return true;
@@ -357,7 +366,6 @@ void RDCae::setPlayPortActive(int card,int port,int stream)
   if(restart_lock) {
     return;
   }
-
   if (meter_block){
     meter_block->output_state[card][port][stream]=true;
   }
