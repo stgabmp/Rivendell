@@ -30,6 +30,7 @@
 #include <qsqldatabase.h>
 #include <qfileinfo.h>
 #include <qdatetime.h>
+#include <qxml.h>
 
 #include <rdwavedata.h>
 #include <rdwavefile.h>
@@ -75,6 +76,8 @@ class MainObject : public QObject
   void DeleteCuts(unsigned cartnum);
   QDateTime GetCachedTimestamp(const QString &filename);
   void WriteTimestampCache(const QString &filename,const QDateTime &dt);
+  void RescanGroup();
+  void ReadMmd(RDCart*,RDCut*,QString);
   RDConfig *import_config;
   RDCmdSwitch *import_cmd;
   unsigned import_file_key;
@@ -112,7 +115,23 @@ class MainObject : public QObject
   };
   std::list<DropboxList *> import_dropbox_list;
   QString import_temp_fix_filename;
+  bool import_rescan;
+ };
+
+class StructureParser : public QXmlDefaultHandler
+{
+public:
+    bool startDocument();
+    bool startElement( const QString&, const QString&, const QString& ,
+                       const QXmlAttributes& );
+    bool characters ( const QString & ch );
+    void setCartCut(RDCart *,RDCut*);
+
+private:
+    QString tag;
+    bool flag;
+    RDCart* xml_cart;
+    RDCut* xml_cut;
 };
-
-
+ 
 #endif  // RDIMPORT_H

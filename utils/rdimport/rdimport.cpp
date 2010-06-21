@@ -1441,7 +1441,7 @@ bool StructureParser::characters ( const QString & ch )
         xml_cut->setSegueEndPoint(s.toUInt()/10000);
       }
     }
-    if (tag.lower()=="ramp") {
+    if (tag.left(4).lower()=="ramp") {
       xml_cut->setTalkStartPoint(xml_cut->startPoint());
       xml_cut->setTalkEndPoint(s.toUInt()/10000);
     }
